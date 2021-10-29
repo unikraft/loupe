@@ -18,6 +18,12 @@ also able to convert this database to SQLite. We offer an online, open
 [database]() maintained by the community. Feel free to pull request your
 analysis results!
 
+## Dependencies
+
+- Docker
+- python 3, with [python-git](https://pypi.org/project/python-git/)
+- a recent-enough Linux kernel to support seccomp and ptrace
+
 ## Gathering Data
 
 `loupe generate` takes care of analyzing the system call usage of your
