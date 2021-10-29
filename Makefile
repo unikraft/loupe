@@ -1,5 +1,10 @@
-all:
+.PHONY: docker
+
+seccomp-run:
 	gcc seccomp-run.c -o seccomp-run
 
 docker:
-	sudo docker build -t loup-img .
+	docker build --tag loupe-base -f docker/Dockerfile.loupe-base .
+
+all: seccomp-run docker
+

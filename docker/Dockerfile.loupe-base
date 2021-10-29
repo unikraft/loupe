@@ -1,0 +1,25 @@
+FROM ubuntu:21.04
+
+# Disable Prompt During Packages Installation
+WORKDIR "/root"
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt update
+RUN apt install -y git build-essential wget gcc-multilib gawk libssl-dev seccomp python3 python3-pip unzip
+
+# Install strace
+RUN wget https://github.com/strace/strace/releases/download/v5.14/strace-5.14.tar.xz
+RUN tar -xf strace-5.14.tar.xz
+RUN cd strace-5.14 && ./configure && make -j && make install
+
+# Necessary for build-dep
+RUN cp /etc/apt/sources.list /tmp/sources.list
+RUN sed -i 's/deb /deb-src /' /tmp/sources.list
+RUN cat /tmp/sources.list >> /etc/apt/sources.list
+RUN apt update
+
+# Copy Loupe source code
+COPY explore.py /root/
+COPY seccomp-run.c /root/
+COPY Makefile /root/
+COPY common/ /root/common
+RUN make
