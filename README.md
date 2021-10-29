@@ -18,11 +18,13 @@ also able to convert this database to SQLite. We offer an online, open
 [database]() maintained by the community. Feel free to pull request your
 analysis results!
 
-## Dependencies
+## Dependencies & Install
 
 - Docker
-- python 3, with [python-git](https://pypi.org/project/python-git/)
+- python3, with [python-git](https://pypi.org/project/python-git/)
 - a recent-enough Linux kernel to support seccomp and ptrace
+
+The setup is very simple: `make all`
 
 ## Gathering Data
 
@@ -31,7 +33,72 @@ application.
 
 ### Example 1: Dynamic system call usage analysis of Nginx
 
-*TODO*
+Loupe considers two types of workloads: benchmarks and test suites. Both
+measurements are independent. In this example, we'll measure the dynamic system
+call analysis for Nginx.
+
+Let's take a look at benchmarks first.
+
+#### Benchmark workload
+
+**Step 1**: identify a benchmarking tool that we can use to benchmark Nginx.
+
+Here we'll go for [wrk](https://github.com/wg/wrk).
+
+**Step 2**: write a *test script* that uses wrk. Test scripts are used by Loupe
+to determine whether or not the application (here Nginx) works. Test scripts return
+0 if the application works, 1 if it doesn't.
+
+In the case of Nginx, our test script looks like the following:
+
+	#!/bin/bash
+
+	# nginx command: ./objs/nginx -p $(pwd) -g 'daemon off;'
+
+	b=$(${WRK_PATH} http://localhost:8034/index.html -d3s)
+
+	nl=$(echo ${bench} | grep -P "Transfer/sec:\s*\d+(?:\.\d+)MB" | wc -l)
+	if [ "$nl" -eq "1" ]; then
+	    exit 0
+	fi
+
+	exit 1
+
+**Step 3**: create a Docker container that build nginx and wrk, and performs
+the system call analysis using Loupe. Use `loupe-base` as basis for your Docker
+container.
+
+In our case, the Dockerfile looks like the following:
+
+	FROM loupe-base:latest
+
+	# Install wrk
+	RUN apt install -y wrk
+
+	# Nginx related instructions
+	RUN apt build-dep -y nginx
+	RUN wget https://nginx.org/download/nginx-1.20.1.tar.gz
+	RUN tar -xf nginx-1.20.1.tar.gz
+	RUN cd nginx-1.20.1 && ./configure \
+		--sbin-path=$(pwd)/nginx \
+		--conf-path=$(pwd)/conf/nginx.conf \
+		--pid-path=$(pwd)/nginx.pid
+	RUN cd nginx-1.20.1 && make -j && mkdir logs
+	RUN cd nginx-1.20.1 && sed -i "s/listen       80/listen       8034/g" conf/nginx.conf
+
+	COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
+	RUN chmod a+x /root/nginx-test.sh
+	RUN sed -i "s/\/root\/hle\/pub\/wrk\///g" /root/nginx-test.sh
+
+	CMD /root/explore.py --output-csv -t /root/nginx-test.sh \
+                             -b /root/nginx-1.20.1/objs/nginx -- \
+                             -p /root/nginx-1.20.1 -g "daemon off;"
+
+**Step 4**: start the analysis using the following command:
+
+	$ ./loupe.py generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
+
+#### Test-suite workload
 
 ## Retrieving and Processing Data
 
