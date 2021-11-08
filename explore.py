@@ -141,6 +141,9 @@ def start_seccomp_run(errno, syscall, logf, prefix=[], opts=[]):
     return ret
 
 def start_test_cmd(log):
+    if testscript_path is None:
+        time.sleep(TEST_TIMEOUT)
+        return 0
     testcmd = [testscript_path, log]
     ret = 0
     try:
@@ -445,10 +448,10 @@ parser.add_argument("--timeout", type=int,
         help="test timeout (default %ds)" % TEST_TIMEOUT, dest="timeout")
 parser.add_argument("arg_binary", nargs='*',
         help="additional arguments to pass to the test binary")
+parser.add_argument("-t", dest="testscript",
+        type=pathlib.Path, required=True, help="path to the test script")
 
 required_args = parser.add_argument_group('required arguments')
-required_args.add_argument("-t", dest="testscript",
-        type=pathlib.Path, required=True, help="path to the test script")
 required_args.add_argument("-b", dest="testbinary",
         type=pathlib.Path, required=True, help="path to the test binary")
 
@@ -479,6 +482,10 @@ if args.timeout is not None:
 
 if TEST_TIMEOUT < 1:
     warning("Test timeout is very low, this might cause invalid test results!")
+
+if not args.testscript and PERFORMANCE_ANALYSIS:
+    error("Performance analysis requires a test script.")
+    exit(1)
 
 binary_path = args.testbinary
 binary_options = args.arg_binary
