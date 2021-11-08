@@ -63,6 +63,8 @@ WAIT_STARTUP_TIME = 0.40
 # NOTE: adapt timeout depending on how long your script takes...
 TEST_TIMEOUT = 4
 
+ZBINARY = None
+
 # =========
 # CONSTANTS
 
@@ -130,6 +132,8 @@ def start_seccomp_run(errno, syscall, logf, prefix=[], opts=[]):
     runcmd = []
     runcmd.extend(prefix)
     runcmd.extend(["./seccomp-run", "-e", errno, "-n", "1", str(syscall)])
+    if ZBINARY is not None:
+        runcmd.extend(["-y", str(ZBINARY)])
     runcmd.extend(opts)
     runcmd.extend(["--", str(binary_path)])
     runcmd.extend(binary_options)
@@ -456,6 +460,8 @@ parser.add_argument("arg_binary", nargs='*',
         help="additional arguments to pass to the test binary")
 parser.add_argument("-t", dest="testscript",
         type=pathlib.Path, required=True, help="path to the test script")
+parser.add_argument("--only-consider", dest="zbinary",
+        type=pathlib.Path, help="only consider a given binary in the analysis")
 
 required_args = parser.add_argument_group('required arguments')
 required_args.add_argument("-b", dest="testbinary",
@@ -472,6 +478,7 @@ OUTPUT_CSV = (args.outputcsv is True)
 common.OUTPUT_NAMES = (args.outputnames is True)
 common.ENABLE_VERBOSE = (args.verbose is True)
 common.ENABLE_QUIET = (args.quiet is True)
+ZBINARY = args.zbinary
 
 if common.ENABLE_VERBOSE and common.ENABLE_QUIET:
     error("--verbose and --quiet incompatible.")
