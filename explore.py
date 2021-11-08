@@ -37,6 +37,8 @@ from common import *
 # ==============
 # SCRIPT OPTIONS
 
+ENABLE_SEQUENTIAL = False
+
 ENABLE_FASTSCAN = True
 
 PARTIAL_SUPPORT_ANALYSIS = False
@@ -157,6 +159,8 @@ def start_test_cmd(log):
 def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
     with open(log, 'wb') as logf:
         process = start_seccomp_run(errno, syscall, logf)
+        if ENABLE_SEQUENTIAL:
+            process.wait(timeout=TEST_TIMEOUT)
         ret = start_test_cmd(log)
 
         if (not ret):
@@ -446,6 +450,8 @@ parser.add_argument("--perf-analysis", action="store_true",
         help="enable performance and resource usage analysis", dest="perfanalysis")
 parser.add_argument("--timeout", type=int,
         help="test timeout (default %ds)" % TEST_TIMEOUT, dest="timeout")
+parser.add_argument("--test-sequential", action="store_true",
+        help="run the binary first, then the test script with the binary's output", dest="seq")
 parser.add_argument("arg_binary", nargs='*',
         help="additional arguments to pass to the test binary")
 parser.add_argument("-t", dest="testscript",
@@ -458,6 +464,7 @@ required_args.add_argument("-b", dest="testbinary",
 args = parser.parse_args()
 
 # setup according to command line arguments
+ENABLE_SEQUENTIAL = args.seq
 ENABLE_FASTSCAN = (args.nostrace is False)
 PARTIAL_SUPPORT_ANALYSIS = (args.partialsupport is True)
 PERFORMANCE_ANALYSIS = (args.perfanalysis is True)
