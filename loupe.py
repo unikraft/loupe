@@ -418,6 +418,53 @@ def run_tests(path_db, application, workload, path_dockerfile):
 
     return True
 
+def support_plan(applist, supported):
+    print("Step by step support plan:")
+    if applist == "*":
+        applist = db.keys()
+
+    per_app_syscalls = {}
+    for app in applist:
+        per_app_syscalls[app] = {}
+        per_app_syscalls[app]["required"] = used_by_apps(db, [app], benchmark, testsuite)["required"]
+        per_app_syscalls[app]["faked"] = used_by_apps(db, [app], benchmark, testsuite)["faked"]
+        per_app_syscalls[app]["stubbed"] = used_by_apps(db, [app], benchmark, testsuite)["stubbed"]
+        per_app_syscalls[app]["both"] = used_by_apps(db, [app], benchmark, testsuite)["both"]
+
+    already_supported = []
+    for app in per_app_syscalls:
+        if set(per_app_syscalls[app]["required"]).issubset(supported):
+            already_supported.append(app)
+    if already_supported:
+        print("- Supported without changes: ", end="")
+        print(already_supported)
+        for app in already_supported:
+            per_app_syscalls.pop(app)
+
+    step = 1
+    while per_app_syscalls:
+        next_app = list(per_app_syscalls.keys())[0]
+        next_app_impl = set(per_app_syscalls[next_app]["required"]).difference(set(supported))
+        for app in per_app_syscalls:
+            impl_required = set(per_app_syscalls[app]["required"]).difference(set(supported))
+            if len(impl_required) < len(next_app_impl):
+                next_app = app
+                next_app_impl = impl_required
+
+        stub_needed = (set(per_app_syscalls[next_app]["stubbed"])\
+                .union(set(per_app_syscalls[next_app]["both"]))).difference(set(supported))
+        fake_needed = set(per_app_syscalls[next_app]["faked"]).difference(set(supported))
+        print("- Step " + str(step) + " - to support " + next_app)
+        if next_app_impl:
+            print("  - implement " + str(next_app_impl))
+        if stub_needed:
+            print("  - stub " + str(stub_needed))
+        if fake_needed:
+            print("  - fake " + str(fake_needed))
+        supported = supported.union(next_app_impl)
+        del per_app_syscalls[next_app]
+        step += 1
+
 
 # parse arguments and launch the right option
 parser = argparse.ArgumentParser()
@@ -567,6 +614,9 @@ if (args.cmd == "search"):
         print(list(stubbed.difference(supported)))
         print("Missing a fake:")
         print(list(faked.difference(supported)))
+
+        support_plan(args.applist, supported)
+
     else:
         warning("Not implemented yet.")
         exit(0)
