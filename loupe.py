@@ -426,10 +426,14 @@ def support_plan(applist, supported):
     per_app_syscalls = {}
     for app in applist:
         per_app_syscalls[app] = {}
-        per_app_syscalls[app]["required"] = used_by_apps(db, [app], benchmark, testsuite)["required"]
-        per_app_syscalls[app]["faked"] = used_by_apps(db, [app], benchmark, testsuite)["faked"]
-        per_app_syscalls[app]["stubbed"] = used_by_apps(db, [app], benchmark, testsuite)["stubbed"]
-        per_app_syscalls[app]["both"] = used_by_apps(db, [app], benchmark, testsuite)["both"]
+        per_app_syscalls[app]["required"] = \
+                format_syscall_list(used_by_apps(db, [app], benchmark, testsuite)["required"])
+        per_app_syscalls[app]["faked"] = \
+                format_syscall_list(used_by_apps(db, [app], benchmark, testsuite)["faked"])
+        per_app_syscalls[app]["stubbed"] = \
+                format_syscall_list(used_by_apps(db, [app], benchmark, testsuite)["stubbed"])
+        per_app_syscalls[app]["both"] = \
+                format_syscall_list(used_by_apps(db, [app], benchmark, testsuite)["both"])
 
     already_supported = []
     for app in per_app_syscalls:
