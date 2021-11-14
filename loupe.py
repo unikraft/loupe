@@ -446,6 +446,8 @@ def support_plan(applist, supported):
             per_app_syscalls.pop(app)
 
     step = 1
+    already_stubbed = set()
+    already_faked = set()
     while per_app_syscalls:
         next_app = list(per_app_syscalls.keys())[0]
         next_app_impl = set(per_app_syscalls[next_app]["required"]).difference(set(supported))
@@ -456,8 +458,12 @@ def support_plan(applist, supported):
                 next_app_impl = impl_required
 
         stub_needed = (set(per_app_syscalls[next_app]["stubbed"])\
-                .union(set(per_app_syscalls[next_app]["both"]))).difference(set(supported))
-        fake_needed = set(per_app_syscalls[next_app]["faked"]).difference(set(supported))
+                .union(set(per_app_syscalls[next_app]["both"]))).difference(set(supported))\
+                .difference(already_stubbed)
+        fake_needed = set(per_app_syscalls[next_app]["faked"]).difference(set(supported)).\
+                difference(already_faked)
+        already_stubbed = already_stubbed.union(stub_needed)
+        already_faked = already_stubbed.union(fake_needed)
         print("- Step " + str(step) + " - to support " + next_app)
         if next_app_impl:
             print("  - implement " + str(next_app_impl))
