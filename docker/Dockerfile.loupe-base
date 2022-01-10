@@ -4,7 +4,8 @@ FROM ubuntu:21.04
 WORKDIR "/root"
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update
-RUN apt install -y git build-essential wget gcc-multilib gawk libssl-dev seccomp python3 python3-pip unzip
+RUN apt install -y git build-essential wget gcc-multilib gawk libssl-dev \
+                   seccomp python3 python3-pip unzip vim gdb
 
 # Install strace
 RUN wget https://github.com/strace/strace/releases/download/v5.14/strace-5.14.tar.xz
@@ -19,7 +20,13 @@ RUN apt update
 
 # Copy Loupe source code
 COPY explore.py /root/
+RUN chmod a+x /root/explore.py
 COPY seccomp-run.c /root/
 COPY Makefile /root/
 COPY common/ /root/common
 RUN make
+RUN chmod a+x /root/seccomp-run
+
+# In case app dockerfiles run with non-root users
+RUN chmod -R a+rw /root
+RUN chmod -R a+x /root
