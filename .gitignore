@@ -1,8 +1,8 @@
 seccomp-run
-./*.svg
+/*.svg
 data.dat
 dockerfile_data
-./Dockerfile.*
+/Dockerfile.*
 
 # PYTHON below
 
