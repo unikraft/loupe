@@ -339,7 +339,7 @@ int ptracer_loop(long sys, int argn, long argv, char *path, int flags, int f_err
                 status >> 8 == (SIGTRAP | (PTRACE_EVENT_CLONE << 8))) {
                 number_of_children += 1;
                 ptrace(PTRACE_GETEVENTMSG, pid, 0, &child_pid);
-                debug("%lu: new child detected (%d). Tracing it as well.\n",
+                debug("%lu: new child detected (%lu). Tracing it as well.\n",
                       pid, child_pid);
 		/* no need to reset child ptrace flags via PTRACE_SETOPTIONS
 		 * as these are inherited automatically */
