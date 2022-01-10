@@ -100,6 +100,79 @@ In our case, the Dockerfile looks like the following:
 
 #### Test-suite workload
 
+Gathering data for a test suite is not fundamentally different from a benchmark.
+
+**Step 1**: identify the test suite. In many cases it will be in the same
+repository as the software itself, but the case of Nginx it is located in a
+[separate repository](https://github.com/nginx/nginx-tests.git).
+
+**Step 2**: write a *test script* that parses the output of the test suite and
+determines whether it is a success or a failure. It is generally a very simple
+task: run it once manually, and search for a string that indicates success.
+
+In the case of Nginx, our test script looks like the following:
+
+	#!/bin/bash
+
+	nl=$(cat $1 | grep -P "All tests successful." | wc -l)
+	if [ "$nl" -eq "1" ]; then
+	    exit 0
+	fi
+
+	exit 1
+
+**Step 3**: create a Docker container that build nginx and wrk, and performs
+the system call analysis using Loupe. Use `loupe-base` as basis for your Docker
+container.
+
+This Dockerfile will be very similar to the one you wrote for the benchmark.
+
+In our case, the Dockerfile looks like the following:
+
+	FROM loupe-base:latest
+
+	RUN apt build-dep -y nginx
+
+	# needed to run the test suite
+	RUN apt install -y prove6
+
+	COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
+	RUN chmod a+x /root/nginx-test.sh
+
+	# the test suite cannot be run as root - don't ask me why
+	RUN useradd -ms /bin/bash user
+	USER user
+	RUN mkdir /tmp/nginx
+	WORKDIR /tmp/nginx
+
+	# Nginx related instructions
+	RUN wget https://nginx.org/download/nginx-1.20.1.tar.gz
+	RUN tar -xf nginx-1.20.1.tar.gz
+	RUN cd nginx-1.20.1 && ./configure \
+		--sbin-path=$(pwd)/nginx \
+		--conf-path=$(pwd)/conf/nginx.conf \
+		--pid-path=$(pwd)/nginx.pid
+	RUN cd nginx-1.20.1 && make -j && mkdir logs
+	RUN cd nginx-1.20.1 && sed -i "s/listen       80/listen       8034/g" conf/nginx.conf
+	# necessary for the test suite
+	RUN mv nginx-1.20.1 nginx
+
+	# test suite
+	RUN git clone https://github.com/nginx/nginx-tests.git
+
+	CMD cd /tmp/nginx/nginx-tests && /root/explore.py --output-csv \
+			     --only-consider /tmp/nginx/nginx/objs/nginx \
+			     --timeout 600 --test-sequential -t /root/nginx-test.sh \
+			     -b /usr/bin/prove -- -m .
+
+**Step 4**: start the analysis using the following command:
+
+	$ ./loupe.py generate -s -db ../loupedb -a "nginx" -d ./Dockerfile.nginx
+
+As you can see, the only difference is the `-s` and the absence of workload name.
+
 ## Retrieving and Processing Data
 
 `loupe search` takes care of analyzing the data in the database.
+
+More documentation will come here.
