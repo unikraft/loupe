@@ -293,7 +293,7 @@ int ptracer_loop(long sys, int argn, long argv, char *path, int flags, int f_err
     long syscall;
     int status = 0;
     siginfo_t siginfo;
-    pid_t pid, child_pid;
+    unsigned long pid, child_pid;
     int number_of_children = 1; /* keep track of the family */
 
     if (!ISSET(flags, DO_PTRACE) /* ptrace must be enabled */ ||
@@ -323,7 +323,7 @@ int ptracer_loop(long sys, int argn, long argv, char *path, int flags, int f_err
 	    /* exit if our child died (sad, but happens) */
             if (WIFEXITED(status)) {
                 number_of_children -= 1;
-                debug("%d: died, %d children remaining.\n", pid, number_of_children);
+                debug("%lu: died, %d children remaining.\n", pid, number_of_children);
             }
 
             if (number_of_children == 0) {
@@ -339,7 +339,7 @@ int ptracer_loop(long sys, int argn, long argv, char *path, int flags, int f_err
                 status >> 8 == (SIGTRAP | (PTRACE_EVENT_CLONE << 8))) {
                 number_of_children += 1;
                 ptrace(PTRACE_GETEVENTMSG, pid, 0, &child_pid);
-                debug("%d: new child detected (%d). Tracing it as well.\n",
+                debug("%lu: new child detected (%d). Tracing it as well.\n",
                       pid, child_pid);
 		/* no need to reset child ptrace flags via PTRACE_SETOPTIONS
 		 * as these are inherited automatically */
@@ -357,7 +357,7 @@ int ptracer_loop(long sys, int argn, long argv, char *path, int flags, int f_err
         ptrace(PTRACE_GETREGS, pid, 0, &regs);
         syscall = regs.orig_rax;
 
-        debug("%d: got a seccomp event for syscall %ld.\n", pid, syscall);
+        debug("%lu: got a seccomp event for syscall %ld.\n", pid, syscall);
 	if (ISSET(flags, DO_PARTIALSTUB) || ISSET(flags, DO_PATHSTUB)) {
             /* check system call number */
             if (syscall != sys) {
@@ -390,7 +390,7 @@ int ptracer_loop(long sys, int argn, long argv, char *path, int flags, int f_err
 
         if (ISSET(flags, DO_CHECKPATH) && ptracer_check_path(pid) != 0) {
 	    /* path is different, this is not a binary we want to mess with */
-            debug("%d: disabling seccomp for the child (different binary)\n", pid)
+            debug("%lu: disabling seccomp for the child (different binary)\n", pid)
             ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_SUSPEND_SECCOMP);
             ptrace(PTRACE_CONT, pid, 0, 0);
             continue;
@@ -399,7 +399,7 @@ int ptracer_loop(long sys, int argn, long argv, char *path, int flags, int f_err
 	/* right syscall *and* arguments, kill or return errno */
         debug("\thandling this system call.\n")
         if (ISSET(flags, DO_CRASH)) {
-                debug("\tcrash mode, killing the child %d.\n", pid);
+                debug("\tcrash mode, killing the child %lu.\n", pid);
 		/* this will kill the child because of PTRACE_O_EXITKILL */
                 return 0;
         } else /* ISSET(flags, DO_ERRNO) */ {
