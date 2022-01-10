@@ -64,6 +64,11 @@ In the case of Nginx, our test script looks like the following:
 
 	exit 1
 
+This is a very simple script. We first start a 3s benchmark on port 8034 with
+`wrk`.  Then we parse the output for a chain of characters that typically
+indicate success (here the throughput, which is absent if the benchmark fails).
+We return 0 if it is present, and 1 otherwise.
+
 **Step 3**: create a Docker container that build nginx and wrk, and performs
 the system call analysis using Loupe. Use `loupe-base` as basis for your Docker
 container.
@@ -94,9 +99,25 @@ In our case, the Dockerfile looks like the following:
                              -b /root/nginx-1.20.1/objs/nginx -- \
                              -p /root/nginx-1.20.1 -g "daemon off;"
 
+This is a simple container. We install `wrk`, build Nginx and set the port to
+8034 (not stricly necessary). Finally, we start `explore.py`. The arguments are
+quite important:
+
+ - `--output-csv` is necessary to enable parsing by Loupe
+ - `-t /root/nginx-test.sh` indicates our test script
+ - `-b /root/nginx-1.20.1/objs/nginx` indicates our binary
+ - `--` denotes arguments that are passed on to nginx (remember that we want to call `objs/nginx -p $(pwd) -g 'daemon off;'`
+
 **Step 4**: start the analysis using the following command:
 
 	$ ./loupe.py generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
+
+The arguments are important too:
+
+ - `-b` tells Loupe that you are running a benchmark, not a test suite, and `-w` defines the name of the benchmark.
+ - `-db` tells Loupe where the database is
+ - `-a` tells Loupe the name of the software that we are benchmarking
+ - and `-d ./Dockerfile.nginx` passes our Dockerfile from Step 3
 
 #### Test-suite workload
 
