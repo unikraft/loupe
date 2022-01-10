@@ -65,6 +65,9 @@ TEST_TIMEOUT = 4
 
 ZBINARY = None
 
+HOME_PATH = os.path.abspath(os.path.dirname(__file__))
+SECCOMPRUN_PATH = os.path.join(HOME_PATH, "seccomp-run")
+
 # =========
 # CONSTANTS
 
@@ -92,6 +95,8 @@ SYSCALL_FLAGS_FILES = {
     "open" : 0,
     "openat" : 1
 }
+
+RUN_LOGS = "/tmp/dynsystmp"
 
 # ============
 # USAGE CHECKS
@@ -131,7 +136,7 @@ def start_seccomp_run(errno, syscall, logf, prefix=[], opts=[]):
 
     runcmd = []
     runcmd.extend(prefix)
-    runcmd.extend(["./seccomp-run", "-e", errno, "-n", "1", str(syscall)])
+    runcmd.extend([SECCOMPRUN_PATH, "-e", errno, "-n", "1", str(syscall)])
     if ZBINARY is not None:
         runcmd.extend(["-y", str(ZBINARY)])
     runcmd.extend(opts)
@@ -180,7 +185,8 @@ def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
             time.sleep(10)
             success = (False,False,errs + 1)
 
-        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        if not ENABLE_SEQUENTIAL:
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
     return success
 
 # ===========
@@ -223,13 +229,13 @@ def initial_strace_scan():
     tries = 0
 
     while (not success):
-        with open('/tmp/dynsystmp', "w") as outfile:
+        with open(RUN_LOGS, "w") as outfile:
             process = subprocess.Popen(runcmd, stderr=outfile,
                                        stdout=subprocess.DEVNULL,
                                        preexec_fn=os.setsid)
 
         time.sleep(WAIT_STARTUP_TIME)
-        ret = start_test_cmd("/tmp/dynsystmp")
+        ret = start_test_cmd(RUN_LOGS)
 
         os.killpg(os.getpgid(process.pid), signal.SIGKILL)
 
@@ -237,6 +243,7 @@ def initial_strace_scan():
             success = True
         elif tries == LIMIT_RETRIES:
             error("Error: cannot run initial scan. The program doesn't seem to work.")
+            info("Program stdout/err logs are located at " + RUN_LOGS)
             exit(1)
         else:
             cleanup()
@@ -246,7 +253,7 @@ def initial_strace_scan():
     rets = []
     features = {}
     files = {}
-    with open("/tmp/dynsystmp") as logf:
+    with open(RUN_LOGS) as logf:
         full = logf.read()
         regex = re.compile("\[\s+(\d+)\]")
         rets = list(set(regex.findall(full)))
@@ -467,6 +474,10 @@ required_args = parser.add_argument_group('required arguments')
 required_args.add_argument("-b", dest="testbinary",
         type=pathlib.Path, required=True, help="path to the test binary")
 
+required_args = parser.add_argument_group('debug arguments')
+required_args.add_argument("--maxsys", dest="maxsys",
+        type=int, help="maximum number of system calls to consider")
+
 args = parser.parse_args()
 
 # setup according to command line arguments
@@ -478,7 +489,12 @@ OUTPUT_CSV = (args.outputcsv is True)
 common.OUTPUT_NAMES = (args.outputnames is True)
 common.ENABLE_VERBOSE = (args.verbose is True)
 common.ENABLE_QUIET = (args.quiet is True)
+if args.maxsys is not None:
+    MAX_SYSCALL = args.maxsys
+
 ZBINARY = args.zbinary
+if ZBINARY is not None:
+    ENABLE_FASTSCAN = False
 
 if common.ENABLE_VERBOSE and common.ENABLE_QUIET:
     error("--verbose and --quiet incompatible.")
