@@ -138,7 +138,7 @@ def smart_wait(process, logf):
             if (loghash != newhash):
                 loghash = newhash
             else:
-                return
+                break
 
 def cleanup():
     # make sure to have a clean system
