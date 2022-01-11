@@ -68,6 +68,8 @@ ZBINARY = None
 HOME_PATH = os.path.abspath(os.path.dirname(__file__))
 SECCOMPRUN_PATH = os.path.join(HOME_PATH, "seccomp-run")
 
+SMART_WAIT_REPEAT = 1
+
 # =========
 # CONSTANTS
 
@@ -126,6 +128,18 @@ if not strace_recent_enough():
 # =======
 # HELPERS
 
+def smart_wait(process, logf):
+    loghash = get_file_hash(logf)
+    for i in range(SMART_WAIT_REPEAT):
+        try:
+            process.wait(timeout=TEST_TIMEOUT)
+        except TimeoutExpired:
+            newhash = get_file_hash(logf)
+            if (loghash != newhash):
+                loghash = newhash
+            else:
+                return
+
 def cleanup():
     # make sure to have a clean system
     os.system("killall -9 %s > /dev/null 2>&1" % binary_path)
@@ -169,7 +183,7 @@ def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
     with open(log, 'wb') as logf:
         process = start_seccomp_run(errno, syscall, logf)
         if ENABLE_SEQUENTIAL:
-            process.wait(timeout=TEST_TIMEOUT)
+            smart_wait(process)
         ret = start_test_cmd(log)
 
         if (not ret):
@@ -461,6 +475,8 @@ parser.add_argument("--perf-analysis", action="store_true",
         help="enable performance and resource usage analysis", dest="perfanalysis")
 parser.add_argument("--timeout", type=int,
         help="test timeout (default %ds)" % TEST_TIMEOUT, dest="timeout")
+parser.add_argument("--smart-wait-repeat", type=int,
+        help="enable smart wait (if you don't know what this does, don't enable it)", dest="smartwait")
 parser.add_argument("--test-sequential", action="store_true",
         help="run the binary first, then the test script with the binary's output", dest="seq")
 parser.add_argument("arg_binary", nargs='*',
@@ -491,6 +507,9 @@ common.ENABLE_VERBOSE = (args.verbose is True)
 common.ENABLE_QUIET = (args.quiet is True)
 if args.maxsys is not None:
     MAX_SYSCALL = args.maxsys
+
+if args.smartwait is not None and args.smartwait > 1:
+    SMART_WAIT_REPEAT = args.smartwait
 
 ZBINARY = args.zbinary
 if ZBINARY is not None:

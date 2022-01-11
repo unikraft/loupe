@@ -32,7 +32,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import os
-import hashlib
 import argparse
 import pathlib
 import shutil
@@ -397,10 +396,7 @@ def run_tests(path_db, application, workload, path_dockerfile):
 
     # write to the db
     info("Writing to the database...")
-    hashdf = ""
-    with open(path_dockerfile, "rb") as df:
-        data = df.read()
-        hashdf = hashlib.md5(data).hexdigest()
+    hashdf = get_file_hash(path_dockerfile)
 
     runpath = os.path.join(path_db, application, workload, hashdf)
     if not os.path.exists(runpath):

@@ -29,7 +29,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import tempfile, os, sys, re
+import tempfile, os, sys, re, hashlib
 
 # =========
 # CONSTANTS
@@ -132,3 +132,10 @@ def get_temp_dir():
     d = os.path.join("/tmp", next(tempfile._get_candidate_names()))
     os.mkdir(d)
     return d
+
+def get_file_hash(path):
+    hashf = ""
+    with open(path, "rb") as f:
+        data = f.read()
+        hashf = hashlib.md5(data).hexdigest()
+    return hashf
