@@ -73,7 +73,8 @@ We return 0 if it is present, and 1 otherwise.
 the system call analysis using Loupe. Use `loupe-base` as basis for your Docker
 container.
 
-In our case, the Dockerfile looks like the following:
+In our case, the Dockerfile looks like the following (slightly modified to
+exclude coverage, which is not necessary here):
 
 	FROM loupe-base:latest
 
@@ -84,24 +85,25 @@ In our case, the Dockerfile looks like the following:
 	RUN apt build-dep -y nginx
 	RUN wget https://nginx.org/download/nginx-1.20.1.tar.gz
 	RUN tar -xf nginx-1.20.1.tar.gz
-	RUN cd nginx-1.20.1 && ./configure \
+	RUN mv nginx-1.20.1 nginx
+
+	RUN cd nginx && ./configure \
 		--sbin-path=$(pwd)/nginx \
 		--conf-path=$(pwd)/conf/nginx.conf \
 		--pid-path=$(pwd)/nginx.pid
-	RUN cd nginx-1.20.1 && make -j && mkdir logs
-	RUN cd nginx-1.20.1 && sed -i "s/listen       80/listen       8034/g" conf/nginx.conf
+	RUN cd nginx && make -j
 
+	# Copy test script
 	COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
 	RUN chmod a+x /root/nginx-test.sh
-	RUN sed -i "s/\/root\/hle\/pub\/wrk\///g" /root/nginx-test.sh
 
+	# Run command (without coverage)
 	CMD /root/explore.py --output-csv -t /root/nginx-test.sh \
-                             -b /root/nginx-1.20.1/objs/nginx -- \
-                             -p /root/nginx-1.20.1 -g "daemon off;"
+			     -b /root/nginx/objs/nginx \
+			     -- -p /root/nginx -g "daemon off;"
 
-This is a simple container. We install `wrk`, build Nginx and set the port to
-8034 (not stricly necessary). Finally, we start `explore.py`. The arguments are
-quite important:
+This is a simple container. We install `wrk`, and configure and build Nginx.
+Finally, we start `explore.py`. The arguments are quite important:
 
  - `--output-csv` is necessary to enable parsing by Loupe
  - `-t /root/nginx-test.sh` indicates our test script
