@@ -183,7 +183,7 @@ def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
     with open(log, 'wb') as logf:
         process = start_seccomp_run(errno, syscall, logf)
         if ENABLE_SEQUENTIAL:
-            smart_wait(process)
+            smart_wait(process, logf)
         ret = start_test_cmd(log)
 
         if (not ret):

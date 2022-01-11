@@ -190,9 +190,10 @@ In our case, the Dockerfile looks like the following:
 
 **Step 4**: start the analysis using the following command:
 
-	$ ./loupe.py generate -s -db ../loupedb -a "nginx" -d ./Dockerfile.nginx
+	$ ./loupe.py generate -s -db ../loupedb -a "nginx" -w "nginx-tests" -d ./Dockerfile.nginx
 
-As you can see, the only difference is the `-s` and the absence of workload name.
+As you can see, the only difference is the `-s` instead of `-b` to indicate
+that this is a testsuite.
 
 ## Retrieving and Processing Data
 
