@@ -128,12 +128,13 @@ if not strace_recent_enough():
 # =======
 # HELPERS
 
-def smart_wait(process, logf):
+def smart_wait(process, logfs):
+    logf = pathlib.Path(logfs)
     loghash = get_file_hash(logf)
     for i in range(SMART_WAIT_REPEAT):
         try:
             process.wait(timeout=TEST_TIMEOUT)
-        except TimeoutExpired:
+        except(subprocess.TimeoutExpired):
             newhash = get_file_hash(logf)
             if (loghash != newhash):
                 loghash = newhash
@@ -183,7 +184,7 @@ def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
     with open(log, 'wb') as logf:
         process = start_seccomp_run(errno, syscall, logf)
         if ENABLE_SEQUENTIAL:
-            smart_wait(process, logf)
+            smart_wait(process, log)
         ret = start_test_cmd(log)
 
         if (not ret):
