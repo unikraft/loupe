@@ -200,3 +200,56 @@ that this is a testsuite.
 `loupe search` takes care of analyzing the data in the database.
 
 More documentation will come here.
+
+## Generating Coverage
+
+:warning: this section is temporary and might get outdated.
+
+**Step 1**: Check the Dockerfile of the application. If it already contains a
+version of the software built with coverage, then proceed to step 2. Otherwise,
+build the software (or a copy of it if performance measurements are planned)
+with CFLAGS `-fprofile-arcs -ftest-coverage` and LDFLAGS `-lgcov`. An example
+is visible [here](https://github.com/unikraft/loupedb/blob/87439475881b64de0203d9c142ddc01b1071698d/nginx/benchmark-wrk/7883824b5cbef4f66dd1c9bdcf7d6185/Dockerfile.nginx).
+
+**Step 2**: Build the application container, e.g., for nginx:
+```
+$ ./loupe.py generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
+```
+We don't need to perform the actual system call measurement, we only need the
+container to be built, so you can kill this command (CTRL+C) as soon as the
+container is built. In the future we'll extend Loupe with an option to only do
+that.
+
+**Step 3**: Enter the container and generate coverage. It's as simple as running
+the instrumented software. For example, with Nginx:
+```
+$ docker run -it nginx-loupe:latest /bin/bash
+root@b0ef11e440d0:~# # we're in the container, generate coverage data
+root@b0ef11e440d0:~# /root/explore.py --output-csv -t /root/nginx-test.sh \
+                                      -b /root/nginx-coverage/objs/nginx \
+                                      -- -p /root/nginx -g "daemon off;"
+root@b0ef11e440d0:~# # done. check the coverage data:
+root@b0ef11e440d0:~# ls nginx-coverage/objs/src/core/
+[ shows a number of .gcda and .gcno files ]
+```
+
+**Step 4**: Generate an lcov report. Example with Nginx, still in the same container:
+```
+root@b0ef11e440d0:~/nginx-coverage# lcov --capture --directory . --output-file cov.info
+[shows files considered, if you get WARNINGs, investigate, they might be
+invalid files considered in the coverage, like autotest.gcda at the root.
+You can safely remove them.]
+root@b0ef11e440d0:~/nginx-coverage# genhtml cov.info --output-directory out_html \
+                                            --demangle-cpp --legend \
+                                            --title "Nginx coverage wrk"
+[...]
+Overall coverage rate:
+  lines......: 13.0% (5291 of 40728 lines)
+  functions..: 20.1% (282 of 1405 functions)
+root@b0ef11e440d0:~/nginx-coverage# ls out_html/
+amber.png    event      http               index.html  snow.png
+core         gcov.css   index-sort-f.html  os          updown.png
+emerald.png  glass.png  index-sort-l.html  ruby.png    usr
+```
+
+The resulting html report is there.

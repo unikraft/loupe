@@ -3,9 +3,15 @@ FROM ubuntu:21.04
 # Disable Prompt During Packages Installation
 WORKDIR "/root"
 ARG DEBIAN_FRONTEND=noninteractive
+
 RUN apt update
+# Generally needed for compilation of applications and loupe
 RUN apt install -y git build-essential wget gcc-multilib gawk libssl-dev \
-                   seccomp python3 python3-pip unzip vim gdb
+                   seccomp python3 python3-pip unzip
+# Generally needed for debugging
+RUN apt install -y vim gdb
+# Generally needed for coverage
+RUN apt install -y lcov
 
 # Install strace
 RUN wget https://github.com/strace/strace/releases/download/v5.14/strace-5.14.tar.xz

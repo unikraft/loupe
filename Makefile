@@ -7,4 +7,3 @@ docker:
 	docker build --tag loupe-base -f docker/Dockerfile.loupe-base .
 
 all: seccomp-run docker
-
