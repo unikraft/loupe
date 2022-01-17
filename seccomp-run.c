@@ -214,20 +214,20 @@ static long ptrace_get_syscall_args(int argn, struct user_regs_struct regs)
 }
 
 /* return -1 if the binary path differ */
-int ptracer_check_path(pid_t pid) {
+int ptracer_check_path(unsigned long pid) {
     char symlink_path[PATH_MAX + 1];
     char binary_path[PATH_MAX + 1];
 
-    sprintf(symlink_path, "/proc/%d/exe", pid);
-
-    /* readlink doesn't append null character */
-    memset(binary_path, PATH_MAX + 1, 0);
+    sprintf(symlink_path, "/proc/%lu/exe", pid);
 
     int nbytes = readlink(symlink_path, binary_path, PATH_MAX);
     if (nbytes == -1) {
         perror("readlink");
         return -1;
     }
+
+    /* readlink doesn't append null character */
+    binary_path[nbytes] = 0;
 
     int ret = strcmp(binary_path, EXECUTABLE_PATH);
     if (ret != 0) {
