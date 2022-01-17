@@ -236,7 +236,10 @@ def initial_strace_scan():
 
     cleanup()
 
-    runcmd = [STRACE_BINARY, "-tfnX", "verbose", str(binary_path)]
+    # --status=successful,failed greatly simplifies the output of strace for us to parse
+    # and should not impact the number of system calls that we see or their arguments, only
+    # their relative ordering, which doesn't matter to us.
+    runcmd = [STRACE_BINARY, "-tfnX", "verbose",  "--status=successful,failed", str(binary_path)]
     runcmd.extend(binary_options)
 
     process = None
