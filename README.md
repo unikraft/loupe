@@ -112,7 +112,7 @@ Finally, we start `explore.py`. The arguments are quite important:
 
 **Step 4**: start the analysis using the following command:
 
-	$ ./loupe.py generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
+	$ ./loupe generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
 
 The arguments are important too:
 
@@ -190,7 +190,7 @@ In our case, the Dockerfile looks like the following:
 
 **Step 4**: start the analysis using the following command:
 
-	$ ./loupe.py generate -s -db ../loupedb -a "nginx" -w "nginx-tests" -d ./Dockerfile.nginx
+	$ ./loupe generate -s -db ../loupedb -a "nginx" -w "nginx-tests" -d ./Dockerfile.nginx
 
 As you can see, the only difference is the `-s` instead of `-b` to indicate
 that this is a testsuite.
@@ -213,7 +213,7 @@ is visible [here](https://github.com/unikraft/loupedb/blob/87439475881b64de0203d
 
 **Step 2**: Build the application container, e.g., for nginx:
 ```
-$ ./loupe.py generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
+$ ./loupe generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
 ```
 We don't need to perform the actual system call measurement, we only need the
 container to be built, so you can kill this command (CTRL+C) as soon as the
