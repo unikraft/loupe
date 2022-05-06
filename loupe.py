@@ -566,6 +566,9 @@ if (args.cmd == "search"):
             benchmark = True
         elif "testsuite" in args.wllist or "suite" in args.wllist:
             testsuite = True
+        else:
+            error("Invalid workload passed (valid: '*', 'benchmark'/'bench', 'testsuite'/'suite')")
+            exit(1)
 
         usage = used_by_apps(db, args.applist.split(","), bench=benchmark, suite=testsuite)
 
@@ -585,13 +588,30 @@ if (args.cmd == "search"):
         process = subprocess.Popen(runcmd)
         process.wait()
 
+        # remove data file
+        os.remove("./data.dat")
+
         # process data
         info("Processing data")
         cumulative = process_cumulative(db, args.applist.split(","), bench=benchmark, suite=testsuite)
 
         # generate data.dat
-        req = "# x\tdyn-req\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in cumulative[0].items()])
-        exe = "# x\tdyn-exe\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in cumulative[1].items()])
+        d = {}
+        c = 0
+        for i in sorted(cumulative[0].values(), reverse=True):
+            d[c] = i;
+            c+=1
+
+        req = "# x\tdyn-req\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in (d.items())])
+
+        d = {}
+        c = 0
+        for i in sorted(cumulative[1].values(), reverse=True):
+            d[c] = i;
+            c+=1
+
+        exe = "# x\tdyn-exe\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in (d.items())])
+
         with open(os.path.join("./data.dat"), "a") as outf:
             outf.write(exe)
             outf.write("\n\n\n")
@@ -603,9 +623,6 @@ if (args.cmd == "search"):
         print(" ".join(runcmd))
         process = subprocess.Popen(runcmd)
         process.wait()
-
-        # remove data file
-        #os.remove("./data.dat")
 
         # notify user
         print("Plot: ./cumulative-plot.svg")
