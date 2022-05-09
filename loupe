@@ -41,6 +41,8 @@ import common
 import subprocess
 from common import *
 
+ENABLE_DIRTY_DB = False
+
 def open_syscall_file(path):
     with open(path, "r") as f:
         l = list(set([e for e in f.read().split("\n") if len(e) > 1]))
@@ -75,8 +77,11 @@ def db_check(path):
     # it may not have uncommited changes
     git_repo = git.Repo(path, search_parent_directories=True)
     if (git_repo.is_dirty() or len(git_repo.untracked_files) != 0):
-        error("Database %s is dirty; commit your changes before running this tool." % path)
-        return False
+        if (not ENABLE_DIRTY_DB):
+            error("Database %s is dirty; commit your changes before running this tool." % path)
+            return False
+        else:
+            warning("DB dirty, ignoring.")
 
     return True
 
@@ -348,11 +353,6 @@ def remove_container(name):
     process.wait()
 
 def run_tests(path_db, application, workload, path_dockerfile):
-    info("Checking database...")
-    if not db_check(path_db):
-        error("Problem with the database, exiting.")
-        return False
-
     info("Building container...")
     if not path_dockerfile.exists():
         error("Dockerfile %s does not exist" % str(path_dockerfile))
@@ -493,6 +493,8 @@ parser.add_argument("-v", "--verbose", action="store_true", dest="verbose",
         help="enable debug output")
 parser.add_argument("-q", "--quiet", action="store_true", dest="quiet",
         help="disable any non-error output")
+parser.add_argument("--allow-dirty-db", action="store_true", dest="dirtydb",
+        default=False, help="allow dirty DB with uncommited changes")
 
 run_parser = subparsers.add_parser("generate",
         help="run system call usage analysis for an application")
@@ -551,9 +553,15 @@ args = parser.parse_args()
 
 common.ENABLE_VERBOSE = (args.verbose is True)
 common.ENABLE_QUIET = (args.quiet is True)
+ENABLE_DIRTY_DB = (args.dirtydb is True)
 
 if (args.cmd is None):
     parser.print_help()
+
+info("Checking database...")
+if not db_check(args.dbpath):
+    error("Problem with the database, exiting.")
+    exit(1)
 
 if (args.cmd == "search"):
     common.OUTPUT_NAMES = (args.outputnames is True)
