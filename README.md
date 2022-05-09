@@ -199,7 +199,17 @@ that this is a testsuite.
 
 `loupe search` takes care of analyzing the data in the database.
 
-More documentation will come here.
+### Generating Plots
+
+Loupe can generate the paper's plot using information from the database.
+
+#### Cumulative Plot
+
+Simply run
+```
+./loupe search --cumulative-plot -db ../loupedb -a "*" -w suite
+```
+to output a cumulative plot of the database's content for test-suites and all applications.
 
 ## Generating Coverage
 
