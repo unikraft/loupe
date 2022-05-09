@@ -520,6 +520,8 @@ action_args.add_argument("--cumulative-plot", action="store_true", dest="cumulat
         help="output a cumulative support plot for this set")
 action_args.add_argument("--heatmap-plot", action="store_true",
         help="output a heatmap support plot for this set", dest="heatmapplot")
+action_args.add_argument("--paper-histogram-plot", action="store_true",
+        help="output the histogram of the paper, ignores passed set", dest="paperhistogramplot")
 action_args.add_argument("--export-sqlite", action="store_true",
         help="export the DB as SQLite database")
 
@@ -573,7 +575,7 @@ if (args.cmd == "search"):
 
         usage = used_by_apps(db, args.applist.split(","), bench=benchmark, suite=testsuite)
 
-    if (args.heatmapplot is True or args.cumulativeplot is True):
+    if (args.heatmapplot is True or args.cumulativeplot is True or args.paperhistogramplot is True):
         # build plot container
         info("Building plot container")
         runcmd = ["docker", "build", "--tag", "loupe-plot", "-f", "docker/Dockerfile.loupe-plot", "."]

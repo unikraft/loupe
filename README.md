@@ -223,6 +223,14 @@ $ ./loupe search --heatmap-plot -db ../loupedb -a "*" -w suite
 ```
 to output a heatmap plot for the same data set.
 
+#### Paper Histogram Plot
+
+Similarly, run
+```
+$ ./loupe search --paper-histogram-plot -db ../loupedb
+```
+to output the histogram plot of the paper.
+
 ## Generating Coverage
 
 :warning: this section is temporary and might get outdated.
