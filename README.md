@@ -31,7 +31,7 @@ The setup is very simple: `make all`
 `loupe generate` takes care of analyzing the system call usage of your
 application.
 
-### Example 1: Dynamic system call usage analysis of Nginx
+### Example 1: Dynamic System Call Usage Analysis of Nginx
 
 Loupe considers two types of workloads: benchmarks and test suites. Both
 measurements are independent. In this example, we'll measure the dynamic system
@@ -194,6 +194,10 @@ In our case, the Dockerfile looks like the following:
 
 As you can see, the only difference is the `-s` instead of `-b` to indicate
 that this is a testsuite.
+
+### Example 2: Static System Call Usage Analysis of Nginx
+
+TBD.
 
 ## Retrieving and Processing Data
 

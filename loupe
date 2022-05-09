@@ -628,7 +628,22 @@ if (args.cmd == "search"):
         process.wait()
 
         # notify user
-        print("Plot: ./cumulative-plot.svg")
+        print("Plot: ./cumulative-nostatic.svg")
+
+        if (args.sbinary is not True):
+            os.remove("./cumulative-nobinary.svg")
+        else:
+            print("Plot: ./cumulative-nobinary.svg")
+
+        if (args.ssource is not True):
+            os.remove("./cumulative-nosource.svg")
+        else:
+            print("Plot: ./cumulative-nosource.svg")
+
+        if (args.sbinary is not True and args.ssource is not True):
+            os.remove("./cumulative-all.svg")
+        else:
+            print("Plot: ./cumulative-all.svg")
     elif args.supportfile is not None:
         supported = set(format_syscall_list(open_syscall_file(args.supportfile)))
         required  = set(format_syscall_list(usage["required"]))
