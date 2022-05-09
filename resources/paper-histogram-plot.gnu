@@ -1,5 +1,5 @@
 set terminal svg enhanced size 720, 180 font 'Arial,12'
-set output '/mnt/sysusage.svg'
+set output '/mnt/paper-histogram.svg'
 
 # draw all borders
 set border front lt "#AFC1D6" linewidth 1.000 dashtype solid

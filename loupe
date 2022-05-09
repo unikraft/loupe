@@ -654,6 +654,31 @@ if (args.cmd == "search"):
         print(format_syscall_list(usage["faked"]))
         print("Can be both stubbed or faked:")
         print(format_syscall_list(usage["both"]))
+    elif (args.paperhistogramplot is True):
+        # process data
+        info("Processing data")
+        # TODO
+
+        # generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
+        # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
+        apps = ["haproxy", "lighttpd", "memcached", "nginx", "redis",
+                "sqlite", "webfsd", "weborf"]
+
+        for a in apps:
+            with open(os.path.join("./" + a + ".dat"), "a") as outf:
+                # TODO
+                outf.write("")
+
+        info("Building plot")
+        cwd = os.getcwd()
+        runcmd = ["docker", "run", "-it", "--rm", "-v", cwd+ ":/mnt", "loupe-plot",
+                  "gnuplot", "/mnt/resources/paper-histogram-plot.gnu"]
+        print(" ".join(runcmd))
+        process = subprocess.Popen(runcmd)
+        process.wait()
+
+        # notify user
+        print("Plot: ./paper-histogram.svg")
     elif (args.heatmapplot is True):
         # process data
         info("Processing data")
