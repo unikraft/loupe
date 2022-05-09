@@ -197,6 +197,17 @@ that this is a testsuite.
 
 Note: for test suites, `-w` can be empty.
 
+### Example 2: Reproducing Existing Runs
+
+Existing runs can be easily reproduced. In order to reproduce [Example 1](https://github.com/unikraft/loupe#benchmark-workload):
+
+```
+$ cd loupedb/nginx/benchmark-wrk/7883824b5cbef4f66dd1c9bdcf7d6185
+$ loupe generate -b -db ../../../../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
+```
+
+`git diff` can then be used to visualize changes.
+
 ## Retrieving and Processing Data
 
 `loupe search` takes care of analyzing the data in the database.

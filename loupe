@@ -416,11 +416,16 @@ def run_tests(path_db, application, workload, path_dockerfile):
     runpath = os.path.join(path_db, application, workload, hashdf)
     if not os.path.exists(runpath):
         os.makedirs(runpath)
+        shutil.copyfile(path_dockerfile, os.path.join(runpath, "Dockerfile.%s" % application))
+        if (pathlib.Path("./dockerfile_data").exists()):
+            shutil.copytree("./dockerfile_data", os.path.join(runpath, "dockerfile_data"))
+    else:
+        info("This run already exists, replacing (see changes with git diff).")
+        shutil.rmtree(os.path.join(runpath, "data"))
+
     if not os.path.exists(os.path.join(runpath, "data")):
         os.makedirs(os.path.join(runpath, "data"))
-    shutil.copyfile(path_dockerfile, os.path.join(runpath, "Dockerfile.%s" % application))
-    if (pathlib.Path("./dockerfile_data").exists()):
-        shutil.copytree("./dockerfile_data", os.path.join(runpath, "dockerfile_data"))
+
     with open(os.path.join(runpath, "data", "dyn.csv"), "a+") as outf:
         outf.write(out)
 
@@ -430,7 +435,7 @@ def run_tests(path_db, application, workload, path_dockerfile):
 
     debug("Removing the container")
 
-    os.system("docker rm loupe-tmp");
+    os.system("docker rm loupe-tmp &> /dev/null");
 
     info("Done!")
     print(" -- Make sure to commit the changes to the database :-)")
