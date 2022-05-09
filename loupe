@@ -519,7 +519,7 @@ action_args.add_argument("--guide-support", dest="supportfile", type=pathlib.Pat
 action_args.add_argument("--cumulative-plot", action="store_true", dest="cumulativeplot",
         help="output a cumulative support plot for this set")
 action_args.add_argument("--heatmap-plot", action="store_true",
-        help="output a heatmap support plot for this set")
+        help="output a heatmap support plot for this set", dest="heatmapplot")
 action_args.add_argument("--export-sqlite", action="store_true",
         help="export the DB as SQLite database")
 
@@ -572,16 +572,7 @@ if (args.cmd == "search"):
 
         usage = used_by_apps(db, args.applist.split(","), bench=benchmark, suite=testsuite)
 
-    if (args.showusage is True):
-        print("Required:")
-        print(format_syscall_list(usage["required"]))
-        print("Can be stubbed:")
-        print(format_syscall_list(usage["stubbed"]))
-        print("Can be faked:")
-        print(format_syscall_list(usage["faked"]))
-        print("Can be both stubbed or faked:")
-        print(format_syscall_list(usage["both"]))
-    elif (args.cumulativeplot is True):
+    if (args.heatmapplot is True or args.cumulativeplot is True):
         # build plot container
         info("Building plot container")
         runcmd = ["docker", "build", "--tag", "loupe-plot", "-f", "docker/Dockerfile.loupe-plot", "."]
@@ -594,6 +585,46 @@ if (args.cmd == "search"):
         except OSError as error:
             pass
 
+    if (args.showusage is True):
+        print("Required:")
+        print(format_syscall_list(usage["required"]))
+        print("Can be stubbed:")
+        print(format_syscall_list(usage["stubbed"]))
+        print("Can be faked:")
+        print(format_syscall_list(usage["faked"]))
+        print("Can be both stubbed or faked:")
+        print(format_syscall_list(usage["both"]))
+    elif (args.heatmapplot is True):
+        # process data
+        info("Processing data")
+        hmdata = process_heatmap(db, args.applist.split(","), bench=benchmark, suite=testsuite)
+
+        # generate data files (./data-staticsource.dat, ./data-staticbinary.dat, ./data-dynused.dat,
+        # ./data-dynstubfake.dat, ./data-dynstub.dat)
+        # TODO
+
+        info("Building plot")
+        cwd = os.getcwd()
+        runcmd = ["docker", "run", "-it", "--rm", "-v", cwd+ ":/mnt", "loupe-plot",
+                  "gnuplot", "/mnt/resources/heatmap-plot.gnu"]
+        print(" ".join(runcmd))
+        process = subprocess.Popen(runcmd)
+        process.wait()
+
+        # notify user
+        print("Plot: ./heapmap-dyn-used.svg")
+        print("Plot: ./heapmap-dyn-stubfake.svg")
+
+        if (args.sbinary is not True):
+            os.remove("./heapmap-static-binary.svg")
+        else:
+            print("Plot: ./heapmap-static-binary.svg")
+
+        if (args.ssource is not True):
+            os.remove("./heapmap-static-source.svg")
+        else:
+            print("Plot: ./heapmap-static-source.svg")
+    elif (args.cumulativeplot is True):
         # process data
         info("Processing data")
         cumulative = process_cumulative(db, args.applist.split(","), bench=benchmark, suite=testsuite)
@@ -622,7 +653,8 @@ if (args.cmd == "search"):
 
         info("Building plot")
         cwd = os.getcwd()
-        runcmd = ["docker", "run", "-it", "--rm", "-v", cwd+ ":/mnt", "loupe-plot", "gnuplot", "/mnt/resources/cumulative-plot.gnu"]
+        runcmd = ["docker", "run", "-it", "--rm", "-v", cwd+ ":/mnt", "loupe-plot",
+                  "gnuplot", "/mnt/resources/cumulative-plot.gnu"]
         print(" ".join(runcmd))
         process = subprocess.Popen(runcmd)
         process.wait()
@@ -631,16 +663,16 @@ if (args.cmd == "search"):
         print("Plot: ./cumulative-nostatic.svg")
 
         if (args.sbinary is not True):
-            os.remove("./cumulative-nobinary.svg")
-        else:
             print("Plot: ./cumulative-nobinary.svg")
+        else:
+            os.remove("./cumulative-nobinary.svg")
 
         if (args.ssource is not True):
-            os.remove("./cumulative-nosource.svg")
-        else:
             print("Plot: ./cumulative-nosource.svg")
+        else:
+            os.remove("./cumulative-nosource.svg")
 
-        if (args.sbinary is not True and args.ssource is not True):
+        if (args.sbinary is True and args.ssource is True):
             os.remove("./cumulative-all.svg")
         else:
             print("Plot: ./cumulative-all.svg")
