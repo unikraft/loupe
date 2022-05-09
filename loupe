@@ -781,7 +781,10 @@ if (args.cmd == "generate"):
     elif (args.isbenchmark is True):
         wl = "benchmark-" + wl
     elif (args.issuite is True):
-        wl = "suite-" + wl
+        if wl != "":
+            wl = "suite-" + wl
+        else:
+            wl = "suite"
     else:
         ans = str(input("Is this workload a benchmark or a testsuite? [bench/suite] "))
         if ans.lower() == "b" or ans.lower() == "benchmark" or ans.lower() == "bench":
