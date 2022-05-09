@@ -110,21 +110,35 @@ def db_load(path):
             bench_workload = list()
             suite_workload = list()
 
-            # iterate over measurements
-            for m in [e for e in w.iterdir() if e.is_dir()]:
-                ml = list()
+            # if there are multiple runs for this workload, take the latest
+            m = None
+            i = 0
+            for _m in [e for e in w.iterdir() if e.is_dir()]:
+                i += 1
+                if m is None or os.path.getctime(_m) < os.path.getctime(m):
+                    m = _m
 
-                # iterate over the CSV file
-                with open(os.path.join(str(m), "data", "dyn.csv"), "r") as f:
-                    for line in f:
-                        if (line[0] == '#'):
-                            continue
-                        ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+            if (i != 1):
+                debug("Workload directory {} has multiple entries".format(str(w)) +
+                      ", went for most recent: {}".format(str(m)))
 
-                if (os.path.basename(w).startswith("benchmark")):
-                    bench_workload.append(ml)
-                else:
-                    suite_workload.append(ml)
+            ml = list()
+
+            # iterate over the CSV file
+            with open(os.path.join(str(m), "data", "dyn.csv"), "r") as f:
+                for line in f:
+                    if (line[0] == '#'):
+                        continue
+                    ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+
+            if (os.path.basename(w).startswith("benchmark")):
+                bench_workload.append(ml)
+            elif (os.path.basename(w).startswith("suite")):
+                suite_workload.append(ml)
+            else:
+                error("Detected malformed DB: incorrect name " + str(w) +
+                      " (should start with 'benchmark' or 'suite')")
+                exit(1)
 
             app["benchmark"] = bench_workload
             app["testsuite"] = suite_workload
@@ -573,6 +587,7 @@ if (args.cmd == "search"):
             error("Invalid workload passed (valid: '*', 'benchmark'/'bench', 'testsuite'/'suite')")
             exit(1)
 
+    if (args.showusage is True or args.supportfile is not None):
         usage = used_by_apps(db, args.applist.split(","), bench=benchmark, suite=testsuite)
 
     if (args.heatmapplot is True or args.cumulativeplot is True or args.paperhistogramplot is True):
