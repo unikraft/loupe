@@ -549,6 +549,7 @@ if (args.cmd == "search"):
 
     if (args.showusage is True or
        args.cumulativeplot is True or
+       args.heatmapplot is True or
        args.supportfile is not None):
         db = db_load(args.dbpath)
 
@@ -582,6 +583,10 @@ if (args.cmd == "search"):
         # remove data file
         try:
             os.remove("./data.dat")
+            os.remove("./data-staticsource.dat")
+            os.remove("./data-staticbinary.dat")
+            os.remove("./data-dynused.dat")
+            os.remove("./data-dynstubfake.dat")
         except OSError as error:
             pass
 
@@ -597,11 +602,39 @@ if (args.cmd == "search"):
     elif (args.heatmapplot is True):
         # process data
         info("Processing data")
-        hmdata = process_heatmap(db, args.applist.split(","), bench=benchmark, suite=testsuite)
+        cumulative = process_cumulative(db, args.applist.split(","), bench=benchmark, suite=testsuite)
 
-        # generate data files (./data-staticsource.dat, ./data-staticbinary.dat, ./data-dynused.dat,
-        # ./data-dynstubfake.dat, ./data-dynstub.dat)
-        # TODO
+        # generate data files (./data-staticsource.dat, ./data-staticbinary.dat,
+        # ./data-dynused.dat, ./data-dynstubfake.dat)
+        staticsourcedat = ""
+        staticbindat = ""
+        dynuseddat = ""
+        dynstubfakedat = ""
+
+        i = 1
+        for sysnumber in reversed(range(MAX_SYSCALL + 1)):
+            x = (i - 1) % 24
+            y = (i - 1) / 24
+            i += 1
+
+            if (x == 0 and y != 0):
+                staticsourcedat += "\n"
+                staticbindat += "\n"
+                dynuseddat += "\n"
+                dynstubfakedat += "\n"
+
+            dynuseddat     += str(x) + " " + str(y) + " " + str(cumulative[1][sysnumber]) + " " + str(sysnumber) + "\n"
+            dynstubfakedat += str(x) + " " + str(y) + " " + str(cumulative[0][sysnumber]) + " " + str(sysnumber) + "\n"
+            # TODO add generation for static source and binary
+
+        with open(os.path.join("./data-staticsource.dat"), "a") as outf:
+            outf.write(staticsourcedat)
+        with open(os.path.join("./data-staticbinary.dat"), "a") as outf:
+            outf.write(staticbindat)
+        with open(os.path.join("./data-dynused.dat"), "a") as outf:
+            outf.write(dynuseddat)
+        with open(os.path.join("./data-dynstubfake.dat"), "a") as outf:
+            outf.write(dynstubfakedat)
 
         info("Building plot")
         cwd = os.getcwd()
@@ -612,8 +645,8 @@ if (args.cmd == "search"):
         process.wait()
 
         # notify user
-        print("Plot: ./heapmap-dyn-used.svg")
-        print("Plot: ./heapmap-dyn-stubfake.svg")
+        print("Plot: ./heapmap-dynamic-used.svg")
+        print("Plot: ./heapmap-dynamic-stubfake.svg")
 
         if (args.sbinary is not True):
             os.remove("./heapmap-static-binary.svg")

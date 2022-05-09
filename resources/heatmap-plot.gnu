@@ -27,28 +27,28 @@ set palette defined (\
 8 "#1c1044" \
 )
 
-set output 'heapmap-static-binary.svg'
+set output '/mnt/heapmap-static-binary.svg'
 plot '/mnt/data-staticbinary.dat' u (-$1):2:3 with image pixels, \
 	'' u (-$1):2:($3 == 0 ? "" : \
 		$3 >= 60 ? "" : sprintf("%g",$4)) with labels font ",12" tc "black", \
 	'' u (-$1):2:($3 == 0 ? "" : \
 		$3 < 60 ? "" : sprintf("%g",$4)) with labels font ",12" tc "white"
 
-set output 'heapmap-static-source.svg'
+set output '/mnt/heapmap-static-source.svg'
 plot '/mnt/data-staticsource.dat' u (-$1):2:3 with image pixels, \
 	'' u (-$1):2:($3 == 0 ? "" : \
 		$3 >= 60 ? "" : sprintf("%g",$4)) with labels font ",12" tc "black", \
 	'' u (-$1):2:($3 == 0 ? "" : \
 		$3 < 60 ? "" : sprintf("%g",$4)) with labels font ",12" tc "white"
 
-set output 'heapmap-dynamic-used.svg'
+set output '/mnt/heapmap-dynamic-used.svg'
 plot '/mnt/data-dynused.dat' u (-$1):2:3 with image pixels, \
 	'' u (-$1):2:($3 == 0 ? "" : \
 		$3 >= 60 ? "" : sprintf("%g",$4)) with labels font ",12" tc "black", \
 	'' u (-$1):2:($3 == 0 ? "" : \
 		$3 < 60 ? "" : sprintf("%g",$4)) with labels font ",12" tc "white"
 
-set output 'heapmap-dynamic-stubfake.svg'
+set output '/mnt/heapmap-dynamic-stubfake.svg'
 plot '/mnt/data-dynstubfake.dat' u (-$1):2:3 with image pixels, \
 	'' u (-$1):2:($3 == 0 ? "" : \
 		$3 >= 60 ? "" : sprintf("%g",$4)) with labels font ",12" tc "black", \

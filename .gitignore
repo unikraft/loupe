@@ -1,6 +1,6 @@
 seccomp-run
 /*.svg
-data.dat
+/*.dat
 dockerfile_data
 /Dockerfile.*
 
