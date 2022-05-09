@@ -589,7 +589,10 @@ if (args.cmd == "search"):
         process.wait()
 
         # remove data file
-        os.remove("./data.dat")
+        try:
+            os.remove("./data.dat")
+        except OSError as error:
+            pass
 
         # process data
         info("Processing data")
