@@ -211,9 +211,17 @@ Loupe can generate the paper's plot using information from the database.
 
 Simply run
 ```
-./loupe search --cumulative-plot -db ../loupedb -a "*" -w suite
+$ ./loupe search --cumulative-plot -db ../loupedb -a "*" -w suite
 ```
 to output a cumulative plot of the database's content for test-suites and all applications.
+
+#### Heatmap Plot
+
+Similarly, run
+```
+$ ./loupe search --heatmap-plot -db ../loupedb -a "*" -w suite
+```
+to output a heatmap plot for the same data set.
 
 ## Generating Coverage
 

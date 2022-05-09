@@ -583,9 +583,25 @@ if (args.cmd == "search"):
         # remove data file
         try:
             os.remove("./data.dat")
+        except OSError as error:
+            pass
+
+        try:
             os.remove("./data-staticsource.dat")
+        except OSError as error:
+            pass
+
+        try:
             os.remove("./data-staticbinary.dat")
+        except OSError as error:
+            pass
+
+        try:
             os.remove("./data-dynused.dat")
+        except OSError as error:
+            pass
+
+        try:
             os.remove("./data-dynstubfake.dat")
         except OSError as error:
             pass
@@ -612,9 +628,9 @@ if (args.cmd == "search"):
         dynstubfakedat = ""
 
         i = 1
-        for sysnumber in reversed(range(MAX_SYSCALL + 1)):
+        for sysnumber in reversed(range(MAX_SYSCALL + 2)):
             x = (i - 1) % 24
-            y = (i - 1) / 24
+            y = (i - 1) // 24
             i += 1
 
             if (x == 0 and y != 0):
@@ -623,8 +639,13 @@ if (args.cmd == "search"):
                 dynuseddat += "\n"
                 dynstubfakedat += "\n"
 
-            dynuseddat     += str(x) + " " + str(y) + " " + str(cumulative[1][sysnumber]) + " " + str(sysnumber) + "\n"
-            dynstubfakedat += str(x) + " " + str(y) + " " + str(cumulative[0][sysnumber]) + " " + str(sysnumber) + "\n"
+            p = 0
+            if (sysnumber <= MAX_SYSCALL):
+                p = cumulative[1][sysnumber]
+            dynuseddat     += str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+            if (sysnumber <= MAX_SYSCALL):
+                p = cumulative[0][sysnumber]
+            dynstubfakedat += str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
             # TODO add generation for static source and binary
 
         with open(os.path.join("./data-staticsource.dat"), "a") as outf:
