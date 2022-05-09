@@ -384,9 +384,10 @@ def run_tests(path_db, application, workload, path_dockerfile):
         error("Problem building the container?")
         return False
 
-    info("Running container...")
+    info("Running dynamic analysis in the container...")
 
-    runcmd = ["docker", "container", "run", "--rm", "--privileged", containername]
+    runcmd = ["docker", "container", "run", "--name",
+              "loupe-tmp", "--privileged", containername]
     out = ""
     try:
         out = subprocess.check_output(runcmd).decode('utf-8')
@@ -422,6 +423,14 @@ def run_tests(path_db, application, workload, path_dockerfile):
         shutil.copytree("./dockerfile_data", os.path.join(runpath, "dockerfile_data"))
     with open(os.path.join(runpath, "data", "dyn.csv"), "a+") as outf:
         outf.write(out)
+
+    info("Running static analysis in the container...")
+
+    # TODO Gaulthier, you can use the running container "loupe-tmp"
+
+    debug("Removing the container")
+
+    os.system("docker rm loupe-tmp");
 
     info("Done!")
     print(" -- Make sure to commit the changes to the database :-)")
