@@ -486,7 +486,7 @@ parser.add_argument("--test-sequential", action="store_true",
 parser.add_argument("arg_binary", nargs='*',
         help="additional arguments to pass to the test binary")
 parser.add_argument("-t", dest="testscript",
-        type=pathlib.Path, required=True, help="path to the test script")
+        type=pathlib.Path, required=False, help="path to the test script")
 parser.add_argument("--only-consider", dest="zbinary",
         type=pathlib.Path, help="only consider a given binary in the analysis")
 
