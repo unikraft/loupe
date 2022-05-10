@@ -37,6 +37,7 @@ import pathlib
 import shutil
 import git
 import re
+import glob
 import common
 import subprocess
 from common import *
@@ -545,9 +546,9 @@ search_parser = subparsers.add_parser("search",
 required_args = search_parser.add_argument_group('required arguments')
 required_args.add_argument("-db", "--database", dest="dbpath", type=pathlib.Path, required=True,
         help="path to the database")
-required_args.add_argument("-a", "--applications", dest="applist", type=str, required=True,
+required_args.add_argument("-a", "--applications", dest="applist", type=str,
         help="comma-separated list of apps to consider, e.g., 'redis,nginx', '*' for all")
-required_args.add_argument("-w", "--workloads", dest="wllist", type=str, required=True,
+required_args.add_argument("-w", "--workloads", dest="wllist", type=str,
         help="comma-separated list of workloads to consider, e.g., 'bench,suite', '*' for all")
 
 action_args = search_parser.add_argument_group('action arguments')
@@ -582,6 +583,13 @@ ENABLE_DIRTY_DB = (args.dirtydb is True)
 if (args.cmd is None):
     parser.print_help()
 
+if ((args.applist is None or args.wllist is None) and
+        args.paperhistogramplot is not True):
+    error("Application list (-a/--applications) and workload list " +
+          "(-w/--workloads) are required for this option.")
+    error("Call with --help for more information.")
+    exit(1)
+
 info("Checking database...")
 if not db_check(args.dbpath):
     error("Problem with the database, exiting.")
@@ -593,16 +601,13 @@ if (args.cmd == "search"):
         warning("Not implemented yet.")
         exit(0)
 
-    usage = []
+    db = db_load(args.dbpath)
 
-    if (args.showusage is True or
-       args.cumulativeplot is True or
-       args.heatmapplot is True or
-       args.supportfile is not None):
-        db = db_load(args.dbpath)
+    benchmark = False
+    testsuite = False
 
-        benchmark = False
-        testsuite = False
+    if (args.showusage is True or args.cumulativeplot is True or
+            args.heatmapplot is True or args.supportfile is not None):
         if "*" in args.wllist and len(args.wllist) > 1:
             warning("* in the workload list but other entries are specified: " + str(args.wllist))
             warning("Ignoring them.")
@@ -619,6 +624,8 @@ if (args.cmd == "search"):
             error("Invalid workload passed (valid: '*', 'benchmark'/'bench', 'testsuite'/'suite')")
             exit(1)
 
+    usage = []
+
     if (args.showusage is True or args.supportfile is not None):
         usage = used_by_apps(db, args.applist.split(","), bench=benchmark, suite=testsuite)
 
@@ -630,30 +637,12 @@ if (args.cmd == "search"):
         process.wait()
 
         # remove data file
-        try:
-            os.remove("./data.dat")
-        except OSError as error:
-            pass
-
-        try:
-            os.remove("./data-staticsource.dat")
-        except OSError as error:
-            pass
-
-        try:
-            os.remove("./data-staticbinary.dat")
-        except OSError as error:
-            pass
-
-        try:
-            os.remove("./data-dynused.dat")
-        except OSError as error:
-            pass
-
-        try:
-            os.remove("./data-dynstubfake.dat")
-        except OSError as error:
-            pass
+        fileList = glob.glob('./*.dat')
+        for filePath in fileList:
+            try:
+                os.remove(filePath)
+            except:
+                pass
 
     if (args.showusage is True):
         print("Required:")
@@ -701,18 +690,18 @@ if (args.cmd == "search"):
 
             with open(os.path.join("./" + a + ".dat"), "a") as outf:
                 # header
-                outf.write(a + " staticsrc   staticbin   required    stubonly    fakeonly    fakeorstub")
+                outf.write(a + " staticsrc   staticbin   required    stubonly    fakeonly    fakeorstub\n")
                 # binary
                 # TODO add generation for static source and binary
-                outf.write("all     0           0          0           0           0           0")
+                outf.write("all     0           0          0           0           0           0\n")
                 # source
-                outf.write("all     0           0          0           0           0           0")
+                outf.write("all     0           0          0           0           0           0\n")
                 # suite
-                outf.write("suite   0           0          {}          {}          {}          {}".format(
+                outf.write("suite   0           0          {}          {}          {}          {}\n".format(
                     str(len(dat_suite["required"])), str(len(dat_suite["stubbed"])),
                     str(len(dat_suite["faked"])), str(len(dat_suite["both"]))))
                 # bench
-                outf.write("bench   0           0          {}          {}          {}          {}".format(
+                outf.write("bench   0           0          {}          {}          {}          {}\n".format(
                     str(len(dat_bench["required"])), str(len(dat_bench["stubbed"])),
                     str(len(dat_bench["faked"])), str(len(dat_bench["both"]))))
 

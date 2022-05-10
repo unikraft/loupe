@@ -20,9 +20,9 @@ set bmargin at screen 0.4
 # (all, suite, etc.) and the group labels (Redis, Nginx, etc).
 set style histogram rowstacked title offset character 0, -0.3
 set style fill solid 1.0 border -1
-set style /mnt histograms
+set style data histograms
 
-set /mntfile missing '-'
+set datafile missing '-'
 
 set xtics border in scale 0,0 nomirror autojustify  rotate by -25 font ",11"
 set ytics border in scale 0,0 mirror norotate  autojustify
