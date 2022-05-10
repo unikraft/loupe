@@ -855,20 +855,20 @@ if (args.cmd == "search"):
         # notify user
         print("Plot: ./cumulative-nostatic.svg")
 
-        if (args.sbinary is not True):
+        if (args.sbinary is not True and args.ssource is True):
             print("Plot: ./cumulative-nobinary.svg")
         else:
             os.remove("./cumulative-nobinary.svg")
 
-        if (args.ssource is not True):
+        if (args.ssource is not True and args.sbinary is True):
             print("Plot: ./cumulative-nosource.svg")
         else:
             os.remove("./cumulative-nosource.svg")
 
         if (args.sbinary is True and args.ssource is True):
-            os.remove("./cumulative-all.svg")
-        else:
             print("Plot: ./cumulative-all.svg")
+        else:
+            os.remove("./cumulative-all.svg")
     elif args.supportfile is not None:
         supported = set(format_syscall_list(open_syscall_file(args.supportfile)))
         required  = set(format_syscall_list(usage["required"]))
