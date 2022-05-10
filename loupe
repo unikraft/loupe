@@ -200,6 +200,16 @@ def process_cumulative(db, applist, bench=False, suite=False):
 
     return (cumulative_required, cumulative_executed)
 
+# return, for a given application list, the system calls that are required, those
+# that can be faked, stubbed, or faked AND stubbed:
+# {
+#   required : {
+#     1, 4, 44, 221 // system call numbers
+#   }
+#   stubbed: {...}
+#   faked: {...}
+#   both: {...}
+# }
 # FIXME has a lot of duplicated code
 def used_by_apps(db, applist, bench=False, suite=False):
     assert(bench or suite)
@@ -655,19 +665,56 @@ if (args.cmd == "search"):
         print("Can be both stubbed or faked:")
         print(format_syscall_list(usage["both"]))
     elif (args.paperhistogramplot is True):
-        # process data
-        info("Processing data")
-        # TODO
-
-        # generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
-        # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
         apps = ["haproxy", "lighttpd", "memcached", "nginx", "redis",
                 "sqlite", "webfsd", "weborf"]
 
+        # process data
+        info("Processing data")
+
+        # 1. check that apps are featured in the database
+        error = False
         for a in apps:
+            if (a not in db.keys()):
+                error("Application missing from the database (and required for the plot): " + a)
+                error = True
+
+        if (error):
+            exit(1)
+
+        # 2. check that apps all feature both benchmark and suite data
+        for a in apps:
+            if ("benchmark" not in db[a].keys()):
+                error("Application " + a + " does not feature benchmark data")
+                error = True
+            if ("testsuite" not in db[a].keys()):
+                error("Application " + a + " does not feature testsuite data")
+                error = True
+
+        if (error):
+            exit(1)
+
+        # 3. generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
+        # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
+        for a in apps:
+            dat_suite = used_by_apps(db, [a], False, True)
+            dat_bench = used_by_apps(db, [a], True, False)
+
             with open(os.path.join("./" + a + ".dat"), "a") as outf:
-                # TODO
-                outf.write("")
+                # header
+                outf.write(a + " staticsrc   staticbin   required    stubonly    fakeonly    fakeorstub")
+                # binary
+                # TODO add generation for static source and binary
+                outf.write("all     0           0          0           0           0           0")
+                # source
+                outf.write("all     0           0          0           0           0           0")
+                # suite
+                outf.write("suite   0           0          {}          {}          {}          {}".format(
+                    str(len(dat_suite["required"])), str(len(dat_suite["stubbed"])),
+                    str(len(dat_suite["faked"])), str(len(dat_suite["both"]))))
+                # bench
+                outf.write("bench   0           0          {}          {}          {}          {}".format(
+                    str(len(dat_bench["required"])), str(len(dat_bench["stubbed"])),
+                    str(len(dat_bench["faked"])), str(len(dat_bench["both"]))))
 
         info("Building plot")
         cwd = os.getcwd()
