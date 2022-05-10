@@ -111,21 +111,45 @@ def db_load(path):
 
         app = dict()
 
-        # iterate over workloads
-        for w in [e for e in a.iterdir() if e.is_dir()]:
-            bench_workload = list()
-            suite_workload = list()
+        # if there are multiple workloads for this app, take the latest
+        bench_wl_folder = None
+        suite_wl_folder = None
 
+        changed = False
+        for w in [e for e in a.iterdir() if e.is_dir()]:
+            if (os.path.basename(w).startswith("benchmark")):
+                if bench_wl_folder is None:
+                    bench_wl_folder = w
+                elif os.path.getctime(w) > os.path.getctime(bench_wl_folder):
+                    bench_wl_folder = w
+                    changed = True
+            elif (os.path.basename(w).startswith("suite")):
+                if suite_wl_folder is None:
+                    suite_wl_folder = w
+                elif os.path.getctime(w) > os.path.getctime(suite_wl_folder):
+                    suite_wl_folder = w
+                    changed = True
+            else:
+                error("Detected malformed DB: incorrect name " + str(w) +
+                      " (should start with 'benchmark' or 'suite')")
+                exit(1)
+
+        if (changed):
+            debug("App directory {} has multiple entries".format(str(a)) +
+                  ", went for most recent ones: {} and {}".format(str(bench_wl_folder), str(suite_wl_folder)))
+
+        bench_workload = list()
+        if (bench_wl_folder is not None):
             # if there are multiple runs for this workload, take the latest
             m = None
             i = 0
-            for _m in [e for e in w.iterdir() if e.is_dir()]:
+            for _m in [e for e in bench_wl_folder.iterdir() if e.is_dir()]:
                 i += 1
-                if m is None or os.path.getctime(_m) < os.path.getctime(m):
+                if m is None or os.path.getctime(_m) > os.path.getctime(m):
                     m = _m
 
             if (i != 1):
-                debug("Workload directory {} has multiple entries".format(str(w)) +
+                debug("Workload directory {} has multiple entries".format(str(bench_wl_folder)) +
                       ", went for most recent: {}".format(str(m)))
 
             ml = list()
@@ -136,18 +160,38 @@ def db_load(path):
                     if (line[0] == '#'):
                         continue
                     ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+            bench_workload.append(ml)
+        else:
+            debug("App directory {} does not feature benchmark measurements".format(str(a)))
 
-            if (os.path.basename(w).startswith("benchmark")):
-                bench_workload.append(ml)
-            elif (os.path.basename(w).startswith("suite")):
-                suite_workload.append(ml)
-            else:
-                error("Detected malformed DB: incorrect name " + str(w) +
-                      " (should start with 'benchmark' or 'suite')")
-                exit(1)
+        suite_workload = list()
+        if (suite_wl_folder is not None):
+            # if there are multiple runs for this workload, take the latest
+            m = None
+            i = 0
+            for _m in [e for e in suite_wl_folder.iterdir() if e.is_dir()]:
+                i += 1
+                if m is None or os.path.getctime(_m) > os.path.getctime(m):
+                    m = _m
 
-            app["benchmark"] = bench_workload
-            app["testsuite"] = suite_workload
+            if (i != 1):
+                debug("Workload directory {} has multiple entries".format(str(suite_wl_folder)) +
+                      ", went for most recent: {}".format(str(m)))
+
+            ml = list()
+
+            # iterate over the CSV file
+            with open(os.path.join(str(m), "data", "dyn.csv"), "r") as f:
+                for line in f:
+                    if (line[0] == '#'):
+                        continue
+                    ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+            suite_workload.append(ml)
+        else:
+            debug("App directory {} does not feature testsuite measurements".format(str(a)))
+
+        app["benchmark"] = bench_workload
+        app["testsuite"] = suite_workload
 
         db[os.path.basename(a)] = app
 
@@ -672,15 +716,10 @@ if (args.cmd == "search"):
 
         # 2. check that apps all feature both benchmark and suite data
         for a in apps:
-            if ("benchmark" not in db[a].keys()):
-                error("Application " + a + " does not feature benchmark data")
-                error = True
-            if ("testsuite" not in db[a].keys()):
-                error("Application " + a + " does not feature testsuite data")
-                error = True
-
-        if (error):
-            exit(1)
+            if ("benchmark" not in db[a].keys() or len(db[a]["benchmark"]) == 0):
+                warning("Application " + a + " does not feature benchmark data")
+            if ("testsuite" not in db[a].keys() or len(db[a]["testsuite"]) == 0):
+                warning("Application " + a + " does not feature testsuite data")
 
         # 3. generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
         # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
