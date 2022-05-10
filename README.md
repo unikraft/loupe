@@ -18,6 +18,18 @@ also able to convert this database to SQLite. We offer an online, open
 [database]() maintained by the community. Feel free to pull request your
 analysis results!
 
+### Loupe is not your regular strace!
+
+- Loupe supports stubbing/faking analysis (Loupe is not a *passive* observer)
+- Loupe goes beyond system call granularity
+- Loupe supports replication to obtain results stable across runs
+- Loupe offers an infrastructure for reproducibility and sharing of results
+
+## Hardware Dependencies
+
+Any x86 machine with more than 8 CPU cores should do the trick (non-x86 might
+cause issues because of our Docker containers).
+
 ## Dependencies & Install
 
 - Docker
