@@ -152,7 +152,19 @@ def time_to_reach(os_data, syscall_num):
     start_date = os_data[syscall_list[0]]
     end_date = os_data[syscall_list[syscall_num-1]]
 
-    return end_date - start_date
+    # Iterate over the range of commits in question and check for periods of
+    # inactivity ( 1 week+ between two subsequent commits touching
+    # syscalls-related files
+
+    inactivity = datetime.timedelta(0)
+    last_commit_date = os_data[syscall_list[0]]
+    for i in range(1, syscall_num):
+        commit_delta = os_data[syscall_list[i]] - last_commit_date
+        if commit_delta > datetime.timedelta(weeks=1):
+            inactivity += (commit_delta - datetime.timedelta(weeks=1))
+        last_commit_date = os_data[syscall_list[i]]
+
+    return (end_date - start_date) - inactivity
 
 
 if __name__ == "__main__":
