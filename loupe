@@ -39,10 +39,10 @@ import git
 import re
 import glob
 import sys
-import common
+import src.common as common
 import subprocess
 import threading
-from common import *
+from src.common import *
 
 ENABLE_DIRTY_DB = False
 NUMBER_GENERATE_REPLICAS = 6
@@ -704,6 +704,7 @@ ENABLE_DIRTY_DB = (args.dirtydb is True)
 
 if (args.cmd is None):
     parser.print_help()
+    exit(1)
 
 info("Checking database...")
 if not db_check(args.dbpath):
