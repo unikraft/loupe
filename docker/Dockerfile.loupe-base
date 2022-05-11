@@ -29,11 +29,14 @@ RUN cat /tmp/sources.list >> /etc/apt/sources.list
 RUN apt update
 
 # Copy Loupe source code
-COPY src /root/
+COPY src /root/src/
+COPY explore.py /root/explore.py
+
 COPY Makefile /root/
 RUN make
+
 RUN chmod a+x /root/src/seccomp-run
-RUN chmod a+x /root/src/explore.py
+RUN chmod a+x /root/explore.py
 
 # In case app dockerfiles run with non-root users
 RUN chmod -R a+rw /root

@@ -485,7 +485,7 @@ def run_tests(path_db, application, workload, path_dockerfile):
         l = 0
         for line in r.splitlines():
             if (len(re.sub("[^,]", "", line)) != 4):
-                error("Line %d of replica %d's test output seems corrupted. Dumping." % l, x)
+                error("Line %d of replica %d's test output seems corrupted. Dumping." % (l, x))
                 print(r)
                 return False
             l += 1
