@@ -130,18 +130,11 @@ def detect_syscalls(sect_it, syscalls_set, syscalls_map):
         if name in syscalls_map:
             syscalls_set.add(name)
 
-def main():
+def static_analysis(v, app, display=False, csv=True):
     global verbose
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--app','-a', help='Path to application',required=True, default=APP)
-    parser.add_argument('--verbose', '-v', type=str2bool, nargs='?', const=True, help='Verbose mode', default=True)
-    parser.add_argument('--display', '-d', type=str2bool, nargs='?', const=True, help='Display syscalls', default=True)
-    parser.add_argument('--csv', '-c', type=str2bool, nargs='?', const=True, help='Output csv', default=True)
-    args = parser.parse_args()
-
-    verbose = args.verbose
-    binary = lief.parse(args.app)
+    verbose = v
+    binary = lief.parse(app)
     
     print_verbose("Analysing the ELF file. This may take some times...")
     syscalls_set = set()
@@ -156,18 +149,28 @@ def main():
     inv_syscalls_map = {syscalls_map[k] : k for k in syscalls_map}
     disassemble(text_section, syscalls_set, inv_syscalls_map)
 
-    if args.display:
+    if display:
         for k,v in syscalls_map.items():
             if k in syscalls_set:
                 print_verbose("{} : {}".format(k,v))
 
     print_verbose("Total number of syscalls: " + str(len(syscalls_set)))
 
-    if args.csv:
-        name = args.app
+    if csv:
+        name = app
         if "/" in name:
             name = name.split("/")[-1]
         print(name + "," + str(len(syscalls_set)))
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--app','-a', help='Path to application',required=True, default=APP)
+    parser.add_argument('--verbose', '-v', type=str2bool, nargs='?', const=True, help='Verbose mode', default=True)
+    parser.add_argument('--display', '-d', type=str2bool, nargs='?', const=True, help='Display syscalls', default=True)
+    parser.add_argument('--csv', '-c', type=str2bool, nargs='?', const=True, help='Output csv', default=True)
+    args = parser.parse_args()
+
+    static_analysis(args.verbose, args.app, display=args.display, csv=args.csv)
 
 if __name__== "__main__":
     main()  

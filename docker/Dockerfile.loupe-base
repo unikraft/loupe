@@ -22,6 +22,10 @@ RUN cd strace-5.14 && ./configure && make -j && make install
 RUN git clone https://github.com/capstone-engine/capstone.git
 RUN cd capstone && git checkout 4.0.2 && ./make.sh && ./make.sh install
 
+# Install more static analysis deps
+RUN pip install lief
+RUN pip install capstone
+
 # Necessary for build-dep
 RUN cp /etc/apt/sources.list /tmp/sources.list
 RUN sed -i 's/deb /deb-src /' /tmp/sources.list
