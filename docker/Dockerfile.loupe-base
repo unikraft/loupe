@@ -18,6 +18,14 @@ RUN wget https://github.com/strace/strace/releases/download/v5.14/strace-5.14.ta
 RUN tar -xf strace-5.14.tar.xz
 RUN cd strace-5.14 && ./configure && make -j && make install
 
+# Install capstone (for static analysis)
+RUN git clone https://github.com/capstone-engine/capstone.git
+RUN cd capstone && git checkout 4.0.2 && ./make.sh && ./make.sh install
+
+# Install more static analysis deps
+RUN pip install lief
+RUN pip install capstone
+
 # Necessary for build-dep
 RUN cp /etc/apt/sources.list /tmp/sources.list
 RUN sed -i 's/deb /deb-src /' /tmp/sources.list
@@ -25,13 +33,14 @@ RUN cat /tmp/sources.list >> /etc/apt/sources.list
 RUN apt update
 
 # Copy Loupe source code
-COPY explore.py /root/
-RUN chmod a+x /root/explore.py
-COPY seccomp-run.c /root/
+COPY src /root/src/
+COPY explore.py /root/explore.py
+
 COPY Makefile /root/
-COPY common/ /root/common
 RUN make
-RUN chmod a+x /root/seccomp-run
+
+RUN chmod a+x /root/src/seccomp-run
+RUN chmod a+x /root/explore.py
 
 # In case app dockerfiles run with non-root users
 RUN chmod -R a+rw /root

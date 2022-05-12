@@ -4,7 +4,7 @@
 #
 # Authors: Hugo Lefeuvre <hugo.lefeuvre@manchester.ac.uk>
 #
-# Copyright (c) 2020-2021, The University of Manchester. All rights reserved.
+# Copyright (c) 2020-2022, The University of Manchester. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,11 +38,17 @@ import shutil
 import git
 import re
 import glob
-import common
+import sys
+import src.common as common
 import subprocess
-from common import *
+import threading
+from src.common import *
 
 ENABLE_DIRTY_DB = False
+NUMBER_GENERATE_REPLICAS = 6
+NUMBER_PARALLEL_REPLICAS = 3
+
+assert(NUMBER_GENERATE_REPLICAS % NUMBER_PARALLEL_REPLICAS == 0)
 
 def open_syscall_file(path):
     with open(path, "r") as f:
@@ -439,30 +445,95 @@ def run_tests(path_db, application, workload, path_dockerfile):
         error("Problem building the container?")
         return False
 
-    info("Running dynamic analysis in the container...")
+    info("Running dynamic analysis in the container ({} replicas)...".format(
+        NUMBER_GENERATE_REPLICAS))
 
-    runcmd = ["docker", "container", "run", "--name",
-              "loupe-tmp", "--privileged", containername]
-    out = ""
-    try:
-        out = subprocess.check_output(runcmd).decode('utf-8')
-    except subprocess.CalledProcessError as e:
-        out  = str(e.output)
+    def _run_test(n, i, r):
+        runcmd = ["docker", "container", "run", "--rm", "--privileged", n]
+        out = ""
+        try:
+            r[i] = subprocess.check_output(runcmd).decode('utf-8')
+        except subprocess.CalledProcessError as e:
+            r[i]  = str(e.output)
+
+        return out
+
+    # run configured number of replicas
+    threads = [None] * NUMBER_GENERATE_REPLICAS
+    results = [None] * NUMBER_GENERATE_REPLICAS
+    for j in range(NUMBER_GENERATE_REPLICAS // NUMBER_PARALLEL_REPLICAS):
+        debug("Starting replica batch (%d/%d)" % ((
+            j * NUMBER_PARALLEL_REPLICAS) + NUMBER_PARALLEL_REPLICAS,
+            NUMBER_GENERATE_REPLICAS))
+
+        for i in range(NUMBER_PARALLEL_REPLICAS):
+            t = threading.Thread(target=_run_test, args=(containername, (j * NUMBER_PARALLEL_REPLICAS) + i, results))
+            threads[j + i] = t
+            t.start()
+
+        for t in threads:
+            if t is not None:
+                t.join()
 
     # sanitize a bit, make sure that the output is sane
-    info("Sanitizing output...")
-    l = 0
-    for line in out.splitlines():
-        if (len(re.sub("[^,]", "", line)) != 4):
-            error("Line %d of the test output seems corrupted. Dumping." % l)
-            print(out)
+    info("Sanitizing replicas outputs...")
+    x = 0
+    for r in results:
+        if r is None:
+            error("Replica %d did not produce result" % x)
+
+        l = 0
+        for line in r.splitlines():
+            if (len(re.sub("[^,]", "", line)) != 4):
+                error("Line %d of replica %d's test output seems corrupted. Dumping." % (l, x))
+                print(r)
+                return False
+            l += 1
+        if (l != MAX_SYSCALL + 2):
+            error("Somehow replica %d's file does not have the right size... " % x +
+                  "Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
+            print(r)
             return False
-        l += 1
-    if (l != MAX_SYSCALL + 2):
-        error("Somehow this file does not have the right size... " +
-              "Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
-        print(out)
-        return False
+        x += 1
+
+    info("Merging replicas outputs...")
+
+    def _merge_cvs(results):
+        final_csv = ""
+        d = 0
+        for i in range(MAX_SYSCALL + 2):
+            known = [results[0].splitlines()[i]]
+            for r in results:
+                if r is not None and r.splitlines()[i] not in known:
+                    known.append(r.splitlines()[i])
+            if (len(known) != 1):
+                sys = known[0].split(",")[0]
+                used = "N"
+                worksfaked = "Y"
+                worksstubbed = "Y"
+                worksboth = "Y"
+
+                for k in known:
+                    if (len(k.split(",")) < 4):
+                        print("Invalid output line: " + k)
+                        exit(1)
+
+                    if (k.split(",")[1] == "Y"):
+                        used = "Y"
+                    if (k.split(",")[2] == "N"):
+                        worksfaked = "N"
+                        worksboth = "N"
+                    if (k.split(",")[3] == "N"):
+                        worksstubbed = "N"
+                        worksboth = "N"
+                final_csv += "{},{},{},{},{}\n".format(sys, used, worksfaked, worksstubbed, worksboth)
+                d += 1
+            else:
+                final_csv += known[0] + "\n"
+        info("Replicas reported %d differences" % d)
+        return final_csv
+
+    out = _merge_cvs(results)
 
     # write to the db
     info("Writing to the database...")
@@ -477,6 +548,8 @@ def run_tests(path_db, application, workload, path_dockerfile):
     else:
         info("This run already exists, replacing (see changes with git diff).")
         shutil.rmtree(os.path.join(runpath, "data"))
+        if os.path.exists(os.path.join(runpath, "cmd.txt")):
+            os.remove(os.path.join(runpath, "cmd.txt"))
 
     if not os.path.exists(os.path.join(runpath, "data")):
         os.makedirs(os.path.join(runpath, "data"))
@@ -488,9 +561,14 @@ def run_tests(path_db, application, workload, path_dockerfile):
 
     # TODO Gaulthier, you can use the running container "loupe-tmp"
 
-    debug("Removing the container")
+    #debug("Removing the container")
 
-    os.system("docker rm loupe-tmp &> /dev/null");
+    #os.system("docker rm loupe-tmp &> /dev/null");
+
+    debug("Outputing additional reproducibility information...")
+
+    with open(os.path.join(runpath, "cmd.txt"), "a+") as outf:
+        outf.write(" ".join(sys.argv))
 
     info("Done!")
     print(" -- Make sure to commit the changes to the database :-)")
@@ -626,12 +704,6 @@ ENABLE_DIRTY_DB = (args.dirtydb is True)
 
 if (args.cmd is None):
     parser.print_help()
-
-if ((args.applist is None or args.wllist is None) and
-        args.paperhistogramplot is not True):
-    error("Application list (-a/--applications) and workload list " +
-          "(-w/--workloads) are required for this option.")
-    error("Call with --help for more information.")
     exit(1)
 
 info("Checking database...")
@@ -640,6 +712,13 @@ if not db_check(args.dbpath):
     exit(1)
 
 if (args.cmd == "search"):
+    if ((args.applist is None or args.wllist is None) and
+            args.paperhistogramplot is not True):
+        error("Application list (-a/--applications) and workload list " +
+              "(-w/--workloads) are required for this option.")
+        error("Call with --help for more information.")
+        exit(1)
+
     common.OUTPUT_NAMES = (args.outputnames is True)
     if args.sbinary is True or args.ssource is True:
         warning("Not implemented yet.")

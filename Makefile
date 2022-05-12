@@ -1,12 +1,12 @@
 .PHONY: docker
 
-seccomp-run:
-	gcc seccomp-run.c -o seccomp-run
+src/seccomp-run:
+	gcc src/seccomp-run.c -o src/seccomp-run
 
 docker:
 	docker build --tag loupe-base -f docker/Dockerfile.loupe-base .
 
 clean:
-	rm -rf *.svg *.dat seccomp-run
+	rm -rf *.svg *.dat src/seccomp-run
 
-all: seccomp-run docker
+all: src/seccomp-run docker

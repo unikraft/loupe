@@ -4,7 +4,7 @@
 #
 # Authors: Hugo Lefeuvre <hugo.lefeuvre@manchester.ac.uk>
 #
-# Copyright (c) 2020-2021, The University of Manchester. All rights reserved.
+# Copyright (c) 2020-2022, The University of Manchester. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,8 +31,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import os, sys, signal, re, argparse, pathlib, time, subprocess, common
-from common import *
+import os, sys, signal, re, argparse, pathlib, time, subprocess
+import src.common as common
+from src.common import *
 
 # ==============
 # SCRIPT OPTIONS
@@ -66,7 +67,7 @@ TEST_TIMEOUT = 4
 ZBINARY = None
 
 HOME_PATH = os.path.abspath(os.path.dirname(__file__))
-SECCOMPRUN_PATH = os.path.join(HOME_PATH, "seccomp-run")
+SECCOMPRUN_PATH = os.path.join(HOME_PATH, "src", "seccomp-run")
 
 SMART_WAIT_REPEAT = 1
 

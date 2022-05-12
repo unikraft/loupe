@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /*
- * Copyright (c) 2020-2021, Hugo Lefeuvre <hugo.lefeuvre@manchester.ac.uk>
+ * Copyright (c) 2020-2022, Hugo Lefeuvre <hugo.lefeuvre@manchester.ac.uk>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
