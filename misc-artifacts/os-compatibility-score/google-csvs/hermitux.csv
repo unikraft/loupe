@@ -1,0 +1,336 @@
+Syscall N#,Syscall name,Status
+0,read,implemented
+1,write,implemented
+2,open,implemented
+3,close,implemented
+4,stat,implemented
+5,fstat,implemented
+6,lstat,implemented
+7,poll,faked
+8,lseek,implemented
+9,mmap,partially implemented
+10,mprotect,faked
+11,munmap,implemented
+12,brk,implemented
+13,rt_sigaction,implemented
+14,rt_sigprocmask,not implemented
+15,rt_sigreturn,not implemented
+16,ioctl,partially implemented
+17,pread64,implemented
+18,pwrite64,implemented
+19,readv,implemented
+20,writev,implemented
+21,access,implemented
+22,pipe,implemented
+23,select,implemented
+24,sched_yield,implemented
+25,mremap,partially implemented
+26,msync,not implemented
+27,mincore,stubbed
+28,madvise,stubbed
+29,shmget,not implemented
+30,shmat,not implemented
+31,shmctl,not implemented
+32,dup,not implemented
+33,dup2,implemented
+34,pause,not implemented
+35,nanosleep,implemented
+36,getitimer,not implemented
+37,alarm,not implemented
+38,setitimer,not implemented
+39,getpid,implemented
+40,sendfile,implemented
+41,socket,implemented
+42,connect,implemented
+43,accept,implemented
+44,sendto,implemented
+45,recvfrom,implemented
+46,sendmsg,not implemented
+47,recvmsg,not implemented
+48,shutdown,implemented
+49,bind,implemented
+50,listen,implemented
+51,getsockname,implemented
+52,getpeername,implemented
+53,socketpair,not implemented
+54,setsockopt,implemented
+55,getsockopt,not implemented
+56,clone,partially implemented
+57,fork,not implemented
+58,vfork,not implemented
+59,execve,not implemented
+60,exit,implemented
+61,wait4,not implemented
+62,kill,implemented
+63,uname,implemented
+64,semget,not implemented
+65,semop,not implemented
+66,semctl,not implemented
+67,shmdt,not implemented
+68,msgget,not implemented
+69,msgsnd,not implemented
+70,msgrcv,not implemented
+71,msgctl,not implemented
+72,fcntl,implemented
+73,flock,not implemented
+74,fsync,implemented
+75,fdatasync,implemented
+76,truncate,not implemented
+77,ftruncate,not implemented
+78,getdents,implemented
+79,getcwd,implemented
+80,chdir,implemented
+81,fchdir,not implemented
+82,rename,not implemented
+83,mkdir,implemented
+84,rmdir,implemented
+85,creat,implemented
+86,link,not implemented
+87,unlink,implemented
+88,symlink,not implemented
+89,readlink,implemented
+90,chmod,not implemented
+91,fchmod,not implemented
+92,chown,not implemented
+93,fchown,not implemented
+94,lchown,not implemented
+95,umask,faked
+96,gettimeofday,implemented
+97,getrlimit,partially implemented
+98,getrusage,not implemented
+99,sysinfo,implemented
+100,times,not implemented
+101,ptrace,not implemented
+102,getuid,implemented
+103,syslog,not implemented
+104,getgid,implemented
+105,setuid,
+106,setgid,not implemented
+107,geteuid,implemented
+108,getegid,implemented
+109,setpgid,not implemented
+110,getppid,implemented
+111,getpgrp,not implemented
+112,setsid,implemented
+113,setreuid,not implemented
+114,setregid,not implemented
+115,getgroups,not implemented
+116,setgroups,not implemented
+117,setresuid,not implemented
+118,getresuid,not implemented
+119,setresgid,not implemented
+120,getresgid,not implemented
+121,getpgid,not implemented
+122,setfsuid,not implemented
+123,setfsgid,not implemented
+124,getsid,not implemented
+125,capget,not implemented
+126,capset,not implemented
+127,rt_sigpending,not implemented
+128,rt_sigtimedwait,not implemented
+129,rt_sigqueueinfo,not implemented
+130,rt_sigsuspend,not implemented
+131,sigaltstack,stubbed
+132,utime,not implemented
+133,mknod,not implemented
+134,uselib,not implemented
+135,personality,not implemented
+136,ustat,not implemented
+137,statfs,not implemented
+138,fstatfs,not implemented
+139,sysfs,not implemented
+140,getpriority,implemented
+141,setpriority,implemented
+142,sched_setparam,not implemented
+143,sched_getparam,not implemented
+144,sched_setscheduler,not implemented
+145,sched_getscheduler,not implemented
+146,sched_get_priority_max,not implemented
+147,sched_get_priority_min,not implemented
+148,sched_rr_get_interval,not implemented
+149,mlock,not implemented
+150,munlock,not implemented
+151,mlockall,not implemented
+152,munlockall,not implemented
+153,vhangup,not implemented
+154,modify_ldt,not implemented
+155,pivot_root,not implemented
+156,_sysctl,not implemented
+157,prctl,not implemented
+158,arch_prctl,implemented
+159,adjtimex,not implemented
+160,setrlimit,stubbed
+161,chroot,not implemented
+162,sync,implemented
+163,acct,not implemented
+164,settimeofday,not implemented
+165,mount,not implemented
+166,umount2,not implemented
+167,swapon,not implemented
+168,swapoff,not implemented
+169,reboot,not implemented
+170,sethostname,implemented
+171,setdomainname,not implemented
+172,iopl,not implemented
+173,ioperm,not implemented
+174,create_module,not implemented
+175,init_module,not implemented
+176,delete_module,not implemented
+177,get_kernel_syms,not implemented
+178,query_module,not implemented
+179,quotactl,not implemented
+180,nfsservctl,not implemented
+181,getpmsg,not implemented
+182,putpmsg,not implemented
+183,afs_syscall,not implemented
+184,tuxcall,not implemented
+185,security,not implemented
+186,gettid,implemented
+187,readahead,not implemented
+188,setxattr,not implemented
+189,lsetxattr,not implemented
+190,fsetxattr,not implemented
+191,getxattr,not implemented
+192,lgetxattr,not implemented
+193,fgetxattr,not implemented
+194,listxattr,not implemented
+195,llistxattr,not implemented
+196,flistxattr,not implemented
+197,removexattr,not implemented
+198,lremovexattr,not implemented
+199,fremovexattr,not implemented
+200,tkill,implemented
+201,time,implemented
+202,futex,implemented
+203,sched_setaffinity,faked
+204,sched_getaffinity,implemented
+205,set_thread_area,not implemented
+206,io_setup,not implemented
+207,io_destroy,not implemented
+208,io_getevents,not implemented
+209,io_submit,not implemented
+210,io_cancel,not implemented
+211,get_thread_area,not implemented
+212,lookup_dcookie,not implemented
+213,epoll_create,not implemented
+214,epoll_ctl_old,not implemented
+215,epoll_wait_old,not implemented
+216,remap_file_pages,not implemented
+217,getdents64,implemented
+218,set_tid_address,implemented
+219,restart_syscall,not implemented
+220,semtimedop,not implemented
+221,fadvise64,not implemented
+222,timer_create,not implemented
+223,timer_settime,not implemented
+224,timer_gettime,not implemented
+225,timer_getoverrun,not implemented
+226,timer_delete,not implemented
+227,clock_settime,not implemented
+228,clock_gettime,partially implemented
+229,clock_getres,partially implemented
+230,clock_nanosleep,not implemented
+231,exit_group,implemented
+232,epoll_wait,not implemented
+233,epoll_ctl,not implemented
+234,tgkill,implemented
+235,utimes,not implemented
+236,vserver,not implemented
+237,mbind,not implemented
+238,set_mempolicy,not implemented
+239,get_mempolicy,not implemented
+240,mq_open,not implemented
+241,mq_unlink,not implemented
+242,mq_timedsend,not implemented
+243,mq_timedreceive,not implemented
+244,mq_notify,not implemented
+245,mq_getsetattr,not implemented
+246,kexec_load,not implemented
+247,waitid,not implemented
+248,add_key,not implemented
+249,request_key,not implemented
+250,keyctl,not implemented
+251,ioprio_set,not implemented
+252,ioprio_get,not implemented
+253,inotify_init,not implemented
+254,inotify_add_watch,not implemented
+255,inotify_rm_watch,not implemented
+256,migrate_pages,not implemented
+257,openat,implemented
+258,mkdirat,not implemented
+259,mknodat,not implemented
+260,fchownat,not implemented
+261,futimensat,not implemented
+262,newfstatat,implemented
+263,unlinkat,not implemented
+264,renameat,not implemented
+265,linkat,not implemented
+266,symlinkat,not implemented
+267,readlinkat,not implemented
+268,fchmodat,not implemented
+269,faccessat,not implemented
+270,pselect6,not implemented
+271,ppoll,not implemented
+272,unshare,not implemented
+273,set_robust_list,faked
+274,get_robust_list,stubbed
+275,splice,not implemented
+276,tee,not implemented
+277,sync_file_range,not implemented
+278,vmsplice,not implemented
+279,move_pages,not implemented
+280,utimensat,not implemented
+281,epoll_pwait,not implemented
+282,signalfd,implemented
+283,timerfd_create,not implemented
+284,eventfd,not implemented
+285,fallocate,not implemented
+286,timerfd_settime,not implemented
+287,timerfd_gettime,not implemented
+288,accept4,not implemented
+289,signalfd4,not implemented
+290,eventfd2,not implemented
+291,epoll_create1,not implemented
+292,dup3,not implemented
+293,pipe2,not implemented
+294,inotify_init1,not implemented
+295,preadv,not implemented
+296,pwritev,not implemented
+297,rt_tgsigqueueinfo,not implemented
+298,perf_event_open,not implemented
+299,recvmmsg,not implemented
+300,fanotify_init,not implemented
+301,fanotify_mark,not implemented
+302,prlimit64,partially implemented
+303,name_to_handle_at,not implemented
+304,open_by_handle_at,not implemented
+305,clock_adjtime,not implemented
+306,syncfs,implemented
+307,sendmmsg,not implemented
+308,setns,not implemented
+309,getcpu,not implemented
+310,process_vm_readv,not implemented
+311,process_vm_writev,not implemented
+312,kcmp,not implemented
+313,finit_module,not implemented
+314,sched_setattr,not implemented
+315,sched_getattr,not implemented
+316,renameat2,not implemented
+317,seccomp,not implemented
+318,getrandom,not implemented
+319,memfd_create,not implemented
+320,kexec_file_load,not implemented
+321,bpf,not implemented
+322,execveat,not implemented
+323,userfaultfd,not implemented
+324,membarrier,not implemented
+325,mlock2,not implemented
+326,copy_file_range,not implemented
+327,preadv2,not implemented
+328,pwritev2,not implemented
+329,pkey_mprotect,not implemented
+330,pkey_alloc,not implemented
+331,pkey_free,not implemented
+332,statx,not implemented
+333,io_pgetevents,not implemented
+334,rseq,not implemented
