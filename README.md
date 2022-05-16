@@ -252,6 +252,20 @@ $ ./loupe search --paper-histogram-plot -db ../loupedb
 ```
 to output the histogram plot of the paper.
 
+#### OS Support Plan
+
+To get an optimized order of syscall implementation/faking/stubbing for a
+given OS (characterized by a set of already-supported system calls) towards
+a particular set of applications:
+```
+/loupe search -db ../loupedb --guide-support <already supported syscalls> --applications <apps> --workloads <workload>
+```
+
+Here, `<already supported syscalls>` is a newline-separated list of syscalls
+already supported by the target OS (see the `*.syscalls` files at the root
+of `loupedb` for examples), `<apps>` is the list of application to target,
+and `<workload>` is `bench` or `suite`.
+
 ## Generating Coverage
 
 :warning: this section is temporary and might get outdated.
