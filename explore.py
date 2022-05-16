@@ -519,6 +519,8 @@ parser.add_argument("--smart-wait-repeat", type=int,
         help="enable smart wait (if you don't know what this does, don't enable it)", dest="smartwait")
 parser.add_argument("--test-sequential", action="store_true",
         help="run the binary first, then the test script with the binary's output", dest="seq")
+parser.add_argument("--final-check", action="store_true",
+        help="at the end of the analysis, check that sets can still be faked or stubbed as a whole", dest="fc")
 parser.add_argument("arg_binary", nargs='*',
         help="additional arguments to pass to the test binary")
 parser.add_argument("-t", dest="testscript",
@@ -538,6 +540,7 @@ args = parser.parse_args()
 
 # setup according to command line arguments
 ENABLE_SEQUENTIAL = args.seq
+ENABLE_FINAL_CHECK = (args.fc is True)
 ENABLE_FASTSCAN = (args.nostrace is False)
 ENABLE_STATIC = (args.nostatic is False)
 PARTIAL_SUPPORT_ANALYSIS = (args.partialsupport is True)
