@@ -154,12 +154,13 @@ def cleanup():
     os.system("killall -9 %s > /dev/null 2>&1" % binary_path)
     os.system("pkill -9 %s > /dev/null 2>&1" % binary_path)
 
-def start_seccomp_run(errno, syscall, logf, prefix=[], opts=[]):
+def start_seccomp_run(errno, syscalls, logf, prefix=[], opts=[]):
     cleanup()
 
     runcmd = []
     runcmd.extend(prefix)
-    runcmd.extend([SECCOMPRUN_PATH, "-e", errno, "-n", "1", str(syscall)])
+    runcmd.extend([SECCOMPRUN_PATH, "-e", errno, "-n", str(len(syscalls))])
+    runcmd.extend(list(map(str, syscalls)))
     if ZBINARY is not None:
         runcmd.extend(["-y", str(ZBINARY)])
     runcmd.extend(opts)
@@ -191,7 +192,7 @@ def start_test_cmd(log, test_log):
 # return (is used, success)
 def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
     with open(log, 'wb') as logf:
-        process = start_seccomp_run(errno, syscall, logf)
+        process = start_seccomp_run(errno, [syscall], logf)
         process_ok = True
         if ENABLE_SEQUENTIAL:
             process_ret = smart_wait(process, log)
@@ -446,7 +447,7 @@ def explore_perf(errno, syscalls):
             success = False
             while (not success):
                 with open(log, 'wb') as logf:
-                    process = start_seccomp_run(errno, i, logf,
+                    process = start_seccomp_run(errno, [i], logf,
                         prefix=["taskset", "-c", str(TASKSET_CPU)])
 
                     testcmd = [testscript_path, log, "benchmark"]
