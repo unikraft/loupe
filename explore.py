@@ -190,9 +190,9 @@ def start_test_cmd(log, test_log):
     return ret
 
 # return (is used, success)
-def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
+def analyze_one_pass(errno, syscalls, log, errs, prefix=[], opts=[]):
     with open(log, 'wb') as logf:
-        process = start_seccomp_run(errno, [syscall], logf)
+        process = start_seccomp_run(errno, syscalls, logf)
         process_ok = True
         if ENABLE_SEQUENTIAL:
             process_ret = smart_wait(process, log)
@@ -349,7 +349,7 @@ def explore_works(errno, syscalls):
         errs = 0
 
         while (not s):
-            (u, s, errs) = analyze_one_pass(errno, i, log, errs)
+            (u, s, errs) = analyze_one_pass(errno, [i], log, errs)
             if (u):
                 # the program works without feature j in syscall i
                 unused.add(i)
@@ -375,7 +375,7 @@ def explore_works_partial(errno, features):
             errs = 0
 
             while (not success):
-                (used, success, errs) = analyze_one_pass(errno, syscall_name_to_int(i), log, errs,
+                (used, success, errs) = analyze_one_pass(errno, [syscall_name_to_int(i)], log, errs,
                         opts=["-p", str(SYSCALL_FLAGS[i]), str(j)])
                 if (used):
                     # the program works without feature j in syscall i
@@ -398,7 +398,7 @@ def explore_works_specialfiles(errno, files):
             errs = 0
 
             while (not success):
-                (used, success, errs) = analyze_one_pass(errno, syscall_name_to_int(i), log, errs,
+                (used, success, errs) = analyze_one_pass(errno, [syscall_name_to_int(i)], log, errs,
                         opts=["-t", str(SYSCALL_FLAGS_FILES[i]), j])
                 if (used):
                     # the program works without feature j in syscall i
