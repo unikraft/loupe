@@ -45,6 +45,8 @@ ENABLE_FASTSCAN = True
 
 ENABLE_STATIC = True
 
+ENABLE_FINAL_CHECK = False
+
 PARTIAL_SUPPORT_ANALYSIS = False
 
 SPECIAL_FILES_ANALYSIS = False
@@ -618,10 +620,28 @@ info("Finding system calls that work with ENOSYS...")
 probably_works_stubbed = list(explore_works(str(ERRNO_ENOSYS), used))
 probably_works_stubbed.sort()
 
+if (ENABLE_FINAL_CHECK):
+    log = get_temp_file()
+    (u, s, r) = analyze_one_pass(str(ERRNO_ENOSYS), probably_works_stubbed, log, 0)
+    if u:
+        info("Final check analysis for stubbing succeeded; the entire set can be stubbed simultaneously.")
+    else:
+        info("Final check analysis for stubbing failed; the entire set cannot be stubbed simultaneously.")
+        info("We recommend a manual pass with seccomp_run to find the culprit.")
+
 info("Finding system calls that work when we fake (errno = 0)...")
 
 probably_works_lying = list(explore_works("0", used))
 probably_works_lying.sort()
+
+if (ENABLE_FINAL_CHECK):
+    log = get_temp_file()
+    (u, s, r) = analyze_one_pass("0", probably_works_lying, log, 0)
+    if u:
+        info("Final check analysis for faking succeeded; the entire set can be faked simultaneously.")
+    else:
+        info("Final check analysis for faking failed; the entire set cannot be faked simultaneously.")
+        info("We recommend a manual pass with seccomp_run to find the culprit.")
 
 require_impl = list(((set(used)) - set(probably_works_stubbed)) - set(probably_works_lying))
 require_impl.sort()
