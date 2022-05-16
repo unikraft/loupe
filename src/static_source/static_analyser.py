@@ -157,10 +157,11 @@ def static_analysis(v, app, display=False, csv=True):
     print_verbose("Total number of syscalls: " + str(len(syscalls_set)))
 
     if csv:
-        name = app
-        if "/" in name:
-            name = name.split("/")[-1]
-        print(name + "," + str(len(syscalls_set)))
+        for k,v in syscalls_map.items():
+            value = "N"
+            if k in syscalls_set:
+                value = "Y"
+            print("{},{}".format(v,value))
 
 def main():
     parser = argparse.ArgumentParser()

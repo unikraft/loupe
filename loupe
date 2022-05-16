@@ -45,7 +45,7 @@ import threading
 from src.common import *
 
 ENABLE_DIRTY_DB = False
-NUMBER_GENERATE_REPLICAS = 6
+NUMBER_GENERATE_REPLICAS = 3
 NUMBER_PARALLEL_REPLICAS = 3
 
 assert(NUMBER_GENERATE_REPLICAS % NUMBER_PARALLEL_REPLICAS == 0)
@@ -448,26 +448,34 @@ def run_tests(path_db, application, workload, path_dockerfile):
     info("Running dynamic analysis in the container ({} replicas)...".format(
         NUMBER_GENERATE_REPLICAS))
 
-    def _run_test(n, i, r):
+    def _run_test(n, i, r, s):
         runcmd = ["docker", "container", "run", "--rm", "--privileged", n]
-        out = ""
         try:
-            r[i] = subprocess.check_output(runcmd).decode('utf-8')
+            local = threading.local()
+            local.o = subprocess.check_output(runcmd).decode('utf-8')
+            local.split = local.o.split("\n\n")
+
+            r[i] = local.split[0]
+            # only write static_results if we are replica 0, they cannot have
+            # any variation anyways
+            if (i == 0):
+                s[0] = local.split[1]
+                print(s[0])
         except subprocess.CalledProcessError as e:
             r[i]  = str(e.output)
-
-        return out
 
     # run configured number of replicas
     threads = [None] * NUMBER_GENERATE_REPLICAS
     results = [None] * NUMBER_GENERATE_REPLICAS
+    static_results_array = [None]
     for j in range(NUMBER_GENERATE_REPLICAS // NUMBER_PARALLEL_REPLICAS):
         debug("Starting replica batch (%d/%d)" % ((
             j * NUMBER_PARALLEL_REPLICAS) + NUMBER_PARALLEL_REPLICAS,
             NUMBER_GENERATE_REPLICAS))
 
         for i in range(NUMBER_PARALLEL_REPLICAS):
-            t = threading.Thread(target=_run_test, args=(containername, (j * NUMBER_PARALLEL_REPLICAS) + i, results))
+            t = threading.Thread(target=_run_test, args=(containername,
+                (j * NUMBER_PARALLEL_REPLICAS) + i, results, static_results_array))
             threads[j + i] = t
             t.start()
 
@@ -477,15 +485,40 @@ def run_tests(path_db, application, workload, path_dockerfile):
 
     # sanitize a bit, make sure that the output is sane
     info("Sanitizing replicas outputs...")
+
+    # sanitize binary static output
+    if static_results_array[0] is None:
+        error("Binary static analysis results are invalid (no results!)")
+        return False
+
+    static_results = static_results_array[0].strip()
+
+    l = 0
+    for line in static_results.splitlines():
+        if (len(re.sub("[^,]", "", line)) != 1):
+            error("Line %d of the binary static analysis output seems " % l +
+                  "corrupted. Dumping.")
+            print(static_results)
+            return False
+        l += 1
+    if (l != MAX_SYSCALL + 2):
+        error("Somehow the binary static analysis output does not have the " +
+              "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
+        print(static_results)
+        return False
+
+    # sanitize dynamic output
     x = 0
     for r in results:
         if r is None:
             error("Replica %d did not produce result" % x)
+            return False
 
         l = 0
         for line in r.splitlines():
             if (len(re.sub("[^,]", "", line)) != 4):
-                error("Line %d of replica %d's test output seems corrupted. Dumping." % (l, x))
+                error("Line %d of replica %d's test output seems " % (l, x) +
+                      "corrupted. Dumping.")
                 print(r)
                 return False
             l += 1
@@ -526,7 +559,8 @@ def run_tests(path_db, application, workload, path_dockerfile):
                     if (k.split(",")[3] == "N"):
                         worksstubbed = "N"
                         worksboth = "N"
-                final_csv += "{},{},{},{},{}\n".format(sys, used, worksfaked, worksstubbed, worksboth)
+                final_csv += "{},{},{},{},{}\n".format(sys, used, worksfaked,
+                                                       worksstubbed, worksboth)
                 d += 1
             else:
                 final_csv += known[0] + "\n"
@@ -537,14 +571,17 @@ def run_tests(path_db, application, workload, path_dockerfile):
 
     # write to the db
     info("Writing to the database...")
+
     hashdf = get_file_hash(path_dockerfile)
 
     runpath = os.path.join(path_db, application, workload, hashdf)
     if not os.path.exists(runpath):
         os.makedirs(runpath)
-        shutil.copyfile(path_dockerfile, os.path.join(runpath, "Dockerfile.%s" % application))
+        shutil.copyfile(path_dockerfile,
+                        os.path.join(runpath, "Dockerfile.%s" % application))
         if (pathlib.Path("./dockerfile_data").exists()):
-            shutil.copytree("./dockerfile_data", os.path.join(runpath, "dockerfile_data"))
+            shutil.copytree("./dockerfile_data",
+                            os.path.join(runpath, "dockerfile_data"))
     else:
         info("This run already exists, replacing (see changes with git diff).")
         shutil.rmtree(os.path.join(runpath, "data"))
@@ -557,13 +594,8 @@ def run_tests(path_db, application, workload, path_dockerfile):
     with open(os.path.join(runpath, "data", "dyn.csv"), "a+") as outf:
         outf.write(out)
 
-    info("Running static analysis in the container...")
-
-    # TODO Gaulthier, you can use the running container "loupe-tmp"
-
-    #debug("Removing the container")
-
-    #os.system("docker rm loupe-tmp &> /dev/null");
+    with open(os.path.join(runpath, "data", "static_binary.csv"), "a+") as outf:
+        outf.write(static_results)
 
     debug("Outputing additional reproducibility information...")
 

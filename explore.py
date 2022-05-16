@@ -648,6 +648,17 @@ else:
                 str(format_syscall_list([sys])[0]),
                 isused, canfake, canstub, canboth))
 
+info("\nFinding used system calls using static analysis...")
+
+if (OUTPUT_CSV):
+    print()
+
+print("# syscall, used")
+runcmd = [str(os.path.join(os.path.realpath(os.path.dirname(__file__)),
+          "src/static_source/static_analyser.py")), "-a", str(binary_path),
+          "--csv=true", "--display=false", "--verbose=false"]
+print(subprocess.check_output(runcmd).decode('utf-8'))
+
 def print_set(s, printer):
     keys = list(s.keys())
     keys.sort()
