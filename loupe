@@ -257,9 +257,19 @@ def db_load(path):
 
     return db
 
-# note: operates exclusively on dynamic data
-def process_cumulative(db, applist, bench=False, suite=False):
-    assert(bench or suite)
+# returns a tuple of two arrays (required, used) in the form of
+# (
+#   [90,  18, 0,  12, ...],
+#   [100, 34, 10, 45, ...]
+# )
+# with required[syscall number] = percentage of apps that require the syscall
+# e.g., required[0] = 90%, required[1] = 18%, etc.
+#
+# if passed static_binary=True or static_source=True, the second element of
+# the Tuple (used) will be None to represent N/A.
+def process_cumulative(db, applist, bench=False, suite=False,
+        static_binary=False, static_source=False):
+    assert(bench or suite or static_binary or static_source)
 
     if "*" in applist and len(applist) > 1:
         warning("* in the application list but other entries are specified: " + str(applist))
@@ -279,18 +289,38 @@ def process_cumulative(db, applist, bench=False, suite=False):
     n = 0
     for app in applist:
         n += 1
+
         workloads = []
         if bench and len(db[app]["benchmark"]["dynamic"]):
             workloads.append(db[app]["benchmark"]["dynamic"])
         if suite and len(db[app]["testsuite"]["dynamic"]):
             workloads.append(db[app]["testsuite"]["dynamic"])
+        if static_binary:
+            if (db[app]["benchmark"]["static_binary"] is not None and
+               len(db[app]["benchmark"]["static_binary"])):
+                workloads.append(db[app]["benchmark"]["static_binary"])
+            elif (db[app]["testsuite"]["static_binary"] is not None and
+               len(db[app]["testsuite"]["static_binary"])):
+                workloads.append(db[app]["testsuite"]["static_binary"])
+        if static_source:
+            if (db[app]["benchmark"]["static_source"] is not None and
+               len(db[app]["benchmark"]["static_source"])):
+                workloads.append(db[app]["benchmark"]["static_source"])
+            elif( db[app]["testsuite"]["static_source"] is not None and
+               len(db[app]["testsuite"]["static_source"])):
+                workloads.append(db[app]["testsuite"]["static_source"])
+
         for i in range(0, MAX_SYSCALL + 1):
             exe = False
             req = False
             for w in workloads:
-                if w[i][1] == "Y":
-                    exe = True
-                    if w[i][2] == "N" and w[i][3] == "N" and w[i][4] == "N":
+                if bench or suite:
+                    if w[i][1] == "Y":
+                        exe = True
+                        if w[i][2] == "N" and w[i][3] == "N" and w[i][4] == "N":
+                            req = True
+                else:
+                    if w[i][1] == "Y":
                         req = True
             if exe:
                 cumulative_executed[i] += 1
@@ -303,6 +333,9 @@ def process_cumulative(db, applist, bench=False, suite=False):
         cumulative_required[i] *= 100
         cumulative_executed[i] /= n
         cumulative_executed[i] *= 100
+
+    if static_binary or static_source:
+        cumulative_executed = None
 
     return (cumulative_required, cumulative_executed)
 
@@ -317,8 +350,9 @@ def process_cumulative(db, applist, bench=False, suite=False):
 #   both: {...}
 # }
 # FIXME has a lot of duplicated code
-def used_by_apps(db, applist, bench=False, suite=False):
-    assert(bench or suite)
+def used_by_apps(db, applist, bench=False, suite=False,
+        static_binary=False, static_source=False):
+    assert(bench or suite or static_binary or static_source)
 
     if "*" in applist and len(applist) > 1:
         warning("* in the application list but other entries are specified: " + str(applist))
@@ -344,6 +378,16 @@ def used_by_apps(db, applist, bench=False, suite=False):
             workloads.append(db[app]["benchmark"]["dynamic"])
         if suite and len(db[app]["testsuite"]["dynamic"]):
             workloads.append(db[app]["testsuite"]["dynamic"])
+        if static_binary:
+            if len(db[app]["benchmark"]["static_binary"]):
+                workloads.append(db[app]["benchmark"]["static_binary"])
+            elif len(db[app]["testsuite"]["static_binary"]):
+                workloads.append(db[app]["testsuite"]["static_binary"])
+        if static_source:
+            if len(db[app]["benchmark"]["static_source"]):
+                workloads.append(db[app]["benchmark"]["static_source"])
+            elif len(db[app]["testsuite"]["static_source"]):
+                workloads.append(db[app]["testsuite"]["static_source"])
 
         # populate req, stub, fake
         for i in range(0, MAX_SYSCALL + 1):
@@ -353,40 +397,46 @@ def used_by_apps(db, applist, bench=False, suite=False):
             isb = None
 
             for w in workloads:
-                if (w[i][1] == "N"):
-                    continue
-                elif ((w[i][2] == "Y" and w[i][3] == "Y") or
-                      (w[i][4] == "Y")):
-                    # can be stubbed and faked
-                    if (iss is not None or isf is not None):
+                if bench or suite:
+                    if (w[i][1] == "N"):
                         continue
-                    isr = False
-                    iss = True
-                    isf = True
-                    isb = True
-                elif (w[i][2] == "Y" and w[i][3] == "N"):
-                    # can be stubbed
-                    isf = False
-                    isb = False
-                    if (iss is not None):
-                        continue
-                    isr = False
-                    iss = True
-                elif (w[i][2] == "N" and w[i][3] == "Y"):
-                    # can be faked
-                    iss = False
-                    isb = False
-                    if (isf is not None):
-                        continue
-                    isr = False
-                    isf = True
-                elif (w[i][2] == "N" and w[i][3] == "N" and w[i][4] == "N"):
-                    # required
-                    isr = True
-                    iss = False
-                    isf = False
-                    isb = False
-                    break
+                    elif ((w[i][2] == "Y" and w[i][3] == "Y") or
+                          (w[i][4] == "Y")):
+                        # can be stubbed and faked
+                        if (iss is not None or isf is not None):
+                            continue
+                        isr = False
+                        iss = True
+                        isf = True
+                        isb = True
+                    elif (w[i][2] == "Y" and w[i][3] == "N"):
+                        # can be stubbed
+                        isf = False
+                        isb = False
+                        if (iss is not None):
+                            continue
+                        isr = False
+                        iss = True
+                    elif (w[i][2] == "N" and w[i][3] == "Y"):
+                        # can be faked
+                        iss = False
+                        isb = False
+                        if (isf is not None):
+                            continue
+                        isr = False
+                        isf = True
+                    elif (w[i][2] == "N" and w[i][3] == "N" and w[i][4] == "N"):
+                        # required
+                        isr = True
+                        iss = False
+                        isf = False
+                        isb = False
+                        break
+                else:
+                    if (w[i][1] == "Y"):
+                        isr = True
+                    elif (w[i][1] == "N" and isr is None):
+                        isr = False
 
             if isr:
                 req.append(i)
@@ -775,8 +825,6 @@ action_args.add_argument("--export-sqlite", action="store_true",
         help="export the DB as SQLite database")
 
 opt_args = search_parser.add_argument_group('optional arguments')
-opt_args.add_argument("--static-binary", action="store_true",
-        help="also include static binary analysis data", dest="sbinary")
 opt_args.add_argument("--static-source", action="store_true",
         help="also include static source analysis data", dest="ssource")
 opt_args.add_argument("--output-sys-names", action="store_true", dest="outputnames",
@@ -806,9 +854,6 @@ if (args.cmd == "search"):
         exit(1)
 
     common.OUTPUT_NAMES = (args.outputnames is True)
-    if args.sbinary is True or args.ssource is True:
-        warning("Not implemented yet.")
-        exit(0)
 
     db = db_load(args.dbpath)
 
@@ -890,22 +935,31 @@ if (args.cmd == "search"):
                 len(db[a]["benchmark"].keys()) == 0 or
                 len(db[a]["benchmark"]["dynamic"]) == 0):
                 warning("Application " + a + " does not feature benchmark data")
-            dat_bench = used_by_apps(db, [a], True, False)
+            dat_bench = used_by_apps(db, [a], True, False, False, False)
 
             if ("testsuite" not in db[a].keys() or
                 len(db[a]["testsuite"].keys()) == 0 or
                 len(db[a]["testsuite"]["dynamic"]) == 0):
                 warning("Application " + a + " does not feature testsuite data")
-            dat_suite = used_by_apps(db, [a], False, True)
+            dat_suite = used_by_apps(db, [a], False, True, False, False)
+
+            dat_static_binary = used_by_apps(db, [a], False, False, True, False)
+            if (not len(dat_static_binary[0])):
+                warning("Application " + a + " does not feature static binary data")
+
+            dat_static_source = used_by_apps(db, [a], False, False, False, True)
+            if (not len(dat_static_source[0])):
+                warning("Application " + a + " does not feature static source data")
 
             with open(os.path.join("./" + a + ".dat"), "a") as outf:
                 # header
                 outf.write(a + " staticsrc   staticbin   required    stubonly    fakeonly    fakeorstub\n")
                 # binary
-                # TODO add generation for static source and binary
-                outf.write("all     0           0          0           0           0           0\n")
+                outf.write("all     0           {}         0           0           0           0\n").format(
+                    str(len(dat_static_binary["required"])))
                 # source
-                outf.write("all     0           0          0           0           0           0\n")
+                outf.write("all     {}          0          0           0           0           0\n").format(
+                    str(len(dat_static_source["required"])))
                 # suite
                 outf.write("suite   0           0          {}          {}          {}          {}\n".format(
                     str(len(dat_suite["required"])), str(len(dat_suite["stubbed"])),
@@ -930,6 +984,12 @@ if (args.cmd == "search"):
         info("Processing data")
         cumulative = process_cumulative(db, args.applist.split(","),
                 bench=benchmark, suite=testsuite)
+
+        cumulative_binary = process_cumulative(db, args.applist.split(","),
+                False, False, True, False)
+
+        cumulative_source = process_cumulative(db, args.applist.split(","),
+                False, False, False, True)
 
         # generate data files (./data-staticsource.dat, ./data-staticbinary.dat,
         # ./data-dynused.dat, ./data-dynstubfake.dat)
@@ -959,7 +1019,16 @@ if (args.cmd == "search"):
                 p = cumulative[0][sysnumber]
             dynstubfakedat += str(x) + " " + str(y) + " " + str(p) + " " + \
                               str(sysnumber) + "\n"
-            # TODO add generation for static source and binary
+
+            if (sysnumber <= MAX_SYSCALL):
+                p = cumulative_binary[0][sysnumber]
+            staticbindat += str(x) + " " + str(y) + " " + str(p) + " " + \
+                              str(sysnumber) + "\n"
+
+            if (sysnumber <= MAX_SYSCALL):
+                p = cumulative_source[0][sysnumber]
+            staticsourcedat += str(x) + " " + str(y) + " " + str(p) + " " + \
+                              str(sysnumber) + "\n"
 
         with open(os.path.join("./data-staticsource.dat"), "a") as outf:
             outf.write(staticsourcedat)
@@ -981,11 +1050,7 @@ if (args.cmd == "search"):
         # notify user
         print("Plot: ./heapmap-dynamic-used.svg")
         print("Plot: ./heapmap-dynamic-stubfake.svg")
-
-        if (args.sbinary is not True):
-            os.remove("./heapmap-static-binary.svg")
-        else:
-            print("Plot: ./heapmap-static-binary.svg")
+        print("Plot: ./heapmap-static-binary.svg")
 
         if (args.ssource is not True):
             os.remove("./heapmap-static-source.svg")
@@ -997,7 +1062,29 @@ if (args.cmd == "search"):
         cumulative = process_cumulative(db, args.applist.split(","), bench=benchmark,
                 suite=testsuite)
 
+        cumulative_binary = process_cumulative(db, args.applist.split(","),
+                False, False, True, False)
+
+        cumulative_source = process_cumulative(db, args.applist.split(","),
+                False, False, False, True)
+
         # generate data.dat
+        d = {}
+        c = 0
+        for i in sorted(cumulative_binary[0].values(), reverse=True):
+            d[c] = i;
+            c+=1
+
+        bin = "# x\tstatic-binary\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in (d.items())])
+
+        d = {}
+        c = 0
+        for i in sorted(cumulative_source[0].values(), reverse=True):
+            d[c] = i;
+            c+=1
+
+        src = "# x\tstatic-source\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in (d.items())])
+
         d = {}
         c = 0
         for i in sorted(cumulative[0].values(), reverse=True):
@@ -1015,6 +1102,10 @@ if (args.cmd == "search"):
         exe = "# x\tdyn-exe\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in (d.items())])
 
         with open(os.path.join("./data.dat"), "a") as outf:
+            outf.write(bin)
+            outf.write("\n\n\n")
+            outf.write(src)
+            outf.write("\n\n\n")
             outf.write(exe)
             outf.write("\n\n\n")
             outf.write(req)
@@ -1029,20 +1120,13 @@ if (args.cmd == "search"):
 
         # notify user
         print("Plot: ./cumulative-nostatic.svg")
+        print("Plot: ./cumulative-nosource.svg")
 
-        if (args.sbinary is not True and args.ssource is True):
+        if (args.ssource is True):
             print("Plot: ./cumulative-nobinary.svg")
-        else:
-            os.remove("./cumulative-nobinary.svg")
-
-        if (args.ssource is not True and args.sbinary is True):
-            print("Plot: ./cumulative-nosource.svg")
-        else:
-            os.remove("./cumulative-nosource.svg")
-
-        if (args.sbinary is True and args.ssource is True):
             print("Plot: ./cumulative-all.svg")
         else:
+            os.remove("./cumulative-nobinary.svg")
             os.remove("./cumulative-all.svg")
     elif args.supportfile is not None:
         supported = set(format_syscall_list(open_syscall_file(args.supportfile)))

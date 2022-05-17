@@ -54,17 +54,17 @@ plot '/mnt/data.dat' \
 
 set output '/mnt/cumulative-nobinary.svg'
 plot '/mnt/data.dat' \
-        index 0 with linespoints linestyle 1 t "Static (source)", \
-     '' index 1 with linespoints linestyle 2 t "Dynamic (executed)", \
-     '' index 2 with linespoints linestyle 3 t "Dynamic (required)" \
+        index 1 with linespoints linestyle 1 t "Static (source)", \
+     '' index 2 with linespoints linestyle 2 t "Dynamic (executed)", \
+     '' index 3 with linespoints linestyle 3 t "Dynamic (required)" \
 
 set output '/mnt/cumulative-nosource.svg'
 plot '/mnt/data.dat' \
         index 0 with linespoints linestyle 1 t "Static (binary)", \
-     '' index 1 with linespoints linestyle 2 t "Dynamic (executed)", \
-     '' index 2 with linespoints linestyle 3 t "Dynamic (required)" \
+     '' index 2 with linespoints linestyle 2 t "Dynamic (executed)", \
+     '' index 3 with linespoints linestyle 3 t "Dynamic (required)" \
 
 set output '/mnt/cumulative-nostatic.svg'
 plot '/mnt/data.dat' \
-        index 0 with linespoints linestyle 1 t "Dynamic (executed)", \
-     '' index 1 with linespoints linestyle 2 t "Dynamic (required)" \
+        index 2 with linespoints linestyle 1 t "Dynamic (executed)", \
+     '' index 3 with linespoints linestyle 2 t "Dynamic (required)" \
