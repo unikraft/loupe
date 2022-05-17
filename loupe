@@ -97,14 +97,19 @@ def db_check(path):
 #   # first level: applications
 #   redis : {
 #     # second level: workloads
-#     benchmark : [
-#       # third level: individual measurements
-#       [[0, 'Y', 'N', 'Y'], [1, 'N', 'N', 'N'], ...],
-#       [[0, 'Y', 'N', 'Y'], [1, 'Y', 'Y', 'Y'], ...]
-#     ]
-#     testsuite : [
-#       [[0, 'Y', 'N', 'Y'], [1, 'N', 'N', 'N'], ...]
-#     ]
+#     benchmark : {
+#       # third level: individual measurements matched with the
+#       # measurement mechanism. If several result sets are provided,
+#       # the latest one is taken
+#       dynamic : [[0, 'Y', 'N', 'Y'], [1, 'N', 'N', 'N'], ...],
+#       static_binary : [[0, 'Y'], [1, 'N'], ...],
+#       static_source : [[0, 'N'], [1, 'N'], ...]
+#     }
+#     testsuite : {
+#       dynamic : [[0, 'Y', 'N', 'N'], [1, 'N', 'N', 'N'], ...],
+#       static_binary : [[0, 'Y'], [1, 'N'], ...],
+#       static_source : [[0, 'N'], [1, 'N'], ...]
+#     }
 #   }
 # }
 def db_load(path):
@@ -142,9 +147,10 @@ def db_load(path):
 
         if (changed):
             debug("App directory {} has multiple entries".format(str(a)) +
-                  ", went for most recent ones: {} and {}".format(str(bench_wl_folder), str(suite_wl_folder)))
+                  ", went for most recent ones: {} and {}".format(str(bench_wl_folder),
+                      str(suite_wl_folder)))
 
-        bench_workload = list()
+        bench_workload = dict()
         if (bench_wl_folder is not None):
             # if there are multiple runs for this workload, take the latest
             m = None
@@ -155,22 +161,45 @@ def db_load(path):
                     m = _m
 
             if (i != 1):
-                debug("Workload directory {} has multiple entries".format(str(bench_wl_folder)) +
-                      ", went for most recent: {}".format(str(m)))
+                debug("Workload directory {} has multiple entries".format(
+                      str(bench_wl_folder)) + ", went for most recent: {}".format(
+                          str(m)))
+
+            # iterate over CSV data files
 
             ml = list()
-
-            # iterate over the CSV file
             with open(os.path.join(str(m), "data", "dyn.csv"), "r") as f:
                 for line in f:
                     if (line[0] == '#'):
                         continue
                     ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
-            bench_workload.append(ml)
+            bench_workload["dynamic"] = ml
+
+            ml = list()
+            try:
+                with open(os.path.join(str(m), "data", "static_binary.csv"), "r") as f:
+                    for line in f:
+                        if (line[0] == '#'):
+                            continue
+                        ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+            except FileNotFoundError:
+                ml = None
+            bench_workload["static_binary"] = ml
+
+            ml = list()
+            try:
+                with open(os.path.join(str(m), "data", "static_source.csv"), "r") as f:
+                    for line in f:
+                        if (line[0] == '#'):
+                            continue
+                        ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+            except FileNotFoundError:
+                ml = None
+            bench_workload["static_source"] = ml
         else:
             debug("App directory {} does not feature benchmark measurements".format(str(a)))
 
-        suite_workload = list()
+        suite_workload = dict()
         if (suite_wl_folder is not None):
             # if there are multiple runs for this workload, take the latest
             m = None
@@ -181,18 +210,43 @@ def db_load(path):
                     m = _m
 
             if (i != 1):
-                debug("Workload directory {} has multiple entries".format(str(suite_wl_folder)) +
-                      ", went for most recent: {}".format(str(m)))
+                debug("Workload directory {} has multiple entries".format(
+                    str(suite_wl_folder)) + ", went for most recent: {}".format(
+                        str(m)))
 
             ml = list()
 
-            # iterate over the CSV file
+            # iterate over CSV data files
+
+            ml = list()
             with open(os.path.join(str(m), "data", "dyn.csv"), "r") as f:
                 for line in f:
                     if (line[0] == '#'):
                         continue
                     ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
-            suite_workload.append(ml)
+            suite_workload["dynamic"] = ml
+
+            ml = list()
+            try:
+                with open(os.path.join(str(m), "data", "static_binary.csv"), "r") as f:
+                    for line in f:
+                        if (line[0] == '#'):
+                            continue
+                        ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+            except FileNotFoundError:
+                ml = None
+            suite_workload["static_binary"] = ml
+
+            ml = list()
+            try:
+                with open(os.path.join(str(m), "data", "static_source.csv"), "r") as f:
+                    for line in f:
+                        if (line[0] == '#'):
+                            continue
+                        ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+            except FileNotFoundError:
+                ml = None
+            suite_workload["static_source"] = ml
         else:
             debug("App directory {} does not feature testsuite measurements".format(str(a)))
 
@@ -203,6 +257,7 @@ def db_load(path):
 
     return db
 
+# note: operates exclusively on dynamic data
 def process_cumulative(db, applist, bench=False, suite=False):
     assert(bench or suite)
 
@@ -226,9 +281,9 @@ def process_cumulative(db, applist, bench=False, suite=False):
         n += 1
         workloads = []
         if bench:
-            workloads.extend(db[app]["benchmark"])
+            workloads.extend(db[app]["benchmark"]["dynamic"])
         if suite:
-            workloads.extend(db[app]["testsuite"])
+            workloads.extend(db[app]["testsuite"]["dynamic"])
         for i in range(0, MAX_SYSCALL + 1):
             exe = False
             req = False
@@ -286,9 +341,9 @@ def used_by_apps(db, applist, bench=False, suite=False):
         # collect all relevant measurements
         workloads = []
         if bench:
-            workloads.extend(db[app]["benchmark"])
+            workloads.append(db[app]["benchmark"]["dynamic"])
         if suite:
-            workloads.extend(db[app]["testsuite"])
+            workloads.append(db[app]["testsuite"]["dynamic"])
 
         # populate req, stub, fake
         for i in range(0, MAX_SYSCALL + 1):
@@ -678,8 +733,8 @@ run_parser = subparsers.add_parser("generate",
         help="run system call usage analysis for an application")
 
 run_parse_req_args = run_parser.add_argument_group('required arguments')
-run_parse_req_args.add_argument("-db", "--database", dest="dbpath", type=pathlib.Path, required=True,
-        help="path to the database")
+run_parse_req_args.add_argument("-db", "--database", dest="dbpath",
+        type=pathlib.Path, required=True, help="path to the database")
 run_parse_req_args.add_argument("-a", "--application-name", type=str, required=True,
         help="name of the application to be analyzed (e.g., nginx)", dest="application")
 run_parse_req_args.add_argument("-w", "--workload-name", type=str, required=True,
@@ -697,8 +752,8 @@ search_parser = subparsers.add_parser("search",
         help="retrieve and analyze data from the database")
 
 required_args = search_parser.add_argument_group('required arguments')
-required_args.add_argument("-db", "--database", dest="dbpath", type=pathlib.Path, required=True,
-        help="path to the database")
+required_args.add_argument("-db", "--database", dest="dbpath",
+        type=pathlib.Path, required=True, help="path to the database")
 required_args.add_argument("-a", "--applications", dest="applist", type=str,
         help="comma-separated list of apps to consider, e.g., 'redis,nginx', '*' for all")
 required_args.add_argument("-w", "--workloads", dest="wllist", type=str,
@@ -763,7 +818,8 @@ if (args.cmd == "search"):
     if (args.showusage is True or args.cumulativeplot is True or
             args.heatmapplot is True or args.supportfile is not None):
         if "*" in args.wllist and len(args.wllist) > 1:
-            warning("* in the workload list but other entries are specified: " + str(args.wllist))
+            warning("* in the workload list but other entries are specified: " +
+                    str(args.wllist))
             warning("Ignoring them.")
             benchmark = True
             testsuite = True
@@ -786,7 +842,8 @@ if (args.cmd == "search"):
     if (args.heatmapplot is True or args.cumulativeplot is True or args.paperhistogramplot is True):
         # build plot container
         info("Building plot container")
-        runcmd = ["docker", "build", "--tag", "loupe-plot", "-f", "docker/Dockerfile.loupe-plot", "."]
+        runcmd = ["docker", "build", "--tag", "loupe-plot",
+                  "-f", "docker/Dockerfile.loupe-plot", "."]
         process = subprocess.Popen(runcmd)
         process.wait()
 
@@ -824,18 +881,24 @@ if (args.cmd == "search"):
         if (error):
             exit(1)
 
-        # 2. check that apps all feature both benchmark and suite data
-        for a in apps:
-            if ("benchmark" not in db[a].keys() or len(db[a]["benchmark"]) == 0):
-                warning("Application " + a + " does not feature benchmark data")
-            if ("testsuite" not in db[a].keys() or len(db[a]["testsuite"]) == 0):
-                warning("Application " + a + " does not feature testsuite data")
-
-        # 3. generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
+        # 2. generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
         # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
         for a in apps:
-            dat_suite = used_by_apps(db, [a], False, True)
-            dat_bench = used_by_apps(db, [a], True, False)
+            dat_bench = {"required": [], "stubbed": [], "faked": [], "both": []}
+            if ("benchmark" not in db[a].keys() or
+                len(db[a]["benchmark"].keys()) == 0 or
+                len(db[a]["benchmark"]["dynamic"]) == 0):
+                warning("Application " + a + " does not feature benchmark data")
+            else:
+                dat_bench = used_by_apps(db, [a], True, False)
+
+            dat_suite = {"required": [], "stubbed": [], "faked": [], "both": []}
+            if ("testsuite" not in db[a].keys() or
+                len(db[a]["testsuite"].keys()) == 0 or
+                len(db[a]["testsuite"]["dynamic"]) == 0):
+                warning("Application " + a + " does not feature testsuite data")
+            else:
+                dat_suite = used_by_apps(db, [a], False, True)
 
             with open(os.path.join("./" + a + ".dat"), "a") as outf:
                 # header
@@ -891,10 +954,12 @@ if (args.cmd == "search"):
             p = 0
             if (sysnumber <= MAX_SYSCALL):
                 p = cumulative[1][sysnumber]
-            dynuseddat     += str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+            dynuseddat += str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+
             if (sysnumber <= MAX_SYSCALL):
                 p = cumulative[0][sysnumber]
-            dynstubfakedat += str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+            dynstubfakedat += str(x) + " " + str(y) + " " + str(p) + " " + \
+                              str(sysnumber) + "\n"
             # TODO add generation for static source and binary
 
         with open(os.path.join("./data-staticsource.dat"), "a") as outf:
@@ -930,7 +995,8 @@ if (args.cmd == "search"):
     elif (args.cumulativeplot is True):
         # process data
         info("Processing data")
-        cumulative = process_cumulative(db, args.applist.split(","), bench=benchmark, suite=testsuite)
+        cumulative = process_cumulative(db, args.applist.split(","), bench=benchmark,
+                suite=testsuite)
 
         # generate data.dat
         d = {}
