@@ -379,14 +379,18 @@ def used_by_apps(db, applist, bench=False, suite=False,
         if suite and len(db[app]["testsuite"]["dynamic"]):
             workloads.append(db[app]["testsuite"]["dynamic"])
         if static_binary:
-            if len(db[app]["benchmark"]["static_binary"]):
+            if (db[app]["benchmark"]["static_binary"] is not None and
+               len(db[app]["benchmark"]["static_binary"])):
                 workloads.append(db[app]["benchmark"]["static_binary"])
-            elif len(db[app]["testsuite"]["static_binary"]):
+            elif (db[app]["testsuite"]["static_binary"] is not None and
+               len(db[app]["testsuite"]["static_binary"])):
                 workloads.append(db[app]["testsuite"]["static_binary"])
         if static_source:
-            if len(db[app]["benchmark"]["static_source"]):
+            if (db[app]["benchmark"]["static_source"] is not None and
+               len(db[app]["benchmark"]["static_source"])):
                 workloads.append(db[app]["benchmark"]["static_source"])
-            elif len(db[app]["testsuite"]["static_source"]):
+            elif( db[app]["testsuite"]["static_source"] is not None and
+               len(db[app]["testsuite"]["static_source"])):
                 workloads.append(db[app]["testsuite"]["static_source"])
 
         # populate req, stub, fake
@@ -944,22 +948,22 @@ if (args.cmd == "search"):
             dat_suite = used_by_apps(db, [a], False, True, False, False)
 
             dat_static_binary = used_by_apps(db, [a], False, False, True, False)
-            if (not len(dat_static_binary[0])):
+            if (not len(dat_static_binary["required"])):
                 warning("Application " + a + " does not feature static binary data")
 
             dat_static_source = used_by_apps(db, [a], False, False, False, True)
-            if (not len(dat_static_source[0])):
+            if (not len(dat_static_source["required"])):
                 warning("Application " + a + " does not feature static source data")
 
             with open(os.path.join("./" + a + ".dat"), "a") as outf:
                 # header
                 outf.write(a + " staticsrc   staticbin   required    stubonly    fakeonly    fakeorstub\n")
                 # binary
-                outf.write("all     0           {}         0           0           0           0\n").format(
-                    str(len(dat_static_binary["required"])))
+                outf.write("all     0           {}         0           0           0           0\n".format(
+                    str(len(dat_static_binary["required"]))))
                 # source
-                outf.write("all     {}          0          0           0           0           0\n").format(
-                    str(len(dat_static_source["required"])))
+                outf.write("all     {}          0          0           0           0           0\n".format(
+                    str(len(dat_static_source["required"]))))
                 # suite
                 outf.write("suite   0           0          {}          {}          {}          {}\n".format(
                     str(len(dat_suite["required"])), str(len(dat_suite["stubbed"])),
