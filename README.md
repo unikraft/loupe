@@ -266,6 +266,16 @@ already supported by the target OS (see the `*.syscalls` files at the root
 of `loupedb` for examples), `<apps>` is the list of application to target,
 and `<workload>` is `bench` or `suite`.
 
+### Generating the Paper's Plots
+
+Run:
+
+```
+$ make paperplots
+```
+
+Generated plots will be located under `paperplots`.
+
 ## Generating Coverage
 
 :warning: this section is temporary and might get outdated.

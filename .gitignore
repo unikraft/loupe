@@ -3,6 +3,7 @@ seccomp-run
 /*.dat
 dockerfile_data
 /Dockerfile.*
+paperplots
 
 # PYTHON below
 
