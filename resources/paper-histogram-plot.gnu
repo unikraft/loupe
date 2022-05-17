@@ -45,54 +45,54 @@ set arrow from 29, graph 0 to 29, graph 1 nohead
 set arrow from 34, graph 0 to 34, graph 1 nohead
 
 plot newhistogram "{/:Bold Redis}", '/mnt/redis.dat' \
-            u "staticsrc":xtic(1) lc "#FCD29F", \
-         '' u "staticbin" lc "#655A7C", \
-         '' u "required" lc "#AB92BF", \
-         '' u "stubonly" lc "#AFC1D6", \
-         '' u "fakeonly" lc "#CEF9F2", \
-         '' u "fakeorstub" lc "#A9FFCB", \
+            u "staticsrc":xtic(1) lc "#FCD29F" notitle, \
+         '' u "staticbin" lc "#655A7C" notitle, \
+         '' u "required" lc "#AB92BF" notitle, \
+         '' u "stubonly" lc "#AFC1D6" notitle, \
+         '' u "fakeonly" lc "#CEF9F2" notitle, \
+         '' u "fakeorstub" lc "#A9FFCB" notitle, \
      newhistogram "{/:Bold Nginx}", '/mnt/nginx.dat' \
-            u "staticsrc":xtic(1) lc "#FCD29F", \
-         '' u "staticbin" lc "#655A7C", \
-         '' u "required" lc "#AB92BF", \
-         '' u "stubonly" lc "#AFC1D6", \
-         '' u "fakeonly" lc "#CEF9F2", \
-         '' u "fakeorstub" lc "#A9FFCB", \
+            u "staticsrc":xtic(1) lc "#FCD29F" notitle, \
+         '' u "staticbin" lc "#655A7C" notitle, \
+         '' u "required" lc "#AB92BF" notitle, \
+         '' u "stubonly" lc "#AFC1D6" notitle, \
+         '' u "fakeonly" lc "#CEF9F2" notitle, \
+         '' u "fakeorstub" lc "#A9FFCB" notitle, \
      newhistogram "{/:Bold Memcached}", '/mnt/memcached.dat' \
-            u "staticsrc":xtic(1) lc "#FCD29F", \
-         '' u "staticbin" lc "#655A7C", \
-         '' u "required" lc "#AB92BF", \
-         '' u "stubonly" lc "#AFC1D6", \
-         '' u "fakeonly" lc "#CEF9F2", \
-         '' u "fakeorstub" lc "#A9FFCB", \
+            u "staticsrc":xtic(1) lc "#FCD29F" notitle, \
+         '' u "staticbin" lc "#655A7C" notitle, \
+         '' u "required" lc "#AB92BF" notitle, \
+         '' u "stubonly" lc "#AFC1D6" notitle, \
+         '' u "fakeonly" lc "#CEF9F2" notitle, \
+         '' u "fakeorstub" lc "#A9FFCB" notitle, \
      newhistogram "{/:Bold SQLite}", '/mnt/sqlite.dat' \
-            u "staticsrc":xtic(1) lc "#FCD29F", \
-         '' u "staticbin" lc "#655A7C", \
-         '' u "required" lc "#AB92BF", \
-         '' u "stubonly" lc "#AFC1D6", \
-         '' u "fakeonly" lc "#CEF9F2", \
-         '' u "fakeorstub" lc "#A9FFCB", \
+            u "staticsrc":xtic(1) lc "#FCD29F" notitle, \
+         '' u "staticbin" lc "#655A7C" notitle, \
+         '' u "required" lc "#AB92BF" notitle, \
+         '' u "stubonly" lc "#AFC1D6" notitle, \
+         '' u "fakeonly" lc "#CEF9F2" notitle, \
+         '' u "fakeorstub" lc "#A9FFCB" notitle, \
      newhistogram "{/:Bold HAProxy}", '/mnt/haproxy.dat' \
-            u "staticsrc":xtic(1) lc "#FCD29F", \
-         '' u "staticbin" lc "#655A7C", \
-         '' u "required" lc "#AB92BF", \
-         '' u "stubonly" lc "#AFC1D6", \
-         '' u "fakeonly" lc "#CEF9F2", \
-         '' u "fakeorstub" lc "#A9FFCB", \
+            u "staticsrc":xtic(1) lc "#FCD29F" notitle, \
+         '' u "staticbin" lc "#655A7C" notitle, \
+         '' u "required" lc "#AB92BF" notitle, \
+         '' u "stubonly" lc "#AFC1D6" notitle, \
+         '' u "fakeonly" lc "#CEF9F2" notitle, \
+         '' u "fakeorstub" lc "#A9FFCB" notitle, \
      newhistogram "{/:Bold Lighttpd}", '/mnt/lighttpd.dat' \
-            u "staticsrc":xtic(1) lc "#FCD29F", \
-         '' u "staticbin" lc "#655A7C", \
-         '' u "required" lc "#AB92BF", \
-         '' u "stubonly" lc "#AFC1D6", \
-         '' u "fakeonly" lc "#CEF9F2", \
-         '' u "fakeorstub" lc "#A9FFCB", \
+            u "staticsrc":xtic(1) lc "#FCD29F" notitle, \
+         '' u "staticbin" lc "#655A7C" notitle, \
+         '' u "required" lc "#AB92BF" notitle, \
+         '' u "stubonly" lc "#AFC1D6" notitle, \
+         '' u "fakeonly" lc "#CEF9F2" notitle, \
+         '' u "fakeorstub" lc "#A9FFCB" notitle, \
      newhistogram "{/:Bold weborf}", '/mnt/weborf.dat' \
-            u "staticsrc":xtic(1) lc "#FCD29F", \
-         '' u "staticbin" lc "#655A7C", \
-         '' u "required" lc "#AB92BF", \
-         '' u "stubonly" lc "#AFC1D6", \
-         '' u "fakeonly" lc "#CEF9F2", \
-         '' u "fakeorstub" lc "#A9FFCB", \
+            u "staticsrc":xtic(1) lc "#FCD29F" notitle, \
+         '' u "staticbin" lc "#655A7C" notitle, \
+         '' u "required" lc "#AB92BF" notitle, \
+         '' u "stubonly" lc "#AFC1D6" notitle, \
+         '' u "fakeonly" lc "#CEF9F2" notitle, \
+         '' u "fakeorstub" lc "#A9FFCB" notitle, \
      newhistogram "{/:Bold webfsd}", '/mnt/webfsd.dat' \
             u "staticsrc":xtic(1) t "{/:Italic Stat source}" lc "#FCD29F", \
          '' u "staticbin" t "{/:Italic Stat binary}" lc "#655A7C", \
