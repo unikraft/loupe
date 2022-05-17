@@ -288,8 +288,6 @@ def process_cumulative(db, applist, bench=False, suite=False,
 
     n = 0
     for app in applist:
-        n += 1
-
         workloads = []
         if bench and len(db[app]["benchmark"]["dynamic"]):
             workloads.append(db[app]["benchmark"]["dynamic"])
@@ -310,6 +308,9 @@ def process_cumulative(db, applist, bench=False, suite=False,
                len(db[app]["testsuite"]["static_source"])):
                 workloads.append(db[app]["testsuite"]["static_source"])
 
+        if len(workloads):
+            n += 1
+
         for i in range(0, MAX_SYSCALL + 1):
             exe = False
             req = False
@@ -327,12 +328,13 @@ def process_cumulative(db, applist, bench=False, suite=False,
             if req:
                 cumulative_required[i] += 1
 
-    # convert to percentages
-    for i in range(0, MAX_SYSCALL + 1):
-        cumulative_required[i] /= n
-        cumulative_required[i] *= 100
-        cumulative_executed[i] /= n
-        cumulative_executed[i] *= 100
+    if n:
+        # convert to percentages
+        for i in range(0, MAX_SYSCALL + 1):
+            cumulative_required[i] /= n
+            cumulative_required[i] *= 100
+            cumulative_executed[i] /= n
+            cumulative_executed[i] *= 100
 
     if static_binary or static_source:
         cumulative_executed = None
