@@ -460,7 +460,6 @@ def run_tests(path_db, application, workload, path_dockerfile):
             # any variation anyways
             if (i == 0):
                 s[0] = local.split[1]
-                print(s[0])
         except subprocess.CalledProcessError as e:
             r[i]  = str(e.output)
 
