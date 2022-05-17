@@ -150,7 +150,7 @@ def db_load(path):
                   ", went for most recent ones: {} and {}".format(str(bench_wl_folder),
                       str(suite_wl_folder)))
 
-        bench_workload = dict()
+        bench_workload = {"dynamic": [], "static_binary": [], "static_source": []}
         if (bench_wl_folder is not None):
             # if there are multiple runs for this workload, take the latest
             m = None
@@ -199,7 +199,7 @@ def db_load(path):
         else:
             debug("App directory {} does not feature benchmark measurements".format(str(a)))
 
-        suite_workload = dict()
+        suite_workload = {"dynamic": [], "static_binary": [], "static_source": []}
         if (suite_wl_folder is not None):
             # if there are multiple runs for this workload, take the latest
             m = None
@@ -280,10 +280,10 @@ def process_cumulative(db, applist, bench=False, suite=False):
     for app in applist:
         n += 1
         workloads = []
-        if bench:
-            workloads.extend(db[app]["benchmark"]["dynamic"])
-        if suite:
-            workloads.extend(db[app]["testsuite"]["dynamic"])
+        if bench and len(db[app]["benchmark"]["dynamic"]):
+            workloads.append(db[app]["benchmark"]["dynamic"])
+        if suite and len(db[app]["testsuite"]["dynamic"]):
+            workloads.append(db[app]["testsuite"]["dynamic"])
         for i in range(0, MAX_SYSCALL + 1):
             exe = False
             req = False
@@ -340,9 +340,9 @@ def used_by_apps(db, applist, bench=False, suite=False):
 
         # collect all relevant measurements
         workloads = []
-        if bench:
+        if bench and len(db[app]["benchmark"]["dynamic"]):
             workloads.append(db[app]["benchmark"]["dynamic"])
-        if suite:
+        if suite and len(db[app]["testsuite"]["dynamic"]):
             workloads.append(db[app]["testsuite"]["dynamic"])
 
         # populate req, stub, fake
@@ -839,7 +839,8 @@ if (args.cmd == "search"):
     if (args.showusage is True or args.supportfile is not None):
         usage = used_by_apps(db, args.applist.split(","), bench=benchmark, suite=testsuite)
 
-    if (args.heatmapplot is True or args.cumulativeplot is True or args.paperhistogramplot is True):
+    if (args.heatmapplot is True or args.cumulativeplot is True or
+                                    args.paperhistogramplot is True):
         # build plot container
         info("Building plot container")
         runcmd = ["docker", "build", "--tag", "loupe-plot",
@@ -875,7 +876,8 @@ if (args.cmd == "search"):
         error = False
         for a in apps:
             if (a not in db.keys()):
-                error("Application missing from the database (and required for the plot): " + a)
+                error("Application missing from the database " +
+                      "(and required for the plot): " + a)
                 error = True
 
         if (error):
@@ -884,21 +886,17 @@ if (args.cmd == "search"):
         # 2. generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
         # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
         for a in apps:
-            dat_bench = {"required": [], "stubbed": [], "faked": [], "both": []}
             if ("benchmark" not in db[a].keys() or
                 len(db[a]["benchmark"].keys()) == 0 or
                 len(db[a]["benchmark"]["dynamic"]) == 0):
                 warning("Application " + a + " does not feature benchmark data")
-            else:
-                dat_bench = used_by_apps(db, [a], True, False)
+            dat_bench = used_by_apps(db, [a], True, False)
 
-            dat_suite = {"required": [], "stubbed": [], "faked": [], "both": []}
             if ("testsuite" not in db[a].keys() or
                 len(db[a]["testsuite"].keys()) == 0 or
                 len(db[a]["testsuite"]["dynamic"]) == 0):
                 warning("Application " + a + " does not feature testsuite data")
-            else:
-                dat_suite = used_by_apps(db, [a], False, True)
+            dat_suite = used_by_apps(db, [a], False, True)
 
             with open(os.path.join("./" + a + ".dat"), "a") as outf:
                 # header
@@ -930,7 +928,8 @@ if (args.cmd == "search"):
     elif (args.heatmapplot is True):
         # process data
         info("Processing data")
-        cumulative = process_cumulative(db, args.applist.split(","), bench=benchmark, suite=testsuite)
+        cumulative = process_cumulative(db, args.applist.split(","),
+                bench=benchmark, suite=testsuite)
 
         # generate data files (./data-staticsource.dat, ./data-staticbinary.dat,
         # ./data-dynused.dat, ./data-dynstubfake.dat)
