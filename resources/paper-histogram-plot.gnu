@@ -87,13 +87,6 @@ plot newhistogram "{/:Bold Redis}", '/mnt/redis.dat' \
          '' u "fakeonly" lc "#CEF9F2" notitle, \
          '' u "fakeorstub" lc "#A9FFCB" notitle, \
      newhistogram "{/:Bold weborf}", '/mnt/weborf.dat' \
-            u "staticsrc":xtic(1) lc "#FCD29F" notitle, \
-         '' u "staticbin" lc "#655A7C" notitle, \
-         '' u "required" lc "#AB92BF" notitle, \
-         '' u "stubonly" lc "#AFC1D6" notitle, \
-         '' u "fakeonly" lc "#CEF9F2" notitle, \
-         '' u "fakeorstub" lc "#A9FFCB" notitle, \
-     newhistogram "{/:Bold webfsd}", '/mnt/webfsd.dat' \
             u "staticsrc":xtic(1) t "{/:Italic Stat source}" lc "#FCD29F", \
          '' u "staticbin" t "{/:Italic Stat binary}" lc "#655A7C", \
          '' u "required" t "{/:Italic Dyn} required" lc "#AB92BF", \

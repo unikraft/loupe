@@ -938,7 +938,7 @@ if (args.cmd == "search"):
         print(format_syscall_list(usage["both"]))
     elif (args.paperhistogramplot is True):
         apps = ["haproxy", "lighttpd", "memcached", "nginx", "redis",
-                "sqlite", "webfsd", "weborf"]
+                "sqlite", "weborf"]
 
         # process data
         info("Processing data")
