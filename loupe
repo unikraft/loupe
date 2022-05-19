@@ -191,7 +191,7 @@ def db_load(path):
 
             ml = list()
             try:
-                with open(os.path.join(str(m), "data", "static_source.csv"), "r") as f:
+                with open(os.path.join(str(m), "data", "static_sources.csv"), "r") as f:
                     for line in f:
                         if (line[0] == '#'):
                             continue
@@ -244,7 +244,7 @@ def db_load(path):
 
             ml = list()
             try:
-                with open(os.path.join(str(m), "data", "static_source.csv"), "r") as f:
+                with open(os.path.join(str(m), "data", "static_sources.csv"), "r") as f:
                     for line in f:
                         if (line[0] == '#'):
                             continue
