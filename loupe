@@ -151,6 +151,8 @@ def db_load(path):
                       str(suite_wl_folder)))
 
         bench_workload = {"dynamic": [], "static_binary": [], "static_source": []}
+        found_static_binary = False
+        found_static_source = False
         if (bench_wl_folder is not None):
             # if there are multiple runs for this workload, take the latest
             m = None
@@ -182,6 +184,7 @@ def db_load(path):
                         if (line[0] == '#'):
                             continue
                         ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                    found_static_binary = True
             except FileNotFoundError:
                 ml = None
             bench_workload["static_binary"] = ml
@@ -193,11 +196,12 @@ def db_load(path):
                         if (line[0] == '#'):
                             continue
                         ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                    found_static_source = True
             except FileNotFoundError:
                 ml = None
             bench_workload["static_source"] = ml
         else:
-            debug("App directory {} does not feature benchmark measurements".format(str(a)))
+            debug("App directory %s does not feature benchmark data" % str(a))
 
         suite_workload = {"dynamic": [], "static_binary": [], "static_source": []}
         if (suite_wl_folder is not None):
@@ -233,6 +237,7 @@ def db_load(path):
                         if (line[0] == '#'):
                             continue
                         ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                    found_static_binary = True
             except FileNotFoundError:
                 ml = None
             suite_workload["static_binary"] = ml
@@ -244,11 +249,17 @@ def db_load(path):
                         if (line[0] == '#'):
                             continue
                         ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                    found_static_source = True
             except FileNotFoundError:
                 ml = None
             suite_workload["static_source"] = ml
         else:
-            debug("App directory {} does not feature testsuite measurements".format(str(a)))
+            debug("App directory %s does not feature test suite data" % str(a))
+
+        if not found_static_binary:
+            debug("App directory %s does not feature static binary data" % str(a))
+        if not found_static_source:
+            debug("App directory %s does not feature static source data" % str(a))
 
         app["benchmark"] = bench_workload
         app["testsuite"] = suite_workload
@@ -256,6 +267,56 @@ def db_load(path):
         db[os.path.basename(a)] = app
 
     return db
+
+def get_workloads(db, applist, bench=False, suite=False,
+        static_binary=False, static_source=False):
+
+    if "*" in applist and len(applist) > 1:
+        warning("* in the application list but other entries are specified: " + str(applist))
+        warning("Ignoring them.")
+        applist = db.keys()
+    elif "*" in applist:
+        applist = db.keys()
+
+    workloads = []
+    considered_apps = []
+    for app in applist:
+        tmp = []
+
+        if bench and len(db[app]["benchmark"]["dynamic"]):
+            tmp.append(db[app]["benchmark"]["dynamic"])
+        elif bench:
+            continue
+
+        if suite and len(db[app]["testsuite"]["dynamic"]):
+            tmp.append(db[app]["testsuite"]["dynamic"])
+        elif suite:
+            continue
+
+        if static_binary:
+            if (db[app]["benchmark"]["static_binary"] is not None and
+               len(db[app]["benchmark"]["static_binary"])):
+                tmp.append(db[app]["benchmark"]["static_binary"])
+            elif (db[app]["testsuite"]["static_binary"] is not None and
+               len(db[app]["testsuite"]["static_binary"])):
+                tmp.append(db[app]["testsuite"]["static_binary"])
+            else:
+                continue
+
+        if static_source:
+            if (db[app]["benchmark"]["static_source"] is not None and
+               len(db[app]["benchmark"]["static_source"])):
+                tmp.append(db[app]["benchmark"]["static_source"])
+            elif( db[app]["testsuite"]["static_source"] is not None and
+               len(db[app]["testsuite"]["static_source"])):
+                tmp.append(db[app]["testsuite"]["static_source"])
+            else:
+                continue
+
+        workloads.extend(tmp)
+        considered_apps.append(app)
+
+    return (workloads, considered_apps)
 
 # returns a tuple of two arrays (required, used) in the form of
 # (
@@ -270,13 +331,7 @@ def db_load(path):
 def process_cumulative(db, applist, bench=False, suite=False,
         static_binary=False, static_source=False):
     assert(bench or suite or static_binary or static_source)
-
-    if "*" in applist and len(applist) > 1:
-        warning("* in the application list but other entries are specified: " + str(applist))
-        warning("Ignoring them.")
-        applist = db.keys()
-    elif "*" in applist:
-        applist = db.keys()
+    assert('*' not in applist)
 
     cumulative_required = {}
     cumulative_executed = {}
@@ -288,25 +343,8 @@ def process_cumulative(db, applist, bench=False, suite=False,
 
     n = 0
     for app in applist:
-        workloads = []
-        if bench and len(db[app]["benchmark"]["dynamic"]):
-            workloads.append(db[app]["benchmark"]["dynamic"])
-        if suite and len(db[app]["testsuite"]["dynamic"]):
-            workloads.append(db[app]["testsuite"]["dynamic"])
-        if static_binary:
-            if (db[app]["benchmark"]["static_binary"] is not None and
-               len(db[app]["benchmark"]["static_binary"])):
-                workloads.append(db[app]["benchmark"]["static_binary"])
-            elif (db[app]["testsuite"]["static_binary"] is not None and
-               len(db[app]["testsuite"]["static_binary"])):
-                workloads.append(db[app]["testsuite"]["static_binary"])
-        if static_source:
-            if (db[app]["benchmark"]["static_source"] is not None and
-               len(db[app]["benchmark"]["static_source"])):
-                workloads.append(db[app]["benchmark"]["static_source"])
-            elif( db[app]["testsuite"]["static_source"] is not None and
-               len(db[app]["testsuite"]["static_source"])):
-                workloads.append(db[app]["testsuite"]["static_source"])
+        # collect all relevant measurements
+        workloads = get_workloads(db, [app], bench, suite, static_binary, static_source)[0]
 
         if len(workloads):
             n += 1
@@ -355,13 +393,7 @@ def process_cumulative(db, applist, bench=False, suite=False,
 def used_by_apps(db, applist, bench=False, suite=False,
         static_binary=False, static_source=False):
     assert(bench or suite or static_binary or static_source)
-
-    if "*" in applist and len(applist) > 1:
-        warning("* in the application list but other entries are specified: " + str(applist))
-        warning("Ignoring them.")
-        applist = db.keys()
-    elif "*" in applist:
-        applist = db.keys()
+    assert('*' not in applist)
 
     def _used_by_app(app):
         if app not in db.keys():
@@ -375,25 +407,7 @@ def used_by_apps(db, applist, bench=False, suite=False,
         both = []
 
         # collect all relevant measurements
-        workloads = []
-        if bench and len(db[app]["benchmark"]["dynamic"]):
-            workloads.append(db[app]["benchmark"]["dynamic"])
-        if suite and len(db[app]["testsuite"]["dynamic"]):
-            workloads.append(db[app]["testsuite"]["dynamic"])
-        if static_binary:
-            if (db[app]["benchmark"]["static_binary"] is not None and
-               len(db[app]["benchmark"]["static_binary"])):
-                workloads.append(db[app]["benchmark"]["static_binary"])
-            elif (db[app]["testsuite"]["static_binary"] is not None and
-               len(db[app]["testsuite"]["static_binary"])):
-                workloads.append(db[app]["testsuite"]["static_binary"])
-        if static_source:
-            if (db[app]["benchmark"]["static_source"] is not None and
-               len(db[app]["benchmark"]["static_source"])):
-                workloads.append(db[app]["benchmark"]["static_source"])
-            elif( db[app]["testsuite"]["static_source"] is not None and
-               len(db[app]["testsuite"]["static_source"])):
-                workloads.append(db[app]["testsuite"]["static_source"])
+        workloads = get_workloads(db, [app], bench, suite, static_binary, static_source)[0]
 
         # populate req, stub, fake
         for i in range(0, MAX_SYSCALL + 1):
@@ -726,13 +740,17 @@ def support_plan(applist, supported):
     for app in applist:
         per_app_syscalls[app] = {}
         per_app_syscalls[app]["required"] = \
-                format_syscall_list(used_by_apps(db, [app], benchmark, testsuite)["required"])
+                format_syscall_list(used_by_apps(db, [app], benchmark,
+                    testsuite)["required"])
         per_app_syscalls[app]["faked"] = \
-                format_syscall_list(used_by_apps(db, [app], benchmark, testsuite)["faked"])
+                format_syscall_list(used_by_apps(db, [app], benchmark,
+                    testsuite)["faked"])
         per_app_syscalls[app]["stubbed"] = \
-                format_syscall_list(used_by_apps(db, [app], benchmark, testsuite)["stubbed"])
+                format_syscall_list(used_by_apps(db, [app], benchmark,
+                    testsuite)["stubbed"])
         per_app_syscalls[app]["both"] = \
-                format_syscall_list(used_by_apps(db, [app], benchmark, testsuite)["both"])
+                format_syscall_list(used_by_apps(db, [app], benchmark,
+                    testsuite)["both"])
 
     already_supported = []
     for app in per_app_syscalls:
@@ -749,9 +767,11 @@ def support_plan(applist, supported):
     already_faked = set()
     while per_app_syscalls:
         next_app = list(per_app_syscalls.keys())[0]
-        next_app_impl = set(per_app_syscalls[next_app]["required"]).difference(set(supported))
+        next_app_impl = set(per_app_syscalls[next_app]["required"])\
+                .difference(set(supported))
         for app in per_app_syscalls:
-            impl_required = set(per_app_syscalls[app]["required"]).difference(set(supported))
+            impl_required = set(per_app_syscalls[app]["required"])\
+                    .difference(set(supported))
             if len(impl_required) < len(next_app_impl):
                 next_app = app
                 next_app_impl = impl_required
@@ -936,26 +956,27 @@ if (args.cmd == "search"):
 
         # 2. generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
         # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
+        missingBars = False
         for a in apps:
             if ("benchmark" not in db[a].keys() or
                 len(db[a]["benchmark"].keys()) == 0 or
                 len(db[a]["benchmark"]["dynamic"]) == 0):
-                warning("Application " + a + " does not feature benchmark data")
+                missingBars = True
             dat_bench = used_by_apps(db, [a], True, False, False, False)
 
             if ("testsuite" not in db[a].keys() or
                 len(db[a]["testsuite"].keys()) == 0 or
                 len(db[a]["testsuite"]["dynamic"]) == 0):
-                warning("Application " + a + " does not feature testsuite data")
+                missingBars = True
             dat_suite = used_by_apps(db, [a], False, True, False, False)
 
             dat_static_binary = used_by_apps(db, [a], False, False, True, False)
             if (not len(dat_static_binary["required"])):
-                warning("Application " + a + " does not feature static binary data")
+                missingBars = True
 
             dat_static_source = used_by_apps(db, [a], False, False, False, True)
             if (not len(dat_static_source["required"])):
-                warning("Application " + a + " does not feature static source data")
+                missingBars = True
 
             with open(os.path.join("./" + a + ".dat"), "a") as outf:
                 # header
@@ -983,18 +1004,27 @@ if (args.cmd == "search"):
         process = subprocess.Popen(runcmd)
         process.wait()
 
+        if missingBars:
+            warning("The plot is missing bars because certain measurements are not provided")
+
         # notify user
         print("Plot: ./paper-histogram.svg")
     elif (args.heatmapplot is True):
         # process data
         info("Processing data")
-        cumulative = process_cumulative(db, args.applist.split(","),
+
+        # we need to be able to use the same dataset for all plots
+        considered = get_workloads(db, args.applist.split(","), benchmark,
+                testsuite, True, True)[1]
+        info("Apps considered in this plot: " + ' '.join(considered))
+
+        cumulative = process_cumulative(db, considered,
                 bench=benchmark, suite=testsuite)
 
-        cumulative_binary = process_cumulative(db, args.applist.split(","),
+        cumulative_binary = process_cumulative(db, considered,
                 False, False, True, False)
 
-        cumulative_source = process_cumulative(db, args.applist.split(","),
+        cumulative_source = process_cumulative(db, considered,
                 False, False, False, True)
 
         # generate data files (./data-staticsource.dat, ./data-staticbinary.dat,
@@ -1065,13 +1095,19 @@ if (args.cmd == "search"):
     elif (args.cumulativeplot is True):
         # process data
         info("Processing data")
-        cumulative = process_cumulative(db, args.applist.split(","), bench=benchmark,
+
+        # we need to be able to use the same dataset for all lines
+        considered = get_workloads(db, args.applist.split(","), benchmark,
+                testsuite, True, True)[1]
+        info("Apps considered in this plot: " + ' '.join(considered))
+
+        cumulative = process_cumulative(db, considered, bench=benchmark,
                 suite=testsuite)
 
-        cumulative_binary = process_cumulative(db, args.applist.split(","),
+        cumulative_binary = process_cumulative(db, considered,
                 False, False, True, False)
 
-        cumulative_source = process_cumulative(db, args.applist.split(","),
+        cumulative_source = process_cumulative(db, considered,
                 False, False, False, True)
 
         # generate data.dat
