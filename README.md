@@ -91,6 +91,7 @@ exclude coverage, which is not necessary here):
 	FROM loupe-base:latest
 
 	# Install wrk
+	RUN apt update
 	RUN apt install -y wrk
 
 	# Nginx related instructions
