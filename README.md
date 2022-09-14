@@ -53,6 +53,11 @@ Let's take a look at benchmarks first.
 
 #### Benchmark workload
 
+**Step 0**: first you'll need to generate the `loupe-base` container image as
+follows (in loupe's root directory):
+
+	$ docker build -f docker/Dockerfile.loupe-base --tag=loupe-base .
+
 **Step 1**: identify a benchmarking tool that we can use to benchmark Nginx.
 
 Here we'll go for [wrk](https://github.com/wg/wrk).
@@ -67,7 +72,7 @@ In the case of Nginx, our test script looks like the following:
 
 	# nginx command: ./objs/nginx -p $(pwd) -g 'daemon off;'
 
-	b=$(${WRK_PATH} http://localhost:8034/index.html -d3s)
+	bench=$(wrk http://localhost:80/index.html -d3s)
 
 	nl=$(echo ${bench} | grep -P "Transfer/sec:\s*\d+(?:\.\d+)MB" | wc -l)
 	if [ "$nl" -eq "1" ]; then
@@ -76,7 +81,7 @@ In the case of Nginx, our test script looks like the following:
 
 	exit 1
 
-This is a very simple script. We first start a 3s benchmark on port 8034 with
+This is a very simple script. We first start a 3s benchmark on port 80 with
 `wrk`.  Then we parse the output for a chain of characters that typically
 indicates success (here the throughput, which is absent if the benchmark fails).
 We return 0 if it is present, and 1 otherwise.
@@ -105,6 +110,7 @@ exclude coverage, which is not necessary here):
 		--conf-path=$(pwd)/conf/nginx.conf \
 		--pid-path=$(pwd)/nginx.pid
 	RUN cd nginx && make -j
+	RUN mkdir /root/nginx/logs
 
 	# Copy test script
 	COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
