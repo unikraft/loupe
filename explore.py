@@ -99,7 +99,8 @@ SYSCALL_FLAGS_FILES = {
     "openat" : 1
 }
 
-RUN_LOGS = "/tmp/dynsystmp"
+INITIAL_SCAN_STDERR = "/tmp/dynsystmp"
+INITIAL_SCAN_STDOUT = "/tmp/dynsystmp-stdout"
 
 # ============
 # USAGE CHECKS
@@ -248,21 +249,27 @@ def initial_strace_scan():
     tries = 0
 
     while (not success):
-        with open(RUN_LOGS, "w") as outfile:
-            process = subprocess.Popen(runcmd, stderr=outfile,
-                                       stdout=subprocess.DEVNULL,
-                                       preexec_fn=os.setsid)
+        with open(INITIAL_SCAN_STDERR, "w") as stderr:
+            with open(INITIAL_SCAN_STDOUT, "w") as stdout:
+                process = subprocess.Popen(runcmd, stderr=stderr,
+                                            stdout=stdout,
+                                            preexec_fn=os.setsid)
 
         time.sleep(WAIT_STARTUP_TIME)
-        ret = start_test_cmd(RUN_LOGS)
 
-        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        if ENABLE_SEQUENTIAL:
+            process.wait(timeout=TEST_TIMEOUT)
+
+        ret = start_test_cmd(INITIAL_SCAN_STDOUT)
+
+        if not ENABLE_SEQUENTIAL:
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
 
         if ret == 0:
             success = True
         elif tries == LIMIT_RETRIES:
             error("Error: cannot run initial scan. The program doesn't seem to work.")
-            info("Program stdout/err logs are located at " + RUN_LOGS)
+            info("Program stdout/err logs are located at " + INITIAL_SCAN_STDERR)
             exit(1)
         else:
             cleanup()
@@ -272,7 +279,7 @@ def initial_strace_scan():
     rets = []
     features = {}
     files = {}
-    with open(RUN_LOGS) as logf:
+    with open(INITIAL_SCAN_STDERR) as logf:
         full = logf.read()
         regex = re.compile("\[\s+(\d+)\]")
         rets = list(set(regex.findall(full)))
