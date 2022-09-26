@@ -31,6 +31,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import datetime
 import os, sys, signal, re, argparse, pathlib, time, subprocess
 import src.common as common
 from src.common import *
@@ -572,11 +573,15 @@ used = []
 features = []
 files = []
 if ENABLE_FASTSCAN:
+    start_time = time.time()
     ret = initial_strace_scan()
+    end_time = time.time()
+
     used = ret[0]
     features = ret[1]
     files = ret[2]
     info("Fast scan done!")
+    info("Traced %d syscalls, estimated total test time: %s" % (len(ret[0]), str(datetime.timedelta(seconds=end_time-start_time)*len(ret[0]))))
 else:
     unused = explore_works("crash", all_syscalls)
     used = list(set(all_syscalls) - unused)
