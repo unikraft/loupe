@@ -591,7 +591,7 @@ if ENABLE_FASTSCAN:
     features = ret[1]
     files = ret[2]
     info("Fast scan done!")
-    info("Traced %d syscalls, estimated total test time: %s" % (len(ret[0]), str(datetime.timedelta(seconds=end_time-start_time)*len(ret[0]*2))))
+    info("Traced %d syscalls, estimated total (worst case) test time: %s" % (len(ret[0]), str(datetime.timedelta(seconds=end_time-start_time)*len(ret[0]*2))))
 else:
     unused = explore_works("crash", all_syscalls)
     used = list(set(all_syscalls) - unused)
