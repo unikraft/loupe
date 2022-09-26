@@ -132,17 +132,20 @@ if not strace_recent_enough():
 # HELPERS
 
 def smart_wait(process, logfs):
+    ret = -1
+
     logf = pathlib.Path(logfs)
     loghash = get_file_hash(logf)
     for i in range(SMART_WAIT_REPEAT):
         try:
-            process.wait(timeout=TEST_TIMEOUT)
+            ret = process.wait(timeout=TEST_TIMEOUT)
         except(subprocess.TimeoutExpired):
             newhash = get_file_hash(logf)
             if (loghash != newhash):
                 loghash = newhash
             else:
                 break
+    return ret
 
 def cleanup():
     # make sure to have a clean system
@@ -186,11 +189,15 @@ def start_test_cmd(log):
 def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
     with open(log, 'wb') as logf:
         process = start_seccomp_run(errno, syscall, logf)
+        process_ok = True
         if ENABLE_SEQUENTIAL:
-            smart_wait(process, log)
+            process_ret = smart_wait(process, log)
+            if process_ret:
+                process_ok = False
+
         ret = start_test_cmd(log)
 
-        if (not ret):
+        if (not ret and process_ok):
             # the program works without this syscall
             success = (True,True,errs)
         elif (ret != 200):
@@ -258,15 +265,18 @@ def initial_strace_scan():
 
         time.sleep(WAIT_STARTUP_TIME)
 
+        traced_program_ok = True
         if ENABLE_SEQUENTIAL:
-            process.wait(timeout=TEST_TIMEOUT)
+            traced_program_ret = process.wait(timeout=TEST_TIMEOUT)
+            if traced_program_ret:
+                traced_program_ok = False
 
         ret = start_test_cmd(INITIAL_SCAN_STDOUT)
 
         if not ENABLE_SEQUENTIAL:
             os.killpg(os.getpgid(process.pid), signal.SIGKILL)
 
-        if ret == 0:
+        if ret == 0 and traced_program_ok:
             success = True
         elif tries == LIMIT_RETRIES:
             error("Error: cannot run initial scan. The program doesn't seem to work.")
@@ -581,7 +591,7 @@ if ENABLE_FASTSCAN:
     features = ret[1]
     files = ret[2]
     info("Fast scan done!")
-    info("Traced %d syscalls, estimated total test time: %s" % (len(ret[0]), str(datetime.timedelta(seconds=end_time-start_time)*len(ret[0]))))
+    info("Traced %d syscalls, estimated total test time: %s" % (len(ret[0]), str(datetime.timedelta(seconds=end_time-start_time)*len(ret[0]*2))))
 else:
     unused = explore_works("crash", all_syscalls)
     used = list(set(all_syscalls) - unused)
