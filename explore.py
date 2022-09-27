@@ -266,8 +266,12 @@ def initial_strace_scan():
         time.sleep(WAIT_STARTUP_TIME)
 
         traced_program_ok = True
+        traced_program_ret = -1
         if ENABLE_SEQUENTIAL:
-            traced_program_ret = process.wait(timeout=TEST_TIMEOUT)
+            try:
+                traced_program_ret = process.wait(timeout=TEST_TIMEOUT)
+            except(subprocess.TimeoutExpired):
+                pass
             if traced_program_ret:
                 traced_program_ok = False
 
