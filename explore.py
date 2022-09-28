@@ -287,6 +287,7 @@ def initial_strace_scan():
             info("Program stdout/err logs are located at " + INITIAL_SCAN_STDERR)
             exit(1)
         else:
+            debug("Initial strace scan attempt failed, traced program returned %d, test returned %d" % (traced_program_ret, ret))
             cleanup()
             time.sleep(10)
             tries += 1
