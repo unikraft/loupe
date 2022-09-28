@@ -393,7 +393,9 @@ def process_cumulative(db, applist, bench=False, suite=False,
 def used_by_apps(db, applist, bench=False, suite=False,
         static_binary=False, static_source=False):
     assert(bench or suite or static_binary or static_source)
-    assert('*' not in applist)
+
+    if "*" in applist:
+        applist = db.keys()
 
     def _used_by_app(app):
         if app not in db.keys():
@@ -732,9 +734,10 @@ def run_tests(path_db, application, workload, path_dockerfile):
     return True
 
 def support_plan(applist, supported):
-    print("Step by step support plan:")
-    if applist == "*":
+    if "*" in applist:
         applist = db.keys()
+
+    print("Step by step support plan for: " + str(applist))
 
     per_app_syscalls = {}
     for app in applist:
@@ -1182,7 +1185,7 @@ if (args.cmd == "search"):
         print("Missing a fake:")
         print(list(faked.difference(supported)))
 
-        support_plan(args.applist, supported)
+        support_plan(args.applist.split(","), supported)
 
     else:
         warning("Not implemented yet.")
