@@ -788,11 +788,11 @@ def support_plan(applist, supported):
         already_faked = already_stubbed.union(fake_needed)
         print("- Step " + str(step) + " - to support " + next_app)
         if next_app_impl:
-            print("  - implement " + str(next_app_impl))
+            print("  - implement " + str(format_syscall_list_to_names(next_app_impl)))
         if stub_needed:
-            print("  - stub " + str(stub_needed))
+            print("  - stub " + str(format_syscall_list_to_names(stub_needed)))
         if fake_needed:
-            print("  - fake " + str(fake_needed))
+            print("  - fake " + str(format_syscall_list_to_names(fake_needed)))
         supported = supported.union(next_app_impl)
         del per_app_syscalls[next_app]
         step += 1
@@ -1179,11 +1179,11 @@ if (args.cmd == "search"):
         stubbed   = set(format_syscall_list(usage["stubbed"]))
         faked     = set(format_syscall_list(usage["faked"]))
         print("Missing a full implementation:")
-        print(list(required.difference(supported)))
+        print(str(format_syscall_list_to_names(list(required.difference(supported)))))
         print("Missing a stub:")
-        print(list(stubbed.difference(supported)))
+        print(str(format_syscall_list_to_names(list(stubbed.difference(supported)))))
         print("Missing a fake:")
-        print(list(faked.difference(supported)))
+        print(str(format_syscall_list_to_names(list(faked.difference(supported)))))
 
         support_plan(args.applist.split(","), supported)
 
