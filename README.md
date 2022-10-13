@@ -34,6 +34,7 @@ cause issues because of our Docker containers).
 
 - Docker
 - python3, with [python-git](https://pypi.org/project/python-git/)
+  (`pip3 install gitpython`)
 - a recent-enough Linux kernel to support seccomp and ptrace
 
 The setup is very simple: `make all`
