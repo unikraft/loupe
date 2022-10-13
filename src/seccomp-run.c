@@ -604,8 +604,7 @@ main(int argc, char **argv)
     }
 
     if (ISSET(flags, DO_CHECKPATH)) {
-        if (EXECUTABLE_PATH[0] == '\0')
-            realpath(argv[sysnum + optind], EXECUTABLE_PATH);
+        realpath(EXECUTABLE_PATH, EXECUTABLE_PATH);
         warning("Path checking mode enabled, "
             "I will only check for binary %s\n", EXECUTABLE_PATH);
     }
