@@ -232,6 +232,7 @@ int ptracer_check_path(unsigned long pid) {
     int ret = strcmp(binary_path, EXECUTABLE_PATH);
     if (ret != 0) {
         debug("Found different binary: %s\n", binary_path);
+        return -1;
     }
 
     return ret;
