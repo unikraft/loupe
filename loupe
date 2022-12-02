@@ -45,8 +45,8 @@ import threading
 from src.common import *
 
 ENABLE_DIRTY_DB = False
-NUMBER_GENERATE_REPLICAS = 6
-NUMBER_PARALLEL_REPLICAS = 3
+NUMBER_GENERATE_REPLICAS = 2
+NUMBER_PARALLEL_REPLICAS = 2
 
 assert(NUMBER_GENERATE_REPLICAS % NUMBER_PARALLEL_REPLICAS == 0)
 
@@ -619,19 +619,20 @@ def run_tests(path_db, application, workload, path_dockerfile):
 
     static_results = static_results_array[0].strip()
 
-    l = 0
-    for line in static_results.splitlines():
-        if (len(re.sub("[^,]", "", line)) != 1):
-            error("Line %d of the binary static analysis output seems " % l +
-                  "corrupted. Dumping.")
+    if(static_results != "Static analysis skipped"):
+        l = 0
+        for line in static_results.splitlines():
+            if (len(re.sub("[^,]", "", line)) != 1):
+                error("Line %d of the binary static analysis output seems " % l +
+                    "corrupted. Dumping.")
+                print(static_results)
+                return False
+            l += 1
+        if (l != MAX_SYSCALL + 2):
+            error("Somehow the binary static analysis output does not have the " +
+                "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
             print(static_results)
             return False
-        l += 1
-    if (l != MAX_SYSCALL + 2):
-        error("Somehow the binary static analysis output does not have the " +
-              "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
-        print(static_results)
-        return False
 
     # sanitize dynamic output
     x = 0
