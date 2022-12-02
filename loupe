@@ -632,19 +632,20 @@ def run_tests(path_db, application, workload, path_dockerfile):
 
     static_results = static_results_array[0].strip()
 
-    l = 0
-    for line in static_results.splitlines():
-        if (len(re.sub("[^,]", "", line)) != 1):
-            error("Line %d of the binary static analysis output seems " % l +
-                  "corrupted. Dumping.")
+    if(static_results != "Static analysis skipped"):
+        l = 0
+        for line in static_results.splitlines():
+            if (len(re.sub("[^,]", "", line)) != 1):
+                error("Line %d of the binary static analysis output seems " % l +
+                    "corrupted. Dumping.")
+                print(static_results)
+                return False
+            l += 1
+        if (l != MAX_SYSCALL + 2):
+            error("Somehow the binary static analysis output does not have the " +
+                "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
             print(static_results)
             return False
-        l += 1
-    if (l != MAX_SYSCALL + 2):
-        error("Somehow the binary static analysis output does not have the " +
-              "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
-        print(static_results)
-        return False
 
     # sanitize dynamic output
     x = 0
@@ -762,8 +763,9 @@ def run_tests(path_db, application, workload, path_dockerfile):
     with open(os.path.join(runpath, "data", "dyn.csv"), "a+") as outf:
         outf.write(out)
 
-    with open(os.path.join(runpath, "data", "static_binary.csv"), "a+") as outf:
-        outf.write(static_results)
+    if(static_results != "Static analysis skipped"):
+        with open(os.path.join(runpath, "data", "static_binary.csv"), "a+") as outf:
+            outf.write(static_results)
 
     debug("Outputing additional reproducibility information...")
 
