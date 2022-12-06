@@ -721,8 +721,9 @@ def run_tests(path_db, application, workload, path_dockerfile):
     with open(os.path.join(runpath, "data", "dyn.csv"), "a+") as outf:
         outf.write(out)
 
-    with open(os.path.join(runpath, "data", "static_binary.csv"), "a+") as outf:
-        outf.write(static_results)
+    if(static_results != "Static analysis skipped"):
+        with open(os.path.join(runpath, "data", "static_binary.csv"), "a+") as outf:
+            outf.write(static_results)
 
     debug("Outputing additional reproducibility information...")
 
