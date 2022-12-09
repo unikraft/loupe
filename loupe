@@ -706,7 +706,27 @@ def run_tests(path_db, application, workload, path_dockerfile):
         info("Replicas reported %d differences" % d)
         return final_csv
 
+    def _check_valid(csv):
+        used = faked = stubbed = both = 0
+        for line in csv.splitlines():
+            tmp = line.split(',')
+            if(tmp[1] == 'Y'):
+                used += 1
+            if(tmp[2] == 'Y'):
+                faked += 1
+            if(tmp[3] == 'Y'):
+                stubbed += 1
+            if(tmp[4] == 'Y'):
+                both += 1
+        sum = faked + stubbed + both
+        if(sum == 0 or sum == used):
+            return False
+        return True
+
     out = _merge_cvs(results)
+    if(_check_valid(out) == False):
+        error("Binary static analysis results are invalid, try changing your test file or, if it's not a client server app, adding the --test-sequential argument in the dockerfile")
+        return False
 
     # write to the db
     info("Writing to the database...")
