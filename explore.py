@@ -43,8 +43,6 @@ ENABLE_SEQUENTIAL = False
 
 ENABLE_FASTSCAN = True
 
-ENABLE_STATIC = True
-
 PARTIAL_SUPPORT_ANALYSIS = False
 
 SPECIAL_FILES_ANALYSIS = False
@@ -503,8 +501,6 @@ parser.add_argument("--partial-support", action="store_true",
         help="enable partial support analysis", dest="partialsupport")
 parser.add_argument("--perf-analysis", action="store_true",
         help="enable performance and resource usage analysis", dest="perfanalysis")
-parser.add_argument("--disable-static", action="store_true",
-        help="disable the static analysis of the test binary", dest="nostatic")
 parser.add_argument("--timeout", type=int,
         help="test timeout (default %ds)" % TEST_TIMEOUT, dest="timeout")
 parser.add_argument("--smart-wait-repeat", type=int,
@@ -531,7 +527,6 @@ args = parser.parse_args()
 # setup according to command line arguments
 ENABLE_SEQUENTIAL = args.seq
 ENABLE_FASTSCAN = (args.nostrace is False)
-ENABLE_STATIC = (args.nostatic is False)
 PARTIAL_SUPPORT_ANALYSIS = (args.partialsupport is True)
 PERFORMANCE_ANALYSIS = (args.perfanalysis is True)
 OUTPUT_CSV = (args.outputcsv is True)
@@ -680,25 +675,16 @@ else:
                 str(format_syscall_list([sys])[0]),
                 isused, canfake, canstub, canboth))
 
-if ENABLE_STATIC:
-    info("\nFinding used system calls using static analysis...")
+info("\nFinding used system calls using static analysis...")
 
-    if (OUTPUT_CSV):
-        print()
+if (OUTPUT_CSV):
+    print()
 
-    print("# syscall, used")
-    runcmd = [str(os.path.join(os.path.realpath(os.path.dirname(__file__)),
-            "src/static_source/static_analyser.py")), "-a", str(binary_path),
-            "--csv=true", "--display=false", "--verbose=false"]
-    print(subprocess.check_output(runcmd).decode('utf-8'))
-else:
-    info("\nSkipping static analysis...")
-
-    if (OUTPUT_CSV):
-        print()
-
-    print("Static analysis skipped")
-
+print("# syscall, used")
+runcmd = [str(os.path.join(os.path.realpath(os.path.dirname(__file__)),
+        "src/static_source/static_analyser.py")), "-a", str(binary_path),
+        "--csv=true", "--display=false", "--verbose=false"]
+print(subprocess.check_output(runcmd).decode('utf-8'))
 
 
 def print_set(s, printer):
