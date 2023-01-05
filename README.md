@@ -228,6 +228,36 @@ $ loupe generate -b -db ../../../../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.
 
 `git diff` can then be used to visualize changes.
 
+## Integration with debhelper
+
+We provide a script that integrates loutpe with [`debhelper`](https://man7.org/linux/man-pages/man7/debhelper.7.html). 
+Our script automatically downloads the debian sources of a package, builds it and then runs the test suite with loupe.
+We use `dh_test_auto` to run the testsuite. `dh_test_auto` returns 0 if the test suite executed succesfully.
+
+Example of usage with memcached:
+
+```
+sudo docker build --tag loupe-dbhelper --build-arg APP=memcached --build-arg BINARY=memcached-debug  -f debhelper/Dockerfile.debhelper .
+```
+
+Note the two variables passed, `APP` and `BINARY`. APP is the identifier for the debian package that we are targeting, in this case `memcached`.
+`BINARY` is the resulting binary that we will be analysing, in this case `memcached-debug` is being run by the memcached suite automatically.
+
+TODO: We can get from the automatic build all the binaries being buit, and such we could pass them to `BINARY` without ant user input.
+
+The next step is to run loupe:
+
+```
+sudo docker container run --rm --privileged -e "BINARY=memcached-debug" -e "APP=memcached" -it loupe-dbhelper
+```
+
+Or if you would want to run loupe manually from the conainter:
+
+```
+sudo docker container run --rm --privileged -e "BINARY=memcached-debug" -e "APP=memcached" -it loupe-dbhelper /bin/bash
+```
+
+
 ## Retrieving and Processing Data
 
 `loupe search` takes care of analyzing the data in the database.
