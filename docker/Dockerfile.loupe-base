@@ -8,6 +8,8 @@ RUN apt update && apt -y upgrade
 # Generally needed for compilation of applications and loupe
 RUN apt install -y git build-essential wget gcc-multilib gawk libssl-dev \
                    seccomp python3 python3-pip unzip
+RUN pip3 install psutil
+
 # Generally needed for debugging
 RUN apt install -y vim gdb
 # Generally needed for coverage
