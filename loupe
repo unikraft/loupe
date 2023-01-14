@@ -623,13 +623,13 @@ def run_tests(path_db, application, workload, path_dockerfile):
     for line in static_results.splitlines():
         if (len(re.sub("[^,]", "", line)) != 1):
             error("Line %d of the binary static analysis output seems " % l +
-                "corrupted. Dumping.")
+                  "corrupted. Dumping.")
             print(static_results)
             return False
         l += 1
     if (l != MAX_SYSCALL + 2):
         error("Somehow the binary static analysis output does not have the " +
-            "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL,l))
+              "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
         print(static_results)
         return False
 
@@ -693,7 +693,7 @@ def run_tests(path_db, application, workload, path_dockerfile):
         info("Replicas reported %d differences" % d)
         return final_csv
 
-    def _check_valid(csv):
+    def _check_results_valid(csv):
         used = faked = stubbed = both = 0
         for line in csv.splitlines():
             tmp = line.split(',')
@@ -711,8 +711,9 @@ def run_tests(path_db, application, workload, path_dockerfile):
         return True
 
     out = _merge_cvs(results)
-    if(_check_valid(out) == False):
-        error("Binary static analysis results are invalid, try changing your test file or, if it's not a client server app, adding the --test-sequential argument in the dockerfile")
+    if(_check_results_valid(out) == False):
+        error("Dynamic analysis results are invalid (all or none of the " +
+            "syscalls invoked can be stubbed/faked")
         return False
 
     # write to the db
@@ -726,8 +727,8 @@ def run_tests(path_db, application, workload, path_dockerfile):
         shutil.copyfile(path_dockerfile,
                         os.path.join(runpath, "Dockerfile.%s" % application))
         if (pathlib.Path("./dockerfile_data").exists()):
-            shutil.copyfile("./dockerfile_data",
-                        os.path.join(runpath, "dockerfile_data"))
+            shutil.copytree("./dockerfile_data",
+                            os.path.join(runpath, "dockerfile_data"))
     else:
         info("This run already exists, replacing (see changes with git diff).")
         shutil.rmtree(os.path.join(runpath, "data"))

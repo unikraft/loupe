@@ -687,10 +687,9 @@ if (OUTPUT_CSV):
 
 print("# syscall, used")
 runcmd = [str(os.path.join(os.path.realpath(os.path.dirname(__file__)),
-        "src/static_source/static_analyser.py")), "-a", str(binary_path),
-        "--csv=true", "--display=false", "--verbose=false"]
+          "src/static_source/static_analyser.py")), "-a", str(binary_path),
+          "--csv=true", "--display=false", "--verbose=false"]
 print(subprocess.check_output(runcmd).decode('utf-8'))
-
 
 def print_set(s, printer):
     keys = list(s.keys())
