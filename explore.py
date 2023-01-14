@@ -55,8 +55,8 @@ TASKSET_CPU = 5
 WARMUP_ROUNDS = 5
 # how many runs to average
 NO_RUNS_AVG = 4
-
-LIMIT_RETRIES = 25
+# How many times we re-run a failing test before conluding that it does fail
+LIMIT_RETRIES = 2
 
 BEAUTIFY_PERF_OUTPUT = True
 
