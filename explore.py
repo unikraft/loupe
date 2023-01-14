@@ -172,15 +172,16 @@ def start_seccomp_run(errno, syscall, logf, prefix=[], opts=[]):
 
     return ret
 
-def start_test_cmd(log):
+def start_test_cmd(log, test_log):
     if testscript_path is None:
         time.sleep(TEST_TIMEOUT)
         return 0
     testcmd = [testscript_path, log]
     ret = 0
     try:
-        ret = subprocess.call(testcmd, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL, timeout=TEST_TIMEOUT)
+        with open(test_log, "w+") as test_logfile:
+          ret = subprocess.call(testcmd, stdout=test_logfile,
+             stderr=subprocess.STDOUT, timeout=TEST_TIMEOUT)
     except(subprocess.TimeoutExpired):
         ret = 1
     return ret
@@ -195,7 +196,7 @@ def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
             if process_ret:
                 process_ok = False
 
-        ret = start_test_cmd(log)
+        ret = start_test_cmd(log, log + ".test.log")
 
         if (not ret and process_ok):
             # the program works without this syscall
@@ -275,7 +276,7 @@ def initial_strace_scan():
             if traced_program_ret:
                 traced_program_ok = False
 
-        ret = start_test_cmd(INITIAL_SCAN_STDOUT)
+        ret = start_test_cmd(INITIAL_SCAN_STDOUT, INITIAL_SCAN_STDOUT + ".test.log")
 
         if not ENABLE_SEQUENTIAL:
             os.killpg(os.getpgid(process.pid), signal.SIGKILL)
@@ -287,7 +288,11 @@ def initial_strace_scan():
             info("Program stdout/err logs are located at " + INITIAL_SCAN_STDERR)
             exit(1)
         else:
-            debug("Initial strace scan attempt failed, traced program returned %d, test returned %d" % (traced_program_ret, ret))
+            if ENABLE_SEQUENTIAL:
+                debug("Initial strace scan attempt failed, traced program returned %d, test returned %d" % (traced_program_ret, ret))
+            else:
+                debug("Initial strace scan attempt failed, test returned %d," \
+                    "test output in %s" % (ret, INITIAL_SCAN_STDOUT + ".test.log"))
             cleanup()
             time.sleep(10)
             tries += 1
