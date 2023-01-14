@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import datetime
-import os, sys, signal, re, argparse, pathlib, time, subprocess
+import os, sys, re, argparse, pathlib, time, subprocess, psutil
 import src.common as common
 from src.common import *
 
@@ -186,6 +186,13 @@ def start_test_cmd(log, test_log):
         ret = 1
     return ret
 
+
+def smart_kill(pid):
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        child.kill()
+    parent.kill()
+
 # return (is used, success)
 def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
     with open(log, 'wb') as logf:
@@ -212,7 +219,7 @@ def analyze_one_pass(errno, syscall, log, errs, prefix=[], opts=[]):
             success = (False,False,errs + 1)
 
         if not ENABLE_SEQUENTIAL:
-            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            smart_kill(process.pid)
     return success
 
 # ===========
@@ -279,7 +286,7 @@ def initial_strace_scan():
         ret = start_test_cmd(INITIAL_SCAN_STDOUT, INITIAL_SCAN_STDOUT + ".test.log")
 
         if not ENABLE_SEQUENTIAL:
-            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            smart_kill(process.pid)
 
         if ret == 0 and traced_program_ok:
             success = True
@@ -454,7 +461,7 @@ def explore_perf(errno, syscalls):
                         perf[i]["perf"] += float(out)
                         perf[i]["openfds"] += float(open_fds(process.pid))
                         perf[i]["memusage"] += float(peak_memsize(process.pid))
-                        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                        smart_kill(process.pid)
                         success = True
                     except(subprocess.CalledProcessError):
                         # in theory, this shouldn't happen
@@ -462,7 +469,7 @@ def explore_perf(errno, syscalls):
                         # time between the starting and stopping of nginx
                         # in this case we just want to wait a bit and retry
                         # if it happens to many time in a row, just abort, it's bad.
-                        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                        smart_kill(process.pid)
                         errs += 1
                         if (errs >= LIMIT_RETRIES):
                             print()
@@ -480,7 +487,7 @@ def explore_perf(errno, syscalls):
                               "to work with errno " + str(errno) + " OR test script " +
                               "doesn't support performance benchmark mode.")
                         error("Cause: ValueError")
-                        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                        smart_kill(process.pid)
                         exit(1)
         perf[i]["perf"] /= NO_RUNS_AVG
         perf[i]["openfds"] /= NO_RUNS_AVG
