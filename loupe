@@ -42,6 +42,7 @@ import sys
 import src.common as common
 import subprocess
 import threading
+from distutils.dir_util import copy_tree
 from src.common import *
 
 ENABLE_DIRTY_DB = False
@@ -540,7 +541,7 @@ def remove_container(name):
     process = subprocess.Popen(runcmd)
     process.wait()
 
-def select_files(dockerfile):
+def select_files_for_copy_in_db(dockerfile):
     tmp = dockerfile.split('\n')
     lines = []
     for line in tmp:
@@ -741,10 +742,14 @@ def run_tests(path_db, application, workload, path_dockerfile):
         if (pathlib.Path("./dockerfile_data").exists()):
             os.makedirs(os.path.join(runpath, "dockerfile_data"))
             df = open(path_dockerfile, 'r')
-            files = select_files(df.read())
+            files = select_files_for_copy_in_db(df.read())
             for file in files:
-                shutil.copyfile("./dockerfile_data/%s" % file,
-                            os.path.join(runpath, "dockerfile_data/%s" % file))
+                source = os.path.abspath(os.path.join("./dockerfile_data/%s" % file))
+                destination = os.path.abspath(os.path.join(runpath, "dockerfile_data/%s" % file))
+                if os.path.isdir(source):
+                    copy_tree(source, destination)
+                else:
+                    shutil.copyfile(source, destination)
     else:
         info("This run already exists, replacing (see changes with git diff).")
         shutil.rmtree(os.path.join(runpath, "data"))
