@@ -688,6 +688,12 @@ else:
 if ENABLE_STATIC:
     info("\nFinding used system calls using static analysis...")
 
+    # In "consider-only" mode, it is the binary to be considered that we should
+    # analyze, not the invocation command
+    target_binary = binary_path
+    if ZBINARY is not None:
+        binary_path = ZBINARY
+
     if (OUTPUT_CSV):
         print()
 
