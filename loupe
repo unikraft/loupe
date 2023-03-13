@@ -319,6 +319,10 @@ def get_workloads(db, applist, bench=False, suite=False,
 
     return (workloads, considered_apps)
 
+# auxiliary function for sorting
+def sortaux(e):
+    return -e[1]
+
 # returns a tuple of two arrays (required, used) in the form of
 # (
 #   [90,  18, 0,  12, ...],
@@ -896,6 +900,8 @@ action_args.add_argument("--paper-histogram-plot", action="store_true",
         help="output the histogram of the paper, ignores passed set", dest="paperhistogramplot")
 action_args.add_argument("--export-sqlite", action="store_true",
         help="export the DB as SQLite database")
+action_args.add_argument("--popularity", action="store_true",
+        help="find the most popular system calls in the given app list", dest="popularity")
 
 opt_args = search_parser.add_argument_group('optional arguments')
 opt_args.add_argument("--static-source", action="store_true",
@@ -1217,6 +1223,25 @@ if (args.cmd == "search"):
         else:
             os.remove("./cumulative-nobinary.svg")
             os.remove("./cumulative-all.svg")
+    elif (args.popularity is True):
+        info("Processing data")
+        
+        considered = get_workloads(db, args.applist.split(","), True,
+                False, False, False)[1]
+        info("Number of apps considered: " + str(len(considered)))
+        cumulative = process_cumulative(db, considered, bench=True, suite=True)
+        array = []
+        # transfer the data from the cumulative plot to an array in order to sort it more easily
+        for i in range(len(cumulative[0])):
+            array.append([i,cumulative[0][i]])
+        array.sort(key=sortaux)
+        print("\nUsed system calls, sorted by popularity:")
+        for i in range(len(array)):
+            if(array[i][1] == 0):
+                break
+            print("\t- " + str(array[i][0]) + ", used by " + str(int(array[i][1])) + "." + str(int(array[i][1]*100)%100) + "% of the apps")
+
+
     elif args.supportfile is not None:
         supported = set(format_syscall_list(open_syscall_file(args.supportfile)))
         required  = set(format_syscall_list(usage["required"]))
