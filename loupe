@@ -340,6 +340,7 @@ def process_popularity(db, applist):
     for i in range(len(used)):
         used[i] = used[i] / n * 100
     return used
+
 # returns a tuple of two arrays (required, used) in the form of
 # (
 #   [90,  18, 0,  12, ...],
@@ -1246,26 +1247,32 @@ if (args.cmd == "search"):
         considered = get_workloads(db, args.applist.split(","), True,
                 False, False, False)[1]
         info("Number of apps considered: " + str(len(considered)))
-        popularity = process_popularity(db, considered)
-        array = []
+        pop = process_popularity(db, considered)
+        popularity = []
+        syscalls = []
         # transfer the data from the cumulative plot to an array in order to sort it more easily
-        for i in range(len(popularity)):
-            array.append([i,popularity[i]])
+        for i in range(len(pop)):
+            popularity.append(pop[i])
+            syscalls.append(i)
 
         # sort the array
-        for i in range(len(array)-1):
-            for j in range(i+1, len(array)):
-                if(array[i][1] < array[j][1]):
-                    aux = array[i]
-                    array[i] = array[j]
-                    array[j] = aux
-        
+        for i in range(len(popularity)-1):
+            for j in range(i+1, len(popularity)):
+                if(popularity[i] < popularity[j]):
+                    aux = popularity[i]
+                    popularity[i] = popularity[j]
+                    popularity[j] = aux
+
+                    aux = syscalls[i]
+                    syscalls[i] = syscalls[j]
+                    syscalls[j] = aux
         # output the result
         print("\nUsed system calls, sorted by popularity:")
-        for i in range(len(array)):
-            if(array[i][1] == 0):
+        syscalls = format_syscall_list_to_names(syscalls)
+        for i in range(len(popularity)):
+            if(popularity[i] == 0):
                 break
-            print("\t- " + str(array[i][0]) + ", used by " + str(int(array[i][1])) + "." + str(int(array[i][1]*100)%100) + "% of the apps")
+            print("\t- " + str(syscalls[i]) + ", used by " + str(int(popularity[i])) + "." + str(int(popularity[i]*100)%100) + "% of the apps")
 
 
     elif args.supportfile is not None:
