@@ -22,7 +22,7 @@ paperplots: cleanfigs
 	# syscall usage heatmaps
 	./loupe -v search --static-source --heatmap-plot -db ../loupedb -a "*" -w bench
 	# syscall usage cumulative
-	./loupe -v search --static-source --cumulative-plot -db ../loupedb -a "*" -w suite
+	./loupe -v search --static-source --cumulative-plot -db ../loupedb -a "*" -w bench
 	mv *.svg paperplots
 
 all: clean clonedb src/seccomp-run docker

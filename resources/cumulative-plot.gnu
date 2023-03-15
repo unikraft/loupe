@@ -49,8 +49,8 @@ set output '/mnt/cumulative-all.svg'
 plot '/mnt/data.dat' \
         index 0 with linespoints linestyle 1 t "Static (binary)", \
      '' index 1 with linespoints linestyle 2 t "Static (source)", \
-     '' index 2 with linespoints linestyle 3 t "Dynamic (executed)", \
-     '' index 3 with linespoints linestyle 4 t "Dynamic (required)" \
+     '' index 2 with linespoints linestyle 3 t "Dynamic (naive,\\w/o stub/fake)", \
+     '' index 3 with linespoints linestyle 4 t "Dynamic (OSLens,\\w/ stub/fake)" \
 
 set output '/mnt/cumulative-nobinary.svg'
 plot '/mnt/data.dat' \
