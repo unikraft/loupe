@@ -284,7 +284,15 @@ $ make paperplots
 
 Generated plots will be located under `paperplots`.
 
-## Integration with debhelper
+## Advanced Features
+
+Here we describe advanced features supported by Loupe.
+
+:warning: this section is temporary and might get outdated. Some of the
+features may not be fully integrated in the `loupe` main wrapper, and may not
+be stable.
+
+### Integration with debhelper
 
 We provide a script that integrates Loupe with [`debhelper`](https://man7.org/linux/man-pages/man7/debhelper.7.html). 
 Our script automatically downloads the debian sources of a package, builds it and then runs the test suite with loupe.
@@ -315,15 +323,148 @@ sudo docker container run --rm --privileged -e "BINARY=memcached-debug" -e "APP=
 
 TODO: We can get from the automatic build all the binaries being buit, and such we could pass them to `BINARY` without user input.
 
-## Advanced Features
+### Performance & Resource Usage Impact Analysis
 
-### Performance Impact Analysis
+Loupe can analyze, for each system call stubbed/faked, the impact on
+performance and resource usage. For that, the test script must be extended to
+support benchmarking (usually very simple!), and `explore.py` must be called
+with particular arguments.
 
-TODO
+**Step 1**: Add support to the test script. The test script may be passed an
+argument. If the value of the argument is `benchmark`, then the script is asked
+to output a performance number to stdout. If it doesn't, the performance
+evaluation will fail. Taking the previous example with Nginx and `wrk`, we obtain:
+
+```
+#!/bin/bash
+
+# nginx command: ./objs/nginx -p $(pwd) -g 'daemon off;'
+
+WRK_PATH=wrk
+PORT=80
+
+test_works() {
+  bench=$(${WRK_PATH} http://localhost:${PORT}/index.html -d3s)
+
+  failure=$(echo ${bench} | grep -P "unable to connect to localhost" | wc -l)
+  if [ "$failure" -eq "1" ]; then
+      exit 200
+  fi
+
+  nl=$(echo ${bench} | grep -P "Transfer/sec:\s*\d+(?:\.\d+)MB" | wc -l)
+  if [ "$nl" -eq "1" ]; then
+      exit 0
+  fi
+
+  exit 1
+}
+
+benchmark() {
+  taskset -c 6 ${WRK_PATH} http://localhost:${PORT}/index.html -d10s | \
+          grep -P "Requests/sec:\s*\d+(?:\.\d+)" | grep -Po "\d+(?:\.\d+)"
+  exit $?
+}
+
+if [ "$2" == "benchmark" ]; then
+  benchmark
+else
+  test_works
+fi
+```
+
+No need to modify the script to support resource usage analysis, this is done
+automatically.
+
+**Step 2**: We now want to call `explore.py` as following:
+
+```
+$ /root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/ob^C/nginx -- -p /root/nginx -g "daemon off;"
+```
+
+Note that support is not integrate in the `loupe` main program, so, in order to
+run this, manually start the Docker contain built previously while running the
+analysis and manually run:
+
+```
+$ docker run -it docker.io/library/nginx-loupe bash
+$ /root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/ob^C/nginx -- -p /root/nginx -g "daemon off;"
+```
+
+This will output the performance and resource usage impact detailed analysis per-system call.
+
+TODO: Integrate performance and resource usage analysis in the main `loupe` wrapper.
+
+#### Known Results (paper submission)
+
+**Nginx (wrk)**
+
+```
+[I] Determining baseline...
+Baseline: perf openfds memusage
+Baseline: 51333.21 8.0 4612.0
+
+[I] Gathering data for stubbing...
+[============================================================] 100.0%
+syscall: perf openfds memusage (relative to the baseline)
+1: 59073.05 8.0 4612.0 (1.15,1.0,1.0)
+11: 51121.13 8.0 4632.0 (1.0,1.0,1.0)
+12: 51841.67 8.0 5376.0 (1.01,1.0,1.17)
+14: 51806.57 8.0 4612.0 (1.01,1.0,1.0)
+21: 51889.43 8.0 4612.0 (1.01,1.0,1.0)
+40: 0.0 8.0 4612.0 (0.0,1.0,1.0)
+42: 51446.93 8.0 4612.0 (1.0,1.0,1.0)
+92: 51401.59 8.0 4612.0 (1.0,1.0,1.0)
+107: 52085.92 8.0 4612.0 (1.01,1.0,1.0)
+110: 51576.41 8.0 4612.0 (1.0,1.0,1.0)
+116: 52016.96 8.0 4612.0 (1.01,1.0,1.0)
+157: 51904.9 8.0 4612.0 (1.01,1.0,1.0)
+218: 52266.61 8.0 4612.0 (1.02,1.0,1.0)
+273: 51326.91 8.0 4612.0 (1.0,1.0,1.0)
+288: 51263.03 8.0 4612.0 (1.0,1.0,1.0)
+290: 51685.32 8.0 4612.0 (1.01,1.0,1.0)
+318: 51462.09 8.0 4612.0 (1.0,1.0,1.0)
+334: 52216.86 8.0 4612.0 (1.02,1.0,1.0)
+
+[I] Gathering data for faking...
+[============================================================] 100.0%
+syscall: perf openfds memusage (relative to the baseline)
+1: 58673.37 8.0 4612.0 (1.14,1.0,1.0)
+8: 51453.42 8.0 4612.0 (1.0,1.0,1.0)
+10: 51287.55 8.0 4612.0 (1.0,1.0,1.0)
+11: 51602.4 8.0 4632.0 (1.01,1.0,1.0)
+12: 51314.54 8.0 5376.0 (1.0,1.0,1.17)
+13: 51754.21 8.0 4612.0 (1.01,1.0,1.0)
+14: 51690.4 8.0 4612.0 (1.01,1.0,1.0)
+16: 51618.22 8.0 4612.0 (1.01,1.0,1.0)
+21: 51466.88 8.0 4612.0 (1.0,1.0,1.0)
+33: 52060.56 8.0 4612.0 (1.01,1.0,1.0)
+39: 51909.32 8.0 4612.0 (1.01,1.0,1.0)
+40: 0.0 8.0 4612.0 (0.0,1.0,1.0)
+42: 51787.95 8.0 4612.0 (1.01,1.0,1.0)
+56: 51755.31 8.0 5052.0 (1.01,1.0,1.1)
+63: 51495.91 8.0 4612.0 (1.0,1.0,1.0)
+72: 51440.13 8.0 4612.0 (1.0,1.0,1.0)
+83: 51181.87 8.0 4612.0 (1.0,1.0,1.0)
+92: 52168.04 8.0 4612.0 (1.02,1.0,1.0)
+105: 51685.38 8.0 4612.0 (1.01,1.0,1.0)
+106: 52673.1 8.0 4612.0 (1.03,1.0,1.0)
+107: 51847.52 8.0 4612.0 (1.01,1.0,1.0)
+110: 51861.8 8.0 4612.0 (1.01,1.0,1.0)
+116: 51689.33 8.0 4612.0 (1.01,1.0,1.0)
+157: 51549.74 8.0 4612.0 (1.0,1.0,1.0)
+218: 51659.52 8.0 4612.0 (1.01,1.0,1.0)
+273: 51967.1 8.0 4612.0 (1.01,1.0,1.0)
+290: 52170.69 8.0 4612.0 (1.02,1.0,1.0)
+302: 51486.21 8.0 4612.0 (1.0,1.0,1.0)
+318: 51907.57 8.0 4612.0 (1.01,1.0,1.0)
+334: 52031.13 8.0 4612.0 (1.01,1.0,1.0)
+```
+
+Generally no impact (error margin), apart from `sendfile` (breaks Nginx),
+`read` (makes it faster because we don't read requests anymore, breaks it as
+well), as described in the paper.
 
 ### Generating Coverage
-
-:warning: this section is temporary and might get outdated.
 
 **Step 1**: Check the Dockerfile of the application. If it already contains a
 version of the software built with coverage, then proceed to step 2. Otherwise,
