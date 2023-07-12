@@ -582,7 +582,7 @@ debug("Full test binary command: %s %s" % (binary_path, " ".join(binary_options)
 
 all_syscalls = range(0, MAX_SYSCALL + 1)
 
-if not OUTPUT_CSV and (PARTIAL_SUPPORT_ANALYSIS or PERFORMANCE_ANALYSIS):
+if OUTPUT_CSV and (PARTIAL_SUPPORT_ANALYSIS or PERFORMANCE_ANALYSIS):
     error("CSV formatting not available with performance or partial analysis.")
     exit(1)
 
