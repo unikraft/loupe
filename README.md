@@ -396,6 +396,9 @@ TODO: Integrate performance and resource usage analysis in the main `loupe` wrap
 
 #### Known Results (paper submission)
 
+:warning: This is a non-exhaustive list. Results are provided for demonstration
+purposes, see the paper for a comprehensive list.
+
 **Nginx (wrk)**
 
 ```
