@@ -394,7 +394,7 @@ This will output the performance and resource usage impact detailed analysis per
 
 TODO: Integrate performance and resource usage analysis in the main `loupe` wrapper.
 
-#### Known Results (paper submission)
+#### Example Results (paper submission)
 
 :warning: This is a non-exhaustive list. Results are provided for demonstration
 purposes, see the paper for a comprehensive list.
@@ -463,9 +463,13 @@ syscall: perf openfds memusage (relative to the baseline)
 334: 52031.13 8.0 4612.0 (1.01,1.0,1.0)
 ```
 
-Generally no impact (error margin), apart from `sendfile` (breaks Nginx),
-`read` (makes it faster because we don't read requests anymore, breaks it as
-well), as described in the paper.
+Generally no performance impact (error margin), apart from (as described in the paper):
+- 1: `write` (faster, breaking)
+- 40: `sendfile` (zero output, breaking)
+
+Generally no resource usage impact (error margin), apart from (as described in the paper):
+- 12: `brk` (increased footprint, ??)
+- 56: `clone` (increased footprint, ??)
 
 ### Generating Coverage
 
