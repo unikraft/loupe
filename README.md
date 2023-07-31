@@ -57,7 +57,7 @@ Let's take a look at benchmarks first.
 **Step 0**: first you'll need to generate the `loupe-base` container image as
 follows (in loupe's root directory):
 
-	$ docker build -f docker/Dockerfile.loupe-base --tag=loupe-base .
+	$ make docker
 
 **Step 1**: identify a benchmarking tool that we can use to benchmark Nginx.
 
@@ -521,3 +521,11 @@ emerald.png  glass.png  index-sort-l.html  ruby.png    usr
 ```
 
 The resulting html report is there.
+
+## Troubleshooting
+
+:warning: this section is work in progress.
+
+**Issue:** There is an issue with the base container, or you simply want to rebuild it.
+
+**Solution:** You can use `make rebuild-docker` instead of `make docker`.

@@ -6,6 +6,9 @@ src/seccomp-run:
 docker:
 	docker build --tag loupe-base -f docker/Dockerfile.loupe-base .
 
+rebuild-docker:
+	docker build --no-cache --tag loupe-base -f docker/Dockerfile.loupe-base .
+
 clonedb:
 	git clone git@github.com:unikraft/loupedb.git ../loupedb
 
