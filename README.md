@@ -378,16 +378,16 @@ automatically.
 **Step 2**: We now want to call `explore.py` as following:
 
 ```
-$ /root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/ob^C/nginx -- -p /root/nginx -g "daemon off;"
+$ /root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/objs/nginx -- -p /root/nginx -g "daemon off;"
 ```
 
-Note that support is not integrate in the `loupe` main program, so, in order to
+Note that support is not integrated in the `loupe` main program. In order to
 run this, manually start the Docker contain built previously while running the
-analysis and manually run:
+analysis, and manually run:
 
 ```
 $ docker run -it docker.io/library/nginx-loupe bash
-$ /root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/ob^C/nginx -- -p /root/nginx -g "daemon off;"
+$ /root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/objs/nginx -- -p /root/nginx -g "daemon off;"
 ```
 
 This will output the performance and resource usage impact detailed analysis per-system call.
