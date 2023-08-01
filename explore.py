@@ -420,10 +420,10 @@ def peak_memsize(pid):
                 size = result.group(1).strip()
     if (size == ""):
         error("Bug here! Failed to determine VmPeak.")
-        exit(1)
+        return -1
     if (size[-3:] != " kB"):
         error("Bug here! VmPeak not in kB:%s" % size[-3:])
-        exit(1)
+        return -1
     return int(size[:-3])
 
 # given an errno and a list of system calls, return a mapping of system calls
