@@ -526,17 +526,17 @@ The resulting html report is there.
 
 :warning: this section is work in progress.
 
-- **Issue:** You want to rebuild the base container, but running `make docker` doesn't do anything.
+**Issue:** You want to rebuild the base container, but running `make docker` doesn't do anything.
 
-  **Solution:** You can use `make rebuild-docker` instead of `make docker`.
+Solution: You can use `make rebuild-docker` instead of `make docker`.
 
-- **Issue:** Loupe fails with the following error message:
+**Issue:** Loupe fails with the following error message:
 ```
 [E] Database /home/hle/Development/loupedb is dirty; commit your changes before running this tool.
 ```
-  **Solution:** You should either commit your changes to the database, or ignore the changes with `--allow-dirty-db`
+Solution: You should either commit your changes to the database, or ignore the changes with `--allow-dirty-db`
 
-- **Issue:** The container hangs while building, with the following error:
+**Issue:** The container hangs while building, with the following error:
 ```
 Please select the geographic area in which you live. Subsequent configuration
 questions will narrow this down by presenting a list of cities, representing
@@ -547,5 +547,4 @@ the time zones in which they are located.
   3. Antarctica  6. Asia       9. Indian    12. US
 Geographic area:
 ```
-  **Solution:** We likely forgot to add `ARG DEBIAN_FRONTEND=noninteractive` in
-                the Dockerfile. Try to add it, it should address the issue.
+Solution: We likely forgot to add `ARG DEBIAN_FRONTEND=noninteractive` in the Dockerfile. Try to add it, it should address the issue.
