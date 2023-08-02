@@ -460,11 +460,11 @@ purposes, see the paper for a comprehensive list.
 | 334          | 1.01        | 1.0      | 1.0          |
 
 Generally no performance impact (error margin, <3%), apart from (as described in the paper):
-- 1: `write` (14-15% faster, breaking)
+- 1: `write` (14-15% faster, because logs are not written anymore, fine)
 
 Generally no resource usage impact (error margin, <1%), apart from (as described in the paper):
-- 12: `brk` (17% increased memory footprint, ??)
-- 56: `clone` (10% increased memory footprint, ??)
+- 12: `brk` (17% increased memory footprint, due to `mmap` fallback in early GLIBC allocator, fine)
+- 56: `clone` (10% increased memory footprint, results in the master process executing the worker loop, works but fragile)
 
 **Redis (redis-benchmark)**
 
@@ -522,18 +522,18 @@ sure to keep a low-noise system, pin properly, repeat and average.
 | 334          | 1.0         | 1.0      | 1.0          |
 
 Generally no performance impact (error margin, <3%), apart from (as described in the paper):
-- 202: futex (66% slower, breaking)
+- 202: futex (66% slower, inconsistent synchronization, breaking)
 
 Generally no resource usage impact (error margin, <1%), apart from (as described in the paper):
-- 3: close (8x increased FD usage, generally fine)
-- 11: munmap (19% increased memory footprint, generally fine)
-- 12: brk (2% increased memory footprint, ??)
+- 3: close (8x increased FD usage, FDs are not closed anymore, fine to a certain extent)
+- 11: munmap (19% increased memory footprint, regions are not disposed anymore, fine to a certain extent)
+- 12: `brk` (2% increased memory footprint, due to `mmap` fallback in early GLIBC allocator, fine)
 - 14: rt_sigprocmask (15% lower memory footprint, when stubbing only, ??)
 - 16: ioctl (4% increased memory footprint, when faking only, ??)
 - 95: umask (4% increased memory footprint, when stubbing only, ??)
-- 202: futex (94% increased FD usage, breaking)
-- 273: set_robust_list (4% increased memory footprint)
-- 293: pipe2 (25% lower FD usage)
+- 202: futex (94% slower, inconsistent synchronization, breaking)
+- 273: set_robust_list (4% increased memory footprint, ??)
+- 293: pipe2 (25% lower FD usage, ??)
 
 **iPerf3 (iPerf3 client)**
 
@@ -579,7 +579,7 @@ Generally no resource usage impact (error margin, <1%), apart from (as described
 Generally no performance impact (error margin, <3%).
 
 Generally no resource usage impact (error margin, <1%), apart from (as described in the paper):
-- 12: brk (11% increased memory footprint, ??)
+- 12: `brk` (11% increased memory footprint, due to `mmap` fallback in early GLIBC allocator, fine)
 
 ### Generating Coverage
 
