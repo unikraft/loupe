@@ -529,7 +529,7 @@ Generally no resource usage impact (error margin, <1%), apart from (as described
 - 11: `munmap` (19% increased memory footprint, regions are not disposed anymore, fine to a certain extent)
 - 12: `brk` (2% increased memory footprint, due to `mmap` fallback in early GLIBC allocator, fine)
 - 14: `rt_sigprocmask` (15% lower memory footprint, when stubbing only, prevents creation of jemalloc background threads, resulting in memory being freed earlier/synchronously, fine)
-- 202: `futex` (94% slower, inconsistent synchronization, breaking)
+- 202: `futex` (94% more FD usage, inconsistent synchronization, breaking)
 - 293: `pipe2` (25% lower FD usage, because pipes are not created anymore, persistence may not work properly, fine depending on feature targets)
 
 **iPerf3 (iPerf3 client)**
