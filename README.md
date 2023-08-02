@@ -486,7 +486,7 @@ sure to keep a low-noise system, pin properly, repeat and average.
 | 28           | 1.0         | 1.0      | 1.0          |
 | 39           | 0.97        | 1.0      | 1.0          |
 | 89           | 0.99        | 1.0      | 1.0          |
-| 95           | 0.99        | 1.0      | **1.04**     |
+| 95           | 0.99        | 1.0      | 1.0          |
 | 99           | 0.99        | 1.0      | 1.0          |
 | 157          | 1.03        | 1.0      | 1.0          |
 | 218          | 0.98        | 1.0      | 1.0          |
@@ -505,7 +505,7 @@ sure to keep a low-noise system, pin properly, repeat and average.
 | 12           | 0.98        | 1.0      | **1.02**     |
 | 13           | 0.98        | 1.0      | 1.0          |
 | 14           | 1.0         | 1.0      | 1.0          |
-| 16           | 0.97        | 1.0      | **1.04**     |
+| 16           | 0.97        | 1.0      | 1.0          |
 | 21           | 1.02        | 1.0      | 1.0          |
 | 28           | 0.99        | 1.0      | 1.0          |
 | 39           | 1.0         | 1.0      | 1.0          |
@@ -516,24 +516,21 @@ sure to keep a low-noise system, pin properly, repeat and average.
 | 157          | 0.98        | 1.0      | 1.0          |
 | 202          | **0.33**    | **1.94** | 1.0          |
 | 218          | 0.97        | 1.0      | 1.0          |
-| 273          | 0.98        | 1.0      | **1.04**     |
+| 273          | 0.98        | 1.0      | 1.0          |
 | 293          | 0.96        | **0.75** | 1.0          |
 | 318          | 1.03        | 1.0      | 1.0          |
 | 334          | 1.0         | 1.0      | 1.0          |
 
 Generally no performance impact (error margin, <3%), apart from (as described in the paper):
-- 202: futex (66% slower, inconsistent synchronization, breaking)
+- 202: `futex` (66% slower, inconsistent synchronization, breaking)
 
 Generally no resource usage impact (error margin, <1%), apart from (as described in the paper):
-- 3: close (8x increased FD usage, FDs are not closed anymore, fine to a certain extent)
-- 11: munmap (19% increased memory footprint, regions are not disposed anymore, fine to a certain extent)
+- 3: `close` (8x increased FD usage, FDs are not closed anymore, fine to a certain extent)
+- 11: `munmap` (19% increased memory footprint, regions are not disposed anymore, fine to a certain extent)
 - 12: `brk` (2% increased memory footprint, due to `mmap` fallback in early GLIBC allocator, fine)
-- 14: rt_sigprocmask (15% lower memory footprint, when stubbing only, ??)
-- 16: ioctl (4% increased memory footprint, when faking only, ??)
-- 95: umask (4% increased memory footprint, when stubbing only, ??)
-- 202: futex (94% slower, inconsistent synchronization, breaking)
-- 273: set_robust_list (4% increased memory footprint, ??)
-- 293: pipe2 (25% lower FD usage, ??)
+- 14: `rt_sigprocmask` (15% lower memory footprint, when stubbing only, prevents creation of jemalloc background threads, resulting in memory being freed earlier/synchronously, fine)
+- 202: `futex` (94% slower, inconsistent synchronization, breaking)
+- 293: `pipe2` (25% lower FD usage, because pipes are not created anymore, persistence may not work properly, fine depending on feature targets)
 
 **iPerf3 (iPerf3 client)**
 
