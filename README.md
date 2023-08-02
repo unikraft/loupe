@@ -661,6 +661,7 @@ Solution: We likely forgot to add `ARG DEBIAN_FRONTEND=noninteractive` in the Do
 [E] Bug here! Failed to determine VmPeak.
 ```
 ...and the value for the memory usage of one or more system calls is -1.
+
 Solution: It is likely that the program is crashing, and that Loupe is consequently unable to measure the peak process memory usage. You should assume that those system calls cannot be faked or stubbed.
 
 **Issue:** Performance measurement shows with the following error:
@@ -668,4 +669,5 @@ Solution: It is likely that the program is crashing, and that Loupe is consequen
 [E] Bug here! VmPeak not in kB:${something}
 ```
 ...and the value for the memory usage of one or more system calls is -1.
+
 Solution: This is a bug in Loupe. Please submit a bug report.
