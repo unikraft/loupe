@@ -232,6 +232,26 @@ $ loupe generate -b -db ../../../../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.
 
 `loupe search` takes care of analyzing the data in the database.
 
+### Extracting Data
+
+Loupe can simply output the database's raw data:
+
+```
+$ ./loupe search --show-usage -db ../loupedb -a "nginx" -w benchmark
+[I] Checking database...
+Required:
+[0, 3, 9, 17, 18, 20, 41, 45, 49, 50, 53, 54, 59, 158, 213, 232, 233, 257, 262]
+Can be stubbed:
+[8, 10, 13, 16, 33, 39, 56, 63, 72, 83, 105, 106, 302]
+Can be faked:
+[288]
+Can be both stubbed or faked:
+[1, 11, 12, 14, 21, 40, 42, 92, 107, 110, 116, 157, 218, 273, 290, 318, 334]
+```
+
+- You can replace `nginx` with any other application name, list of names (comma-separated), or a `*` for all.
+- You can replace `benchmark` with `suite` to obtain data for the test-suite, or `*` for both.
+
 ### Generating Plots
 
 Loupe can generate the paper's plot using information from the database.
