@@ -437,6 +437,7 @@ purposes, see the paper for a comprehensive list.
 | 107          | 1.01        | 1.0      | 1.0          |
 | 110          | 1.0         | 1.0      | 1.0          |
 | 116          | 1.01        | 1.0      | 1.0          |
+| 130          | **0.87**    | 1.0      | 1.0          |
 | 157          | 0.99        | 1.0      | 1.0          |
 | 218          | 1.02        | 1.0      | 1.0          |
 | 273          | 1.0         | 1.0      | 1.0          |
@@ -471,6 +472,7 @@ purposes, see the paper for a comprehensive list.
 | 107          | 1.01        | 1.0      | 1.0          |
 | 110          | 1.01        | 1.0      | 1.0          |
 | 116          | 1.01        | 1.0      | 1.0          |
+| 130          | **0.62**    | 1.0      | 1.0          |
 | 157          | 1.0         | 1.0      | 1.0          |
 | 218          | 1.01        | 1.0      | 1.0          |
 | 273          | 0.99        | 1.0      | 1.0          |
@@ -481,10 +483,18 @@ purposes, see the paper for a comprehensive list.
 
 Generally no performance impact (error margin, <3%), apart from (as described in the paper):
 - 1: `write` (14-15% faster, because logs are not written anymore, fine)
+- 130: `sigsuspend` (~38% slower, because the master process polls for signals, fine)
 
 Generally no resource usage impact (error margin, <1%), apart from (as described in the paper):
 - 12: `brk` (17% increased memory footprint, due to `mmap` fallback in early GLIBC allocator, fine)
 - 56: `clone` (10% increased memory footprint, results in the master process executing the worker loop, works but fragile)
+
+Note on 130 (`sigsuspend`): there is a bug in Loupe that prevents it from
+automatically performing measurements for 130. We are working on solving it.
+Meanwhile, we conducted the measurements for 130 manually (calling
+`seccomp-run` manually). Unlike other system calls, the performance impact of
+stubbing/faking this feature shows a lot of variance, which explains the
+difference of results between stubbing and faking.
 
 **Redis (redis-benchmark)**
 
