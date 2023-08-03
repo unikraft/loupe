@@ -2,9 +2,10 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 #
-# Authors: Gaulthier Gain <gaulthier.gain@uliege.be>
+# Authors:  Gaulthier Gain <gaulthier.gain@uliege.be>
+#           Benoit Knott <benoit.knott@student.uliege.be>
 #
-# Copyright (c) 2020-2022, University of Liège. All rights reserved.
+# Copyright (c) 2020-2023, University of Liège. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,147 +32,95 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import os
-import re
-import csv
-import lief
+"""
+Main file of the program.
+
+Parses the input, calls the elf and code analyser and prints the results.
+"""
+
 import sys
-import json
 import argparse
+import lief
 
-from syscalls import *
-from capstone import *
+import utils
+from syscalls import get_inverse_syscalls_map, syscalls_map
+from code_analyser import CodeAnalyser
+from elf_analyser import get_syscalls_from_symbols, is_valid_binary
+from custom_exception import StaticAnalyserException
 
-verbose = False
+CSV = "data.csv"
 
-CSV          = "data.csv"
-TEXT_SECTION = ".text"
-APP          = "redis-server-static"
+def main():
+    """Parse the arguments, starts the analysis and print the results"""
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--app','-a', help='Path to application',required=True,
+                        default=utils.app)
+    parser.add_argument('--verbose', '-v', type=utils.str2bool, nargs='?',
+                        const=True, help='Verbose mode', default=True)
+    parser.add_argument('--display', '-d', type=utils.str2bool, nargs='?',
+                        const=True, help='Display syscalls', default=True)
+    parser.add_argument('--csv', '-c', type=utils.str2bool, nargs='?',
+                        const=True, help='Output csv', default=True)
+    parser.add_argument('--log', '-l', type=utils.str2bool, nargs='?',
+                        const=True, help='Log mode', default=False)
+    parser.add_argument('--log-to-stdout', '-L', type=utils.str2bool,
+                        nargs='?', const=True, help='Print logs to the '
+                        'standard output', default=False)
+    parser.add_argument('--max-backtrack-insns', '-B', type=int, nargs='?',
+                        const=True, help='Maximum number of instructions to '
+                        'check before a syscall instruction to find its id',
+                        default=20)
+    parser.add_argument('--skip-data', '-s', type=utils.str2bool, nargs='?',
+                        const=True, help='Automatically skip data in code and '
+                        'try to find the next instruction (may lead to '
+                        'errors)', default=False)
+    args = parser.parse_args()
 
-def print_verbose(msg, indent=0):
-    
-    if verbose:
-        print(indent * "\t" + msg)
+    utils.verbose = args.verbose
+    utils.app = args.app
+    utils.use_log_file = not args.log_to_stdout
+    utils.logging = args.log if args.log_to_stdout is False else True
+    if utils.logging and utils.use_log_file:
+        utils.clean_logs()
+    utils.skip_data = args.skip_data
+    utils.max_backtrack_insns = args.max_backtrack_insns
 
-def str2bool(v):
+    try:
+        binary = lief.parse(utils.app)
+        if not is_valid_binary(binary):
+            raise StaticAnalyserException("The given binary is not a CLASS64 "
+                                          "ELF file.")
 
-    if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        utils.print_verbose("Analysing the ELF file. This may take some "
+                            "times...")
 
-def process_alias(name):
-    
-    if name.startswith("__"):
-        name = re.sub('^_*', '', name)
-    if "libc_" in name:
-        name = name.replace("libc_", "")
-    return name
+        syscalls_set = set()
+        get_syscalls_from_symbols(binary, syscalls_set)
 
-def backtrack_syscalls(index, ins):
+        code_analyser = CodeAnalyser(utils.app)
 
-    for i in range(index-1, 0, -1):
-        
-        b = ins[i].bytes
-        print_verbose("-> 0x{:x}:{} {}".format(ins[i].address, ins[i].mnemonic, ins[i].op_str), indent=1)
-        # MOV in EAX
-        if b[0] == 0xb8:
-            return int(b[1])
-
-        # Another syscall is called, break
-        if b[0] == 0xcd and b[1] == 0x80:
-            return -1
-
-def wrapper_backtrack_syscalls(i, list_inst, syscalls_set, inv_syscalls_map):
-    nb_syscall = backtrack_syscalls(i, list_inst)
-    if nb_syscall != -1 and nb_syscall < len(inv_syscalls_map):
-        name = inv_syscalls_map[nb_syscall]
-        print_verbose("Found: {}: {}\n".format(name, nb_syscall))
-        syscalls_set.add(name)
-    else:
-        print_verbose("Ignore {}".format(nb_syscall))
-
-def disassemble(text_section, syscalls_set, inv_syscalls_map):
-    
-    md = Cs(CS_ARCH_X86, CS_MODE_64)
-    md.detail = True
-
-    insns = md.disasm(bytearray(text_section.content), text_section.virtual_address)
-    list_inst = list()
-    for i, ins in enumerate(insns):
-        
-        b = ins.bytes
-        list_inst.append(ins)
-
-        if b[0] == 0x0f and b[1] == 0x05:
-            # Direct syscall SYSCALL
-            print_verbose("DIRECT SYSCALL (x86_64): 0x{:x} {} {}".format(ins.address, ins.mnemonic, ins.op_str))
-            wrapper_backtrack_syscalls(i, list_inst, syscalls_set, inv_syscalls_map)
-        elif b[0] == 0x0f and b[1] == 0x34:
-            # Direct syscall SYSENTER
-            print_verbose("SYSENTER: 0x{:x} {} {}".format(ins.address, ins.mnemonic, ins.op_str))
-            wrapper_backtrack_syscalls(i, list_inst, syscalls_set, inv_syscalls_map)
-        elif b[0] == 0xcd and b[1] == 0x80:
-            # Direct syscall int 0x80
-            print_verbose("DIRECT SYSCALL (x86): 0x{:x} {} {}".format(ins.address, ins.mnemonic, ins.op_str))
-            wrapper_backtrack_syscalls(i, list_inst, syscalls_set, inv_syscalls_map)
-
-def detect_syscalls(sect_it, syscalls_set, syscalls_map):
-    for s in sect_it:
-        name = s.name
-        if name in alias_syscalls_map:
-            name = alias_syscalls_map[name]
-        
-        if name in syscalls_map:
-            syscalls_set.add(name)
-
-def static_analysis(v, app, display=False, csv=True):
-    global verbose
-
-    verbose = v
-    binary = lief.parse(app)
-    
-    print_verbose("Analysing the ELF file. This may take some times...")
-    syscalls_set = set()
-    for sect_it in [binary.dynamic_symbols, binary.static_symbols, binary.symbols]:
-        detect_syscalls(sect_it, syscalls_set, syscalls_map)
-
-    text_section = binary.get_section(TEXT_SECTION)
-    if text_section is None:
-        sys.write("[ERROR] Text section is not found.")
+        inv_syscalls_map = get_inverse_syscalls_map()
+        code_analyser.get_used_syscalls_text_section(syscalls_set,
+                                                     inv_syscalls_map)
+    except StaticAnalyserException as e:
+        sys.stderr.write(f"[ERROR] {e}\n")
         sys.exit(1)
 
-    inv_syscalls_map = {syscalls_map[k] : k for k in syscalls_map}
-    disassemble(text_section, syscalls_set, inv_syscalls_map)
-
-    if display:
+    if args.display:
         for k,v in syscalls_map.items():
             if k in syscalls_set:
-                print_verbose("{} : {}".format(k,v))
+                print(f"{k} : {v}")
 
-    print_verbose("Total number of syscalls: " + str(len(syscalls_set)))
+    utils.print_verbose("Total number of syscalls: " + str(len(syscalls_set)))
 
-    if csv:
+    if args.csv:
+        print("# syscall, used")
         for k,v in syscalls_map.items():
             value = "N"
             if k in syscalls_set:
                 value = "Y"
-            print("{},{}".format(v,value))
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--app','-a', help='Path to application',required=True, default=APP)
-    parser.add_argument('--verbose', '-v', type=str2bool, nargs='?', const=True, help='Verbose mode', default=True)
-    parser.add_argument('--display', '-d', type=str2bool, nargs='?', const=True, help='Display syscalls', default=True)
-    parser.add_argument('--csv', '-c', type=str2bool, nargs='?', const=True, help='Output csv', default=True)
-    args = parser.parse_args()
-
-    static_analysis(args.verbose, args.app, display=args.display, csv=args.csv)
+            print(f"{v},{value}")
 
 if __name__== "__main__":
-    main()  
+    main()
