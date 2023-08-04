@@ -1122,6 +1122,22 @@ if (args.cmd == "search"):
         with open(os.path.join("./data-dynstubfake.dat"), "a") as outf:
             outf.write(dynstubfakedat)
 
+        # generate dumps (only used separately for correlation checks)
+        dynuseddat_dump = ""
+        dynstubfakedat_dump = ""
+
+        for sysnumber in range(MAX_SYSCALL):
+            p = cumulative[1][sysnumber]
+            dynuseddat_dump += str(sysnumber) + "\t" + str(p) + "\n"
+
+            p = cumulative[0][sysnumber]
+            dynstubfakedat_dump += str(sysnumber) + "\t" + str(p) + "\n"
+
+        with open(os.path.join("./data-dynused-dump.dat"), "a") as outf:
+            outf.write(dynuseddat_dump)
+        with open(os.path.join("./data-dynstubfake-dump.dat"), "a") as outf:
+            outf.write(dynstubfakedat_dump)
+
         info("Building plot")
         cwd = os.getcwd()
         runcmd = ["docker", "run", "-it", "--rm", "-v", cwd+ ":/mnt", "loupe-plot",
