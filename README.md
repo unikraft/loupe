@@ -14,8 +14,8 @@ are made in a Docker container.
 
 Loupe stores analysis results in a custom database. A Loupe database is nothing
 more than a git repository with a particular layout. We offer an online, open
-[database]() maintained by the community. Feel free to pull request your
-analysis results!
+[database](https://github.com/unikraft/loupedb) maintained by the community.
+Feel free to pull request your analysis results!
 
 Loupe is the result of a collaboration between The University of Manchester,
 Liège Université, University Politehnica of Bucharest, and Unikraft.io. It has
