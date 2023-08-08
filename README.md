@@ -13,8 +13,7 @@ analysis data.  We put the emphasis on *reproducible* analysis: measurements
 are made in a Docker container.
 
 Loupe stores analysis results in a custom database. A Loupe database is nothing
-more than a git repository with a particular layout. If necessary, Loupe is
-also able to convert this database to SQLite. We offer an online, open
+more than a git repository with a particular layout. We offer an online, open
 [database]() maintained by the community. Feel free to pull request your
 analysis results!
 
@@ -751,6 +750,14 @@ software](https://github.com/unikraft/loupe/blob/staging/COPYING.md).
 To contribute to this repository, please fork and submit a Pull-Request. If you
 introduce a new file, make sure to add an SPDX license header. If you do
 significant-enough changes, consider adding yourself to `COPYING.md`.
+
+We included a
+[description](https://github.com/unikraft/loupe/blob/staging/STRUCTURE.md) of
+the structure of this repository, which you may find useful to get started.
+
+Here are a few ideas of contributions to get started:
+- Add support to convert Loupe databases to SQLite.
+- Fix [open bug reports](https://github.com/unikraft/loupe/issues).
 
 ## 9. Disclaimer
 
