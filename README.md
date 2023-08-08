@@ -732,6 +732,16 @@ Solution: It is likely that the program is crashing, and that Loupe is consequen
 
 Solution: This is a bug in Loupe. Please submit a bug report.
 
+**Issue:** I cannot reproduce certain measurements, despite of running the
+reproduce command as instructed in the
+[README.md](https://github.com/unikraft/loupe/tree/staging#example-2-reproducing-existing-runs).
+
+Solution: Although infrequently happening, this is a known issue. The reason
+varies; it can be due to the Loupe code having changed since the run was
+performed, to the Docker container not being perfectly reproducible (e.g.,
+versions of the application, shared libraries not being fixed properly), to the
+kernel having changed, etc.
+
 ## 7. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)
 
 In addition to this repository, we have archived this artifact on Zenodo. In
