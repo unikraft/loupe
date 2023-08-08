@@ -25,12 +25,29 @@ analysis results!
 - Loupe supports replication to obtain results stable across runs
 - Loupe offers an infrastructure for reproducibility and sharing of results
 
-## Hardware Dependencies
+## 0. Table of Contents
+
+If at all possible, please read through this entire document before installing
+or using Loupe. This document is best read on
+[GitHub](https://github.com/unikraft/loupe), with a Markdown viewer, or
+Markdown editor.
+
+- [1. Hardware Dependencies]()
+- [2. Dependencies & Install]()
+- [3. Gathering Data]()
+- [4. Retrieving and Processing Data]()
+- [5. Advanced Features]()
+- [6. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)]()
+- [7. Contributing]()
+- [8. Disclaimer]()
+- [9. Acknowledgements]()
+
+## 1. Hardware Dependencies
 
 Any x86 machine with more than 8 CPU cores should do the trick (non-x86 might
 cause issues because of our Docker containers).
 
-## Dependencies & Install
+## 2. Dependencies & Install
 
 - Docker
 - python3, with [python-git](https://pypi.org/project/python-git/)
@@ -39,7 +56,7 @@ cause issues because of our Docker containers).
 
 The setup is very simple: `make all`
 
-## Gathering Data
+## 3. Gathering Data
 
 `loupe generate` takes care of analyzing the system call usage of your
 application.
@@ -228,7 +245,7 @@ $ loupe generate -b -db ../../../../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.
 
 `git diff` can then be used to visualize changes.
 
-## Retrieving and Processing Data
+## 4. Retrieving and Processing Data
 
 `loupe search` takes care of analyzing the data in the database.
 
@@ -304,7 +321,7 @@ $ make paperplots
 
 Generated plots will be located under `paperplots`.
 
-## Advanced Features
+## 5. Advanced Features
 
 Here we describe advanced features supported by Loupe.
 
@@ -659,7 +676,7 @@ emerald.png  glass.png  index-sort-l.html  ruby.png    usr
 
 The resulting html report is there.
 
-## Troubleshooting
+## 6. Troubleshooting
 
 :warning: this section is work in progress.
 
@@ -701,3 +718,29 @@ Solution: It is likely that the program is crashing, and that Loupe is consequen
 ...and the value for the memory usage of one or more system calls is -1.
 
 Solution: This is a bug in Loupe. Please submit a bug report.
+
+## 7. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)
+
+In addition to this repository, we have archived this artifact on Zenodo. In
+order to make the Zenodo artifact as self-contained as possible, we included a
+copy of the [Loupe database](https://github.com/unikraft/loupedb) along with
+this repository. These are provided for the main purpose of archival. You can
+generate a new snapshot with `make zenodo`.
+
+We tagged both repositories with `asplos24-ae` before submission.
+
+## 8. Contributing
+
+More information will follow here.
+
+## 9. Disclaimer
+
+This artifact is the first release of a research proof-of-concept for Loupe.
+Like any research prototype, it contains hacks, bugs, and TODOs. Please use it
+with a critical eye. We hope that it will be useful!
+
+## 10. Acknowledgements
+
+This artifact would not exist without the infrastructure and hard work of the
+Unikraft community.  We encourage interested researchers to visit the project's
+[web page](https://unikraft.org/) and [GitHub](https://github.com/unikraft/).
