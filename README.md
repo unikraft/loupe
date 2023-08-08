@@ -18,6 +18,17 @@ also able to convert this database to SQLite. We offer an online, open
 [database]() maintained by the community. Feel free to pull request your
 analysis results!
 
+Loupe is the result of a collaboration between The University of Manchester,
+Liège Université, University Politehnica of Bucharest, and Unikraft.io. It has
+been accepted to appear in [ASPLOS'24](https://www.asplos-conference.org/asplos2024/).
+
+> **Abstract**: Supporting mainstream applications is fundamental for a new OS to have impact, and is generally achieved by developing a layer of compatibility such that applications developed for a mainstream OS like Linux can work, unmodified, on the new OS. Building such a layer, as we will show, results in large inefficiencies in terms of engineering effort due to the lack of efficient methods to precisely measure the OS features required by a set of applications.
+>
+> We propose Loupe, a novel method based on dynamic analysis that determines the OS features that need to be implemented in a prototype OS to bring support for a target set of applications and workloads.
+> Loupe guides and boosts OS developers as they build compatibility layers, prioritizing which features to implement in order to quickly support many applications as early as possible. We apply our methodology to 100+ applications and several OSes currently under development, demonstrating high engineering effort savings vs. existing approaches: for example, for the 62 applications supported by the OSv kernel, we show that using Loupe, would have required implementing only 37 system calls vs. 92 for the non-systematic process followed by OSv developers.
+>
+> We further study our measurements and extract several novel key insights. Overall, we show that the burden of building compatibility layers is significantly less than what previous works suggest: in some cases, only as few as 20% of system calls reported by static analysis, and 50% of those reported by naive dynamic analysis need an implementation for an application to successfully run standard benchmarks.
+
 ### Loupe is not your regular strace!
 
 - Loupe supports stubbing/faking analysis (Loupe is not a *passive* observer)
@@ -32,15 +43,16 @@ or using Loupe. This document is best read on
 [GitHub](https://github.com/unikraft/loupe), with a Markdown viewer, or
 Markdown editor.
 
-- [1. Hardware Dependencies]()
-- [2. Dependencies & Install]()
-- [3. Gathering Data]()
-- [4. Retrieving and Processing Data]()
-- [5. Advanced Features]()
-- [6. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)]()
-- [7. Contributing]()
-- [8. Disclaimer]()
-- [9. Acknowledgements]()
+- [1. Hardware Dependencies](#1-hardware-dependencies)
+- [2. Dependencies & Install](#2-dependencies--install)
+- [3. Gathering Data](#3-gathering-data)
+- [4. Retrieving and Processing Data](#4-retrieving-and-processing-data)
+- [5. Advanced Features](#5-advanced-features)
+- [6. Troubleshooting](#6-troubleshooting)
+- [7. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)](#7-zenodo-artifact--tags-asplos24-artifact-evaluation)
+- [8. Contributing](#8-contributing)
+- [9. Disclaimer](#9-disclaimer)
+- [10. Acknowledgements](#10-acknowledgements)
 
 ## 1. Hardware Dependencies
 
