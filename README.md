@@ -690,7 +690,9 @@ The resulting html report is there.
 
 ## 6. Troubleshooting
 
-:warning: this section is work in progress.
+This is a list of known issues, along with their solution. If your issue is not
+in this list, feel free to open a bug report and [contribute a
+fix](https://github.com/unikraft/loupe#8-contributing).
 
 **Issue:** You want to rebuild the base container, but running `make docker` doesn't do anything.
 
@@ -743,7 +745,12 @@ We tagged both repositories with `asplos24-ae` before submission.
 
 ## 8. Contributing
 
-More information will follow here.
+We welcome contributions from anyone. This is [free
+software](https://github.com/unikraft/loupe/blob/staging/COPYING.md).
+
+To contribute to this repository, please fork and submit a Pull-Request. If you
+introduce a new file, make sure to add an SPDX license header. If you do
+significant-enough changes, consider adding yourself to `COPYING.md`.
 
 ## 9. Disclaimer
 
