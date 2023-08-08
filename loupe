@@ -4,7 +4,7 @@
 #
 # Authors: Hugo Lefeuvre <hugo.lefeuvre@manchester.ac.uk>
 #
-# Copyright (c) 2020-2022, The University of Manchester. All rights reserved.
+# Copyright (c) 2020-2023, The University of Manchester. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -330,7 +330,7 @@ def get_workloads(db, applist, bench=False, suite=False,
 # if passed static_binary=True or static_source=True, the second element of
 # the Tuple (used) will be None to represent N/A.
 def process_cumulative(db, applist, bench=False, suite=False,
-        static_binary=False, static_source=False):
+        static_binary=False, static_source=False, ignore_fake=False):
     assert(bench or suite or static_binary or static_source)
     assert('*' not in applist)
 
@@ -357,8 +357,12 @@ def process_cumulative(db, applist, bench=False, suite=False,
                 if bench or suite:
                     if w[i][1] == "Y":
                         exe = True
-                        if w[i][2] == "N" and w[i][3] == "N" and w[i][4] == "N":
-                            req = True
+                        if ignore_fake:
+                            if w[i][3] == "N" and w[i][4] == "N":
+                                req = True
+                        else:
+                            if w[i][2] == "N" and w[i][3] == "N" and w[i][4] == "N":
+                                req = True
                 else:
                     if w[i][1] == "Y":
                         req = True
@@ -1122,6 +1126,31 @@ if (args.cmd == "search"):
         with open(os.path.join("./data-dynstubfake.dat"), "a") as outf:
             outf.write(dynstubfakedat)
 
+        # generate dumps (only used separately for correlation checks)
+        dynuseddat_dump = ""
+        dynstubfakedat_dump = ""
+        dynstubdat_dump = ""
+
+        cumulative_nofake = process_cumulative(db, considered,
+                bench=benchmark, suite=testsuite, ignore_fake=True)
+
+        for sysnumber in range(MAX_SYSCALL):
+            p = cumulative[1][sysnumber]
+            dynuseddat_dump += str(sysnumber) + "\t" + str(p) + "\n"
+
+            p = cumulative[0][sysnumber]
+            dynstubfakedat_dump += str(sysnumber) + "\t" + str(100 - p) + "\n"
+
+            p = cumulative_nofake[0][sysnumber]
+            dynstubdat_dump += str(sysnumber) + "\t" + str(100 - p) + "\n"
+
+        with open(os.path.join("./data-dynused-dump.dat"), "a") as outf:
+            outf.write(dynuseddat_dump)
+        with open(os.path.join("./data-dynstubfake-dump.dat"), "a") as outf:
+            outf.write(dynstubfakedat_dump)
+        with open(os.path.join("./data-dynstub-dump.dat"), "a") as outf:
+            outf.write(dynstubdat_dump)
+
         info("Building plot")
         cwd = os.getcwd()
         runcmd = ["docker", "run", "-it", "--rm", "-v", cwd+ ":/mnt", "loupe-plot",
@@ -1145,7 +1174,7 @@ if (args.cmd == "search"):
 
         # we need to be able to use the same dataset for all lines
         considered = get_workloads(db, args.applist.split(","), benchmark,
-                testsuite, True, True)[1]
+                False, False, False)[1]
         info("Apps considered in this plot: " + ' '.join(considered))
 
         cumulative = process_cumulative(db, considered, bench=benchmark,

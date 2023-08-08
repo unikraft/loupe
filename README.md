@@ -13,10 +13,20 @@ analysis data.  We put the emphasis on *reproducible* analysis: measurements
 are made in a Docker container.
 
 Loupe stores analysis results in a custom database. A Loupe database is nothing
-more than a git repository with a particular layout. If necessary, Loupe is
-also able to convert this database to SQLite. We offer an online, open
+more than a git repository with a particular layout. We offer an online, open
 [database]() maintained by the community. Feel free to pull request your
 analysis results!
+
+Loupe is the result of a collaboration between The University of Manchester,
+Liège Université, University Politehnica of Bucharest, and Unikraft.io. It has
+been accepted to appear in [ASPLOS'24](https://www.asplos-conference.org/asplos2024/).
+
+> **Abstract**: Supporting mainstream applications is fundamental for a new OS to have impact, and is generally achieved by developing a layer of compatibility such that applications developed for a mainstream OS like Linux can work, unmodified, on the new OS. Building such a layer, as we will show, results in large inefficiencies in terms of engineering effort due to the lack of efficient methods to precisely measure the OS features required by a set of applications.
+>
+> We propose Loupe, a novel method based on dynamic analysis that determines the OS features that need to be implemented in a prototype OS to bring support for a target set of applications and workloads.
+> Loupe guides and boosts OS developers as they build compatibility layers, prioritizing which features to implement in order to quickly support many applications as early as possible. We apply our methodology to 100+ applications and several OSes currently under development, demonstrating high engineering effort savings vs. existing approaches: for example, for the 62 applications supported by the OSv kernel, we show that using Loupe, would have required implementing only 37 system calls vs. 92 for the non-systematic process followed by OSv developers.
+>
+> We further study our measurements and extract several novel key insights. Overall, we show that the burden of building compatibility layers is significantly less than what previous works suggest: in some cases, only as few as 20% of system calls reported by static analysis, and 50% of those reported by naive dynamic analysis need an implementation for an application to successfully run standard benchmarks.
 
 ### Loupe is not your regular strace!
 
@@ -25,12 +35,30 @@ analysis results!
 - Loupe supports replication to obtain results stable across runs
 - Loupe offers an infrastructure for reproducibility and sharing of results
 
-## Hardware Dependencies
+## 0. Table of Contents
+
+If at all possible, please read through this entire document before installing
+or using Loupe. This document is best read on
+[GitHub](https://github.com/unikraft/loupe), with a Markdown viewer, or
+Markdown editor.
+
+- [1. Hardware Dependencies](#1-hardware-dependencies)
+- [2. Dependencies & Install](#2-dependencies--install)
+- [3. Gathering Data](#3-gathering-data)
+- [4. Retrieving and Processing Data](#4-retrieving-and-processing-data)
+- [5. Advanced Features](#5-advanced-features)
+- [6. Troubleshooting](#6-troubleshooting)
+- [7. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)](#7-zenodo-artifact--tags-asplos24-artifact-evaluation)
+- [8. Contributing](#8-contributing)
+- [9. Disclaimer](#9-disclaimer)
+- [10. Acknowledgements](#10-acknowledgements)
+
+## 1. Hardware Dependencies
 
 Any x86 machine with more than 8 CPU cores should do the trick (non-x86 might
 cause issues because of our Docker containers).
 
-## Dependencies & Install
+## 2. Dependencies & Install
 
 - Docker
 - python3, with [python-git](https://pypi.org/project/python-git/)
@@ -39,7 +67,7 @@ cause issues because of our Docker containers).
 
 The setup is very simple: `make all`
 
-## Gathering Data
+## 3. Gathering Data
 
 `loupe generate` takes care of analyzing the system call usage of your
 application.
@@ -228,7 +256,7 @@ $ loupe generate -b -db ../../../../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.
 
 `git diff` can then be used to visualize changes.
 
-## Retrieving and Processing Data
+## 4. Retrieving and Processing Data
 
 `loupe search` takes care of analyzing the data in the database.
 
@@ -304,7 +332,7 @@ $ make paperplots
 
 Generated plots will be located under `paperplots`.
 
-## Advanced Features
+## 5. Advanced Features
 
 Here we describe advanced features supported by Loupe.
 
@@ -659,9 +687,11 @@ emerald.png  glass.png  index-sort-l.html  ruby.png    usr
 
 The resulting html report is there.
 
-## Troubleshooting
+## 6. Troubleshooting
 
-:warning: this section is work in progress.
+This is a list of known issues, along with their solution. If your issue is not
+in this list, feel free to open a bug report and [contribute a
+fix](https://github.com/unikraft/loupe#8-contributing).
 
 **Issue:** You want to rebuild the base container, but running `make docker` doesn't do anything.
 
@@ -701,3 +731,52 @@ Solution: It is likely that the program is crashing, and that Loupe is consequen
 ...and the value for the memory usage of one or more system calls is -1.
 
 Solution: This is a bug in Loupe. Please submit a bug report.
+
+**Issue:** I cannot reproduce certain measurements, despite of running the
+reproduce command as instructed in the
+[README.md](https://github.com/unikraft/loupe/tree/staging#example-2-reproducing-existing-runs).
+
+Solution: Although infrequently happening, this is a known issue. The reason
+varies; it can be due to the Loupe code having changed since the run was
+performed, to the Docker container not being perfectly reproducible (e.g.,
+versions of the application, shared libraries not being fixed properly), to the
+kernel having changed, etc.
+
+## 7. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)
+
+In addition to this repository, we have archived this artifact on Zenodo. In
+order to make the Zenodo artifact as self-contained as possible, we included a
+copy of the [Loupe database](https://github.com/unikraft/loupedb) along with
+this repository. These are provided for the main purpose of archival. You can
+generate a new snapshot with `make zenodo`.
+
+We tagged both repositories with `asplos24-ae` before submission.
+
+## 8. Contributing
+
+We welcome contributions from anyone. This is [free
+software](https://github.com/unikraft/loupe/blob/staging/COPYING.md).
+
+To contribute to this repository, please fork and submit a Pull-Request. If you
+introduce a new file, make sure to add an SPDX license header. If you do
+significant-enough changes, consider adding yourself to `COPYING.md`.
+
+We included a
+[description](https://github.com/unikraft/loupe/blob/staging/STRUCTURE.md) of
+the structure of this repository, which you may find useful to get started.
+
+Here are a few ideas of contributions to get started:
+- Add support to convert Loupe databases to SQLite.
+- Fix [open bug reports](https://github.com/unikraft/loupe/issues).
+
+## 9. Disclaimer
+
+This artifact is the first release of a research proof-of-concept for Loupe.
+Like any research prototype, it contains hacks, bugs, and TODOs. Please use it
+with a critical eye. We hope that it will be useful!
+
+## 10. Acknowledgements
+
+This artifact would not exist without the infrastructure and hard work of the
+Unikraft community.  We encourage interested researchers to visit the project's
+[web page](https://unikraft.org/) and [GitHub](https://github.com/unikraft/).

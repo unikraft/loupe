@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Authors:  Gaulthier Gain <gaulthier.gain@uliege.be>
 #           Benoit Knott <benoit.knott@student.uliege.be>
@@ -36,7 +37,6 @@ def get_inverse_syscalls_map():
     """Return the syscalls_map directory with keys and values swapped."""
 
     return {ID: name for name, ID in syscalls_map.items()}
-
 
 syscalls_map = {
     "read":                   0,
