@@ -35,7 +35,7 @@ been accepted to appear in [ASPLOS'24](https://www.asplos-conference.org/asplos2
 - Loupe supports replication to obtain results stable across runs
 - Loupe offers an infrastructure for reproducibility and sharing of results
 
-## 0. Table of Contents
+## 0. Table of Contents & Links
 
 If at all possible, please read through this entire document before installing
 or using Loupe. This document is best read on
@@ -52,6 +52,8 @@ Markdown editor.
 - [8. Contributing](#8-contributing)
 - [9. Disclaimer](#9-disclaimer)
 - [10. Acknowledgements](#10-acknowledgements)
+
+**Link to the Loupe ASPLOS'24 paper data set: [[ASPLOS'24 Data Set]](https://github.com/unikraft/loupedb)**
 
 ## 1. Hardware Dependencies
 
