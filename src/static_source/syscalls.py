@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
 syscalls_map = {
     "read":                   0,
     "write":                  1,

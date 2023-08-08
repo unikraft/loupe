@@ -37,7 +37,7 @@ The following information is true as of ASPLOS'24 release:
   but certain files are co-authored with other contributors. This is indicated
   in the corresponding file's license header.
 - Particularly, the static analysis (here) was authored mainly by `Gaulthier Gain <gaulthier.gain@uliege.be>`.
-- `Pierre Olivier <pierre.olivier@manchester.ac.uk>`, `Vlad Schiller <vlad-radu.schiller@student.manchester.ac.uk>`, and `Vlad Badoiu <>vlad_andrei.badoiu@upb.ro` contributed bug fixes throughout the code base.
+- `Pierre Olivier <pierre.olivier@manchester.ac.uk>`, `Vlad Schiller <vlad-radu.schiller@student.manchester.ac.uk>`, and `Vlad Badoiu <vlad_andrei.badoiu@upb.ro>` contributed bug fixes throughout the code base.
 - `Vlad Badoiu <vlad_andrei.badoiu@upb.ro>` contributed the debhelper support.
 - In order to simplify working with license check tools, we add SPDX License
   Identifiers to the source files. Please be aware that this tagging might be
