@@ -35,7 +35,7 @@
 import argparse
 
 DEBUG = False
-log_dir_path = "../logs/"
+log_dir_path = "./"
 
 # global variables
 # Beware that these may NOT be reflective of the default values. To modify the

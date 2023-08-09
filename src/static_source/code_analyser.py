@@ -116,7 +116,8 @@ class CodeAnalyser:
             self.__lib_analyser = library_analyser.LibraryUsageAnalyser(
                     self.__binary)
         except StaticAnalyserException as e:
-            sys.stderr.write(f"[ERROR] library analyser of {self.__path} "
+            if utils.verbose:
+                sys.stderr.write(f"[ERROR] library analyser of {self.__path} "
                              f"couldn't be created: {e}\n")
             self.__has_dyn_libraries = False
 
@@ -168,7 +169,8 @@ class CodeAnalyser:
             list_inst.append(ins)
 
             if ins.id in (X86_INS_DATA16, X86_INS_INVALID):
-                sys.stderr.write(f"[WARNING] data instruction found in "
+                if utils.verbose:
+                    sys.stderr.write(f"[WARNING] data instruction found in "
                                  f"{self.__path} at address "
                                  f"{hex(ins.address)}\n")
                 continue

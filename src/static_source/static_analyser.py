@@ -104,7 +104,8 @@ def main():
         code_analyser.get_used_syscalls_text_section(syscalls_set,
                                                      inv_syscalls_map)
     except StaticAnalyserException as e:
-        sys.stderr.write(f"[ERROR] {e}\n")
+        if utils.verbose:
+            sys.stderr.write(f"[ERROR] {e}\n")
         sys.exit(1)
 
     if args.display:

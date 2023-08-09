@@ -245,8 +245,8 @@ class LibraryUsageAnalyser:
                 return [LibFunction(name="", library_path=self.__binary_path,
                                     boundaries=(rel.addend, -1))]
             return []
-
-        sys.stderr.write(f"[WARNING] A function name couldn't be found for "
+        if utils.verbose:
+            sys.stderr.write(f"[WARNING] A function name couldn't be found for "
                          f"the .plt slot at address {hex(operand)}\n")
         return []
 
@@ -372,9 +372,10 @@ class LibraryUsageAnalyser:
         if not functions:
             if lib_alias is not None:
                 return self.__find_function_with_name(f_name)
-            sys.stderr.write(f"[WARNING] No library function was found for "
+            if utils.verbose:
+                sys.stderr.write(f"[WARNING] No library function was found for "
                              f"{f_name}. Continuing...\n")
-        elif len(functions) > 1:
+        elif len(functions) > 1 and utils.verbose:
             sys.stderr.write(f"[WARNING] Multiple possible library functions "
                              f"were found for {f_name}: {functions}.\n"
                              f"All of them will be considered.\n")
@@ -468,7 +469,7 @@ class LibraryUsageAnalyser:
                     self.__add_used_library(path + name)
                     lib_names.remove(name)
 
-        if len(lib_names) > 0:
+        if len(lib_names) > 0 and utils.verbose:
             sys.stderr.write(f"[ERROR] The following libraries couldn't be "
                              f"found and therefore won't be analysed: "
                              f"{lib_names}\n")
@@ -505,7 +506,8 @@ class LibraryUsageAnalyser:
                         .code_analyser.get_text_section())
         if function.boundaries[1] > text_section.size:
             # TODO: detect in which section it is and fetch it
-            sys.stderr.write(f"[WARNING] Library function "
+            if utils.verbose:
+                sys.stderr.write(f"[WARNING] Library function "
                              f"{function.name}@{lib_name} is located outside "
                              f"the .text section and was therefore not "
                              f"analysed. Continuing...\n")
