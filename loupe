@@ -833,7 +833,7 @@ def support_plan(applist, supported):
         fake_needed = set(per_app_syscalls[next_app]["faked"]).difference(set(supported)).\
                 difference(already_faked)
         already_stubbed = already_stubbed.union(stub_needed)
-        already_faked = already_stubbed.union(fake_needed)
+        already_faked = already_faked.union(fake_needed)
         print("- Step " + str(step) + " - to support " + next_app)
         if next_app_impl:
             print("  - implement " + str(format_syscall_list_to_names(next_app_impl)))
