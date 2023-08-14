@@ -785,7 +785,7 @@ def support_plan(applist, supported):
     if "*" in applist:
         applist = db.keys()
 
-    print("Step by step support plan for: " + str(applist))
+    # print("Step by step support plan for: " + str(applist))
 
     per_app_syscalls = {}
     for app in applist:
@@ -808,10 +808,13 @@ def support_plan(applist, supported):
         if set(per_app_syscalls[app]["required"]).issubset(supported):
             already_supported.append(app)
     if already_supported:
-        print("- Supported without changes: ", end="")
-        print(already_supported)
+        # print("- Supported without changes: ", end="")
+        # print(already_supported)
         for app in already_supported:
             per_app_syscalls.pop(app)
+
+    print("0 & & & & (%d apps)\\\\" % len(already_supported))
+    print("\hline")
 
     step = 1
     already_stubbed = set()
@@ -838,14 +841,18 @@ def support_plan(applist, supported):
 
         apps_to_support.append(next_app)
         if next_app_impl or stub_needed or fake_needed:
-            print("- Step " + str(step) + " - to support " + ', '.join(apps_to_support) + ":")
+            print(str(step) + " & " + ", ".join(map(str, list(next_app_impl))) + \
+            " & " + ", ".join(map(str, list(stub_needed))) + " & " + \
+            ", ".join(map(str, list(fake_needed))) + " & " + " + " + \
+            ', '.join(apps_to_support) + "\\\\")
+            print("\hline")
 
-        if next_app_impl:
-            print("  - implement " + str(format_syscall_list_to_names(next_app_impl)))
-        if stub_needed:
-            print("  - stub " + str(format_syscall_list_to_names(stub_needed)))
-        if fake_needed:
-            print("  - fake " + str(format_syscall_list_to_names(fake_needed)))
+        # if next_app_impl:
+        #     print("  - implement " + str((next_app_impl)))
+        # if stub_needed:
+        #     print("  - stub " + str((stub_needed)))
+        # if fake_needed:
+        #     print("  - fake " + str((fake_needed)))
         supported = supported.union(next_app_impl)
         del per_app_syscalls[next_app]
 
@@ -926,7 +933,7 @@ if (args.cmd is None):
     parser.print_help()
     exit(1)
 
-info("Checking database...")
+# info("Checking database...")
 if not db_check(args.dbpath):
     error("Problem with the database, exiting.")
     exit(1)
@@ -1260,12 +1267,12 @@ if (args.cmd == "search"):
         required  = set(format_syscall_list(usage["required"]))
         stubbed   = set(format_syscall_list(usage["stubbed"]))
         faked     = set(format_syscall_list(usage["faked"]))
-        print("Missing a full implementation:")
-        print(str(format_syscall_list_to_names(list(required.difference(supported)))))
-        print("Missing a stub:")
-        print(str(format_syscall_list_to_names(list(stubbed.difference(supported)))))
-        print("Missing a fake:")
-        print(str(format_syscall_list_to_names(list(faked.difference(supported)))))
+        # print("Missing a full implementation:")
+        # print(str(format_syscall_list_to_names(list(required.difference(supported)))))
+        # print("Missing a stub:")
+        # print(str(format_syscall_list_to_names(list(stubbed.difference(supported)))))
+        # print("Missing a fake:")
+        # print(str(format_syscall_list_to_names(list(faked.difference(supported)))))
 
         support_plan(args.applist.split(","), supported)
 
