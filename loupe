@@ -843,7 +843,10 @@ def support_plan(applist, supported):
             print("  - fake " + str(format_syscall_list_to_names(fake_needed)))
         supported = supported.union(next_app_impl)
         del per_app_syscalls[next_app]
-        step += 1
+
+        # Increment step only if somethign (implementation/stub/fake) was required
+        if next_app_impl or stub_needed or fake_needed:
+            step += 1
 
 
 # parse arguments and launch the right option
