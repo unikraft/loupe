@@ -816,6 +816,7 @@ def support_plan(applist, supported):
     step = 1
     already_stubbed = set()
     already_faked = set()
+    apps_to_support = []
     while per_app_syscalls:
         next_app = list(per_app_syscalls.keys())[0]
         next_app_impl = set(per_app_syscalls[next_app]["required"])\
@@ -834,7 +835,11 @@ def support_plan(applist, supported):
                 difference(already_faked)
         already_stubbed = already_stubbed.union(stub_needed)
         already_faked = already_faked.union(fake_needed)
-        print("- Step " + str(step) + " - to support " + next_app)
+
+        apps_to_support.append(next_app)
+        if next_app_impl or stub_needed or fake_needed:
+            print("- Step " + str(step) + " - to support " + ', '.join(apps_to_support) + ":")
+
         if next_app_impl:
             print("  - implement " + str(format_syscall_list_to_names(next_app_impl)))
         if stub_needed:
@@ -844,8 +849,9 @@ def support_plan(applist, supported):
         supported = supported.union(next_app_impl)
         del per_app_syscalls[next_app]
 
-        # Increment step only if somethign (implementation/stub/fake) was required
+        # Increment step only if something (implementation/stub/fake) was required
         if next_app_impl or stub_needed or fake_needed:
+            apps_to_support = []
             step += 1
 
 
