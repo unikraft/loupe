@@ -48,5 +48,7 @@ The following information is true as of ASPLOS'24 release:
 
 **debhelper/**
 
-- Contains debhelper plugging module.
-- Documented separately in the folder.
+- Contains debhelper integration module. This includes a new docker image derived from the base one,
+and a set of wrapper scripts over the debhelper tool.
+- Automates the build process of the target application.
+- Automates the running of Loupe on the test suite of the app (EXPERIMENTAL)
