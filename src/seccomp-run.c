@@ -229,13 +229,13 @@ int ptracer_check_path(unsigned long pid) {
     /* readlink doesn't append null character */
     binary_path[nbytes] = 0;
 
-    int ret = strcmp(binary_path, EXECUTABLE_PATH);
-    if (ret != 0) {
+    char *ret = strstr(EXECUTABLE_PATH, binary_path);
+    if (ret != NULL) {
         debug("Found different binary: %s\n", binary_path);
         return -1;
     }
 
-    return ret;
+    return 0;
 }
 
 /* NOTE: buffer *must* be able to contain PATH_MAX bytes */
