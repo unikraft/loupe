@@ -9,10 +9,12 @@ The analyser is based on two methods to discover system calls:
     - It traverses this AST in order to detect the system calls called in the application code.
 2. **RTL files analysis (*optional* but more accurate analysis)**:
     - For this analysis, the application sources must be compiled with the `-fdump-rtl-expand` (see [RTL files analysis](#rtl-files-analysis) for further information). Using this flag allows the compiler to generate an intermediate representation ([RTL](https://gcc.gnu.org/onlinedocs/gccint/RTL.html)).
-    - The tool will then iterate through an "expand/" (must be created and populated) folder which contains the RTL representation and parse this intermediate representation in order to create an interdependency graph of all the functions.
+    - The tool will then iterate through an "expand/" folder (must be created and populated) which contains the RTL representation and parse this intermediate representation in order to create an interdependency graph of all the functions.
     - It will then detect the system calls (ind)direclty called in the application by traversing this graph.
 
 The analyser can also be used with coverage information (see [Coverage section](#coverage-information-experimental) for further information).
+
+**Important**: This tool only handles applications written in *C/C++*.
 
 ### Requirements
 
@@ -23,7 +25,7 @@ cd /usr/lib/x86_64-linux-gnu/
 sudo ln -s libclang-X.Y.so.1 /usr/lib/x86_64-linux-gnu/libclang.so #(X.Y the version number)
 ```
 
-It is also necessary to install Clang (bindings) and Beautifulsoup4. Both can be installed by executing the following commands:
+It is also necessary to install Clang (bindings) and Beautifulsoup4. Both can be installed by executing the following command:
 
 ```bash
 pip install -r requirements.txt
@@ -81,6 +83,9 @@ For both analyses, only the application source code is analysed (*without shared
 1. Include the raw sources of the shared libraries: in this case, all the system calls directly used by the shared libraries will be detected, which may greatly overestimate the number of system calls used by the application.
 2. Include RTL files (`*.expand`) from shared libraries: in this case, the interdependency graph can be used to reduce the number of system calls (functions called by the application code only). The larger and more complex the graph is, the longer the analysis takes.
 
+Please refer to the application page to find the required libraries (see README for instance). You can also find
+which libraries are required of an application by using the `ldd` command on the corresponding dynamically-linked binary.
+
 Note that glibc parsing is not supported and requires manual sanitisation.
 
 ### RTL files analysis
@@ -97,7 +102,7 @@ For shared libraries, RTL files must also be included in the application's `expa
 
 ### Coverage information (EXPERIMENTAL)
 
-The tool is also able to detect which system call is really called when testing an application (via benchmark or testsuite). In order to use this feature, you need to install [gcov](https://gcc.gnu.org/onlinedocs/gcc/Gcov.html)and compile your application with the `-fprofile-arcs -ftest-coverage` or `--coverage` flags (only for gcc). As previously, you can also override the `CFLAGS` variable.
+The tool is also able to detect which system call is really called when testing an application (via benchmark or testsuite). In order to use this feature, you need to install [gcov](https://gcc.gnu.org/onlinedocs/gcc/Gcov.html) and compile your application with the `-fprofile-arcs -ftest-coverage` or `--coverage` flags (only for gcc). As previously, you can also override the `CFLAGS` variable.
 
 When the compilation is complete, you need to generate a lcov report:
 
@@ -108,13 +113,13 @@ genhtml cov.info --output-directory "coverage-suite" \
     --title "Coverage type"
 ```
 
-When the HTML folder (called either `coverage-benchmark` or `coverage-suite`) is generated, you can use the source analyser with the `--coverage [coverage-benchmark|coverage-suite]` keyword to analyse the coverage information. The tool can generate dot and pdf files for each system call (which contains the call trace). For this option, `graphviz` must be installed.
+When the HTML folder (called either `coverage-benchmark` or `coverage-suite`) is generated, you can use the source analyser with the `--coverage [coverage-benchmark|coverage-suite]` keyword to analyse the coverage information. The tool can generate dot and pdf files for each system call (which contains the call trace). For this option, `graphviz` must be installed. The complete report with the results will be generated into a `results_[coverage-benchmark|coverage-suite]` folder.
 
 ### Architecture
 
 The current implementation is organized into eight different files. There are three main files that contain the logic of the source analyser: `source_analyser.py`, `process_call.py`, and `parser_clang.py`. The remaining four files contain helper functions, classes or data: `syscalls_list.py`, `utility.py`, `classes.py`, `check_syscall.py` and `output_html.py`.
 
-- The code for scanning syscall from source files (clang AST) is in `parser_clang.py`.
+- The code for scanning syscall from raw source files (clang AST) is in `parser_clang.py`.
 - The code for detecting syscalls from the RTL representation is in `source_analyser.py` and `process_call.py`.
 - The code for parsing and generating HTML folder/results is in `source_analyser.py` and `output_html.py`.
 - The code for manipulating the syscalls map is in `syscalls_list.py`.

@@ -208,7 +208,7 @@ def main():
         if args.coverage != COVERAGE_SUITE or args.coverage != COVERAGE_BENCHMARK:
             print_err("The coverage args must either be " + COVERAGE_SUITE + " or " + COVERAGE_BENCHMARK)
         htmlFolder     = os.path.join(args.folder, args.coverage)
-        resultsFolder  = os.path.join(args.folder, "results" + args.coverage)
+        resultsFolder  = os.path.join(args.folder, "results_" + args.coverage)
         covFolder = CovFolder(appName, htmlFolder, resultsFolder, os.path.join(args.folder, appName + ".csv"))
         print("[INFO] Analysing html folder: " + htmlFolder + " (this may take some times...)")
         iterateHtmlFolder(covFolder)

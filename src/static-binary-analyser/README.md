@@ -1,6 +1,6 @@
 # Static Analyser Tool (binary-level)
 
-The static binary analyser is a tool designed to detect system calls by analysing a static binary of an application. This tool handles both statically and dynamically-linked (it handles the plt/got sections) binaries. The static analyser requires [Capstone](https://pypi.org/project/capstone/) and [Lief](https://pypi.org/project/lief/) as third-parties libraries.
+The static binary analyser is a tool designed to detect system calls by analysing a binary of an application. This tool handles both statically and dynamically-linked (it handles the plt/got sections) binaries. The static analyser requires [Capstone](https://pypi.org/project/capstone/) and [Lief](https://pypi.org/project/lief/) as third-parties libraries.
 
 ### Requirements
 
