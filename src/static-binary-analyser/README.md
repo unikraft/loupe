@@ -1,12 +1,12 @@
-# Static Analyser Tool
+# Static Analyser Tool (binary-level)
 
-The static analyser is a tool designed to detect system calls by analysing a static binary of an application. This tool handles both statically and dynamically-linked (it handles the plt/got sections) binaries. The static analyser requires [Capstone](https://pypi.org/project/capstone/) and [Lief](https://pypi.org/project/lief/) as third-parties libraries.
+The static binary analyser is a tool designed to detect system calls by analysing a static binary of an application. This tool handles both statically and dynamically-linked (it handles the plt/got sections) binaries. The static analyser requires [Capstone](https://pypi.org/project/capstone/) and [Lief](https://pypi.org/project/lief/) as third-parties libraries.
 
 ### Requirements
 
 In order to execute the static analyser, it is necessary to install Capstone and Lief. Both can be installed by executing the following commands:
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 The static analyser can be used with the following syntax:
 
-```
+```bash
 usage: static_analyser.py [-h] --app APP [--verbose [VERBOSE]] [--display [DISPLAY]] [--csv [CSV]] [--log [LOG]] [--log-to-stdout [LOG_TO_STDOUT]] [--max-backtrack-insns [MAX_BACKTRACK_INSNS]]
                           [--skip-data [SKIP_DATA]]
 
@@ -39,12 +39,11 @@ optional arguments:
 
 As an example, the static analyser is directly executed by the  `explore.py` script with the following syntax:
 
-```
+```bash
 ./static_analyser.py -a [app_path] --csv=true --display=false --verbose=false
 ```
 
 The output gives the syscalls discovered in a CSV format with each line formatted as follows: `<syscall_number, Y|N>`.
-
 
 ### Architecture
 
@@ -73,5 +72,6 @@ We included a
 the structure of this repository, which you may find useful to get started.
 
 Here are a few ideas of contributions to get started:
+
 - Add support to convert Loupe databases to SQLite.
 - Fix [open bug reports](https://github.com/unikraft/loupe/issues).

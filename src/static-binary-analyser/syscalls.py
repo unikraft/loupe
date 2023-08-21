@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: BSD-3-Clause
-
 #
 # Authors:  Gaulthier Gain <gaulthier.gain@uliege.be>
 #           Benoit Knott <benoit.knott@student.uliege.be>

@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # Authors:  Gaulthier Gain <gaulthier.gain@uliege.be>

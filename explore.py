@@ -699,7 +699,7 @@ if ENABLE_STATIC:
 
     print("# syscall, used")
     runcmd = [str(os.path.join(os.path.realpath(os.path.dirname(__file__)),
-            "src/static_source/static_analyser.py")), "-a", str(binary_path),
+            "src/static-binary-analyser/static_analyser.py")), "-a", str(binary_path),
             "--csv=true", "--display=false", "--verbose=false"]
     print(subprocess.check_output(runcmd).decode('utf-8'))
 else:
