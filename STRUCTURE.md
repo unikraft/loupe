@@ -27,10 +27,10 @@ The following information is true as of ASPLOS'24 release:
 - You should not have to build this manually. If necessary, you can do it via `make src/seccomp-run`.
 - You should not have to call this manually. If necessary, usage is documented visa `./seccomp-run -h`.
 
-**src/static_source**
+**src/static-{binary|source}-analyser**
 
-- Contains static source analysis tools.
-- Documented separately in the folder.
+- Contains the static binary and source analysis tools.
+- Documented separately in the corresponding folder.
 
 **resources/**
 
