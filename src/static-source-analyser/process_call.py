@@ -249,7 +249,7 @@ def processInlineAsmSyscall(content, line):
                     except:
                         print_err("Unknown inline assembly syscall number for " + line)
                         return None
-                break;
+                break
     return None
     
 # Example: syscall(SYS_write,1,"Hello world\n", 12)
@@ -373,7 +373,6 @@ def getExcludeRegex(args):
             return exclude_regex
         except Exception as e:
             print_err("ERROR: Invalid --exclude regular expression: \"{}\" -> \"{}\"!".format(args.exclude, e))
-            return None
     return None
 
 def buildAll(gObj, args):
@@ -401,7 +400,12 @@ def buildCaller(gObj, covFolder, caller_lst, args, isCovered=False):
             f.write(value)
 
         if args.generatePdf:
-            os.system('dot ' + dotFile + ' -Grankdir=LR -Tpdf -o ' + os.path.join(gObj.outPdfFolder, caller_lst[0] +'.pdf'))
+            try:
+                subprocess.call('dot ' + dotFile + ' -Grankdir=LR -Tpdf -o ' + os.path.join(gObj.outPdfFolder, caller_lst[0] +'.pdf'), timeout=60, shell=True)
+            except subprocess.TimeoutExpired:
+                print_warn("60sec timer expired for " + dotFile)
+            except FileNotFoundError:
+                print_err("dot command not found! Please install graphviz.")
 
 def process_neighbour(line, covFolder):
     line = line.replace("\"", "")
@@ -445,8 +449,9 @@ def buildCallee(gObj, covFolder, callee_lst, args):
         if args.generatePdf:
             with open(dotFile, 'w') as f:
                 f.write(value)
-            
             try:
-                subprocess.call('dot ' + dotFile + ' -Grankdir=LR -Tpdf -o ' + os.path.join(gObj.outPdfFolder, callee_lst[0] +'.pdf'), timeout=10, shell=True)
+                subprocess.call('dot ' + dotFile + ' -Grankdir=LR -Tpdf -o ' + os.path.join(gObj.outPdfFolder, callee_lst[0] +'.pdf'), timeout=60, shell=True)
             except subprocess.TimeoutExpired:
                 print_warn("60sec timer expired for " + dotFile)
+            except FileNotFoundError:
+                print_err("dot command not found! Please install graphviz.")
