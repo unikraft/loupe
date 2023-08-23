@@ -251,7 +251,7 @@ def processInlineAsmSyscall(content, line):
                         return None
                 break
     return None
-    
+
 # Example: syscall(SYS_write,1,"Hello world\n", 12)
 def processDirectSyscall(content, line):
     regex = re.compile(r"^.*\(symbol_ref:(?P<reg>[A-Z]{2}).*$")
@@ -365,7 +365,7 @@ def addTograph(gObj, function_name, filename=""):
         gObj.functions[function_name]["refs"] = dict()
         gObj.functions[function_name]["callee_calls"] = dict()
         gObj.functions[function_name]["callee_refs"] = dict()
-        
+
 def getExcludeRegex(args):
     if args.exclude is not None:
         try:
