@@ -4,7 +4,7 @@ The static binary analyser is a tool designed to detect system calls by analysin
 
 ### Requirements
 
-In order to execute the static analyser, it is necessary to install Capstone and Lief. Both can be installed by executing the following commands:
+In order to execute the static analyser, it is necessary to install Capstone and Lief. Both can be installed by executing the following command:
 
 ```bash
 pip install -r requirements.txt
@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 The static analyser can be used with the following syntax:
 
-```bash
+```python
 usage: static_analyser.py [-h] --app APP [--verbose [VERBOSE]] [--display [DISPLAY]] [--csv [CSV]] [--log [LOG]] [--log-to-stdout [LOG_TO_STDOUT]] [--max-backtrack-insns [MAX_BACKTRACK_INSNS]]
                           [--skip-data [SKIP_DATA]]
 

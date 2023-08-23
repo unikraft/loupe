@@ -35,45 +35,45 @@ pip install -r requirements.txt
 
 The static source analyser can be used with the following syntax:
 
-```bash
-usage: source_analyser.py [-h] --folder FOLDER [--coverage COVERAGE] [--aggregate [AGGREGATE]]
-                          [--savehtml [SAVEHTML]] [--unique [UNIQUE]] [--maxdisplay MAXDISPLAY]
-                          [--verbose [VERBOSE]] [--display [DISPLAY]] [--csv [CSV]] [--generatePdf [GENERATEPDF]]
-                          [--generateDot [GENERATEDOT]] [--exclude REGEX] [--no-externs] [--no-warnings]
+```python
+usage: source_analyser.py [-h] --folder FOLDER [--display [DISPLAY]] [--csv [CSV]] [--coverage COVERAGE] [--aggregate [AGGREGATE]]
+                          [--savehtml [SAVEHTML]] [--unique [UNIQUE]] [--maxdisplay MAXDISPLAY] [--verbose [VERBOSE]]
+                          [--generatePdf [GENERATEPDF]] [--generateDot [GENERATEDOT]] [--exclude REGEX] [--no-externs] [--no-warnings]
                           [--max-depth DEPTH]
 
 optional arguments:
   -h, --help            show this help message and exit
   --folder FOLDER, -f FOLDER
-                        Path to the folder (source files) of the application to analyse (required)
-  --coverage COVERAGE   [EXPERIMENTAL] Type of coverage (can be: None,-coverage-benchmark/or-coverage-suite/)
+                        Path to the folder that contains the sources of the application to analyse
+  --display [DISPLAY], -d [DISPLAY]
+                        Display all the system calls that have been detected
+  --csv [CSV], -c [CSV]
+                        Write all the system calls that have been detected into a CSV files
+  --coverage COVERAGE   [EXPERIMENTAL] Use coverage data from gcov/lcov. Coverage can either be: None (default),coverage-
+                        benchmark/orcoverage-suite/)
   --aggregate [AGGREGATE], -a [AGGREGATE]
-                        Aggregate results into a single aggregated file (log_aggregated)
+                        Aggregate results into a single aggregated file (log_aggregated) [when coverage is used]
   --savehtml [SAVEHTML], -s [SAVEHTML]
-                        Save intermediate results as .html (when coverage is used)
-  --unique [UNIQUE]     Count only functions once in an aggregated unique file (when coverage is used)
+                        Save intermediate results as .html [when coverage is used]
+  --unique [UNIQUE]     Count only functions once in an aggregated unique file [when coverage is used]
   --maxdisplay MAXDISPLAY
-                        Max referenced files to show in the aggregate unique file (default: 10, when coverage is used)
+                        Max referenced files to show in the aggregated unique file (default: 10) [when coverage is used]
   --verbose [VERBOSE], -v [VERBOSE]
                         Verbose mode
-  --display [DISPLAY], -d [DISPLAY]
-                        Display system call
-  --csv [CSV], -c [CSV]
-                        Save system call as CSV
   --generatePdf [GENERATEPDF]
-                        Generate PDF files (when coverage is used)
+                        Generate each syscall callee graph in PDF
   --generateDot [GENERATEDOT]
-                        Generate dot files (when coverage is used)
-  --exclude REGEX       RegEx for functions to exclude (when coverage is used)
-  --no-externs          Do not show external functions (when coverage is used)
-  --no-warnings         Do not show warnings on the console (when coverage is used)
-  --max-depth DEPTH     Maximum tree depth traversal, default no depth (when coverage is used)
+                        Generate each syscall callee graph in dot format [require Graphviz]
+  --exclude REGEX       Regex for functions to exclude
+  --no-externs          Do not show external functions
+  --no-warnings         Do not show warnings on the console
+  --max-depth DEPTH     Maximum tree depth traversal, default no depth
 ```
 
 As an example, the static source analyser can be executed with the following syntax:
 
 ```bash
-./source_analyser.py -f [folder_path] --csv=true --display=false --verbose=false
+./source_analyser.py -f [folder_sources_path] --csv=true --display=false --verbose=false
 ```
 
 ### Shared Libraries
