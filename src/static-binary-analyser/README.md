@@ -57,21 +57,3 @@ The current implementation is organized into seven different files. There are th
 A summary of the content of the code and the interactions between the different files is explained on the following figure:
 
 [<img src="https://people.montefiore.uliege.be/gain/public/syscalls_architecture.png">](https://people.montefiore.uliege.be/gain/public/syscalls_architecture.png/)
-
-### Contributing
-
-We welcome contributions from anyone. This is [free
-software](https://github.com/unikraft/loupe/blob/staging/COPYING.md).
-
-To contribute to this repository, please fork and submit a Pull-Request. If you
-introduce a new file, make sure to add an SPDX license header. If you do
-significant-enough changes, consider adding yourself to `COPYING.md`.
-
-We included a
-[description](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md) of
-the structure of this repository, which you may find useful to get started.
-
-Here are a few ideas of contributions to get started:
-
-- Add support to convert Loupe databases to SQLite.
-- Fix [open bug reports](https://github.com/unikraft/loupe/issues).
