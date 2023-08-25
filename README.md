@@ -50,10 +50,11 @@ Markdown editor.
 - [4. Retrieving and Processing Data](#4-retrieving-and-processing-data)
 - [5. Advanced Features](#5-advanced-features)
 - [6. Troubleshooting](#6-troubleshooting)
-- [7. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)](#7-zenodo-artifact--tags-asplos24-artifact-evaluation)
-- [8. Contributing](#8-contributing)
-- [9. Disclaimer](#9-disclaimer)
-- [10. Acknowledgements](#10-acknowledgements)
+- [7. Additional Documentation)](#7-additional-documentation)
+- [8. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)](#8-zenodo-artifact--tags-asplos24-artifact-evaluation)
+- [9. Contributing](#9-contributing)
+- [10. Disclaimer](#10-disclaimer)
+- [11. Acknowledgements](#11-acknowledgements)
 
 **Link to the Loupe ASPLOS'24 paper data set: [[ASPLOS'24 Data Set]](https://github.com/unikraft/loupedb)**
 
@@ -571,7 +572,15 @@ Loupe has been developed over a span of 3 years, during which we generated
 various results, not all taking advantage of the full set of features that
 Loupe offers in its current state.
 
-## 7. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)
+## 7. Additional Documentation
+
+We included a
+[description](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md) of
+the structure of this repository, which you may find useful to get started.
+
+TODO: complete this section.
+
+## 8. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)
 
 In addition to this repository, we have archived this artifact on Zenodo. In
 order to make the Zenodo artifact as self-contained as possible, we included a
@@ -581,7 +590,7 @@ generate a new snapshot with `make zenodo`.
 
 We tagged both repositories with `asplos24-ae` before submission.
 
-## 8. Contributing
+## 9. Contributing
 
 We welcome contributions from anyone. This is [free
 software](https://github.com/unikraft/loupe/blob/staging/COPYING.md).
@@ -590,21 +599,17 @@ To contribute to this repository, please fork and submit a Pull-Request. If you
 introduce a new file, make sure to add an SPDX license header. If you do
 significant-enough changes, consider adding yourself to `COPYING.md`.
 
-We included a
-[description](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md) of
-the structure of this repository, which you may find useful to get started.
-
 Here are a few ideas of contributions to get started:
 - Add support to convert Loupe databases to SQLite.
 - Fix [open bug reports](https://github.com/unikraft/loupe/issues).
 
-## 9. Disclaimer
+## 10. Disclaimer
 
 This artifact is the first release of a research proof-of-concept for Loupe.
 Like any research prototype, it contains hacks, bugs, and TODOs. Please use it
 with a critical eye. We hope that it will be useful!
 
-## 10. Acknowledgements
+## 11. Acknowledgements
 
 This artifact would not exist without the infrastructure and hard work of the
 Unikraft community.  We encourage interested researchers to visit the project's
