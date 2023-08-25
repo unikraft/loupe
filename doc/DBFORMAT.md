@@ -1,0 +1,3 @@
+# Loupe Database Format
+
+TODO.

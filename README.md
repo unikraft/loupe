@@ -13,9 +13,18 @@ analysis data.  We put the emphasis on *reproducible* analysis: measurements
 are made in a Docker container.
 
 Loupe stores analysis results in a custom database. A Loupe database is nothing
-more than a git repository with a particular layout. We offer an online, open
+more than a git repository with a [particular layout](). We offer an online, open
 [database](https://github.com/unikraft/loupedb) maintained by the community.
 Feel free to pull request your analysis results!
+
+### Loupe is not your regular strace!
+
+- Loupe supports stubbing/faking analysis (Loupe is not a *passive* observer)
+- Loupe goes beyond system call granularity
+- Loupe supports replication to obtain results stable across runs
+- Loupe offers an infrastructure for reproducibility and sharing of results
+
+### ASPLOS'24 Paper
 
 Loupe is the result of a collaboration between The University of Manchester,
 Liège Université, University Politehnica of Bucharest, and Unikraft.io. It has
@@ -27,13 +36,6 @@ been accepted to appear in [ASPLOS'24](https://www.asplos-conference.org/asplos2
 > Loupe guides and boosts OS developers as they build compatibility layers, prioritizing which features to implement in order to quickly support many applications as early as possible. We apply our methodology to 100+ applications and several OSes currently under development, demonstrating high engineering effort savings vs. existing approaches: for example, for the 62 applications supported by the OSv kernel, we show that using Loupe, would have required implementing only 37 system calls vs. 92 for the non-systematic process followed by OSv developers.
 >
 > We further study our measurements and extract several novel key insights. Overall, we show that the burden of building compatibility layers is significantly less than what previous works suggest: in some cases, only as few as 20% of system calls reported by static analysis, and 50% of those reported by naive dynamic analysis need an implementation for an application to successfully run standard benchmarks.
-
-### Loupe is not your regular strace!
-
-- Loupe supports stubbing/faking analysis (Loupe is not a *passive* observer)
-- Loupe goes beyond system call granularity
-- Loupe supports replication to obtain results stable across runs
-- Loupe offers an infrastructure for reproducibility and sharing of results
 
 ## 0. Table of Contents & Links
 
@@ -57,8 +59,11 @@ Markdown editor.
 
 ## 1. Hardware Dependencies
 
-Any x86 machine with more than 8 CPU cores should do the trick (non-x86 might
-cause issues because of our Docker containers).
+Any x86 machine should do the trick - non-x86 might cause technical issues
+because of our Docker containers.
+
+We recommend (but do not require) > 8 CPU cores to obtain stable performance
+numbers.
 
 ## 2. Dependencies & Install
 
@@ -67,7 +72,8 @@ cause issues because of our Docker containers).
   (`pip3 install gitpython`)
 - a recent-enough Linux kernel to support seccomp and ptrace
 
-The setup is very simple: `make all`
+Once these dependencies have been installed, the setup is very simple: `make
+all`
 
 ## 3. Gathering Data
 
@@ -260,7 +266,13 @@ $ loupe generate -b -db ../../../../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.
 
 ## 4. Retrieving and Processing Data
 
-`loupe search` takes care of analyzing the data in the database.
+Once the analysis completed, you can check the database (`loupedb` in the
+previous examples). You will see a number of uncommitted changes - they are the
+results of the analysis. The database is formatted in a custom text-based
+layout documented [here]().
+
+As a user, you do not need to understand this format; `loupe search` takes care
+of analyzing the data in the database for you.
 
 ### Extracting Data
 
@@ -744,6 +756,10 @@ performed, to the Docker container not being perfectly reproducible (e.g.,
 versions of the application, shared libraries not being fixed properly), to the
 kernel having changed, etc.
 
+Loupe has been developed over a span of 3 years, during which we generated
+various results, not all taking advantage of the full set of features that
+Loupe offers in its current state.
+
 ## 7. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)
 
 In addition to this repository, we have archived this artifact on Zenodo. In
@@ -764,7 +780,7 @@ introduce a new file, make sure to add an SPDX license header. If you do
 significant-enough changes, consider adding yourself to `COPYING.md`.
 
 We included a
-[description](https://github.com/unikraft/loupe/blob/staging/STRUCTURE.md) of
+[description](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md) of
 the structure of this repository, which you may find useful to get started.
 
 Here are a few ideas of contributions to get started:

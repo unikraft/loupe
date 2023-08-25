@@ -135,7 +135,7 @@ introduce a new file, make sure to add an SPDX license header. If you do
 significant-enough changes, consider adding yourself to `COPYING.md`.
 
 We included a
-[description](https://github.com/unikraft/loupe/blob/staging/STRUCTURE.md) of
+[description](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md) of
 the structure of this repository, which you may find useful to get started.
 
 Here are a few ideas of contributions to get started:
