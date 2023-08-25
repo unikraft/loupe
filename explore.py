@@ -164,13 +164,21 @@ def start_seccomp_run(errno, syscalls, logf, prefix=[], opts=[]):
     runcmd.extend([SECCOMPRUN_PATH, "-e", errno, "-n", str(len(syscalls))])
     runcmd.extend(list(map(str, syscalls)))
     if ZBINARY is not None:
-        runcmd.extend(["-y", str(ZBINARY)])
+        runcmd.extend(["-y", ''.join(ZBINARY)])
     runcmd.extend(opts)
     runcmd.extend(["--", str(binary_path)])
     runcmd.extend(binary_options)
 
-    ret = subprocess.Popen(runcmd, stderr=logf, stdout=logf,
-        preexec_fn=os.setsid)
+    if ZBINARY is not None:
+        try:
+            ret = subprocess.run(runcmd, timeout=TEST_TIMEOUT, stdout=logf, stderr=logf,
+                preexec_fn=os.setsid)
+        except:
+            ret = -1
+    else:
+
+        ret = subprocess.Popen(runcmd, stderr=logf, stdout=logf,
+            preexec_fn=os.setsid)
 
     # small sleep in case the program needs time to initialize
     time.sleep(WAIT_STARTUP_TIME)
@@ -196,7 +204,7 @@ def analyze_one_pass(errno, syscalls, log, errs, prefix=[], opts=[]):
     with open(log, 'wb') as logf:
         process = start_seccomp_run(errno, syscalls, logf)
         process_ok = True
-        if ENABLE_SEQUENTIAL:
+        if ENABLE_SEQUENTIAL and (ZBINARY is None):
             process_ret = smart_wait(process, log)
             if process_ret:
                 process_ok = False
@@ -526,7 +534,7 @@ parser.add_argument("arg_binary", nargs='*',
 parser.add_argument("-t", dest="testscript",
         type=pathlib.Path, required=False, help="path to the test script")
 parser.add_argument("--only-consider", dest="zbinary",
-        type=pathlib.Path, help="only consider a given binary in the analysis")
+        type=str, help="only consider a given binary in the analysis")
 
 required_args = parser.add_argument_group('required arguments')
 required_args.add_argument("-b", dest="testbinary",

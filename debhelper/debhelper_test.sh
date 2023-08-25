@@ -31,10 +31,11 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+rm -rf result.log
 dh_auto_test
 
 if [ $? -eq 0 ]; then
-	echo "All tests successful." > result.log
-  else
+	echo "All tests successful." >result.log
+else
 	exit 1
 fi

@@ -37,4 +37,5 @@ if [ "$nl" -eq "1" ]; then
 	exit 0
 fi
 
+rm result.log
 exit 1

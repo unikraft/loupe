@@ -58,6 +58,7 @@
 #define DO_PATHSTUB	0x20
 #define SETF(N, F)	(N) = ((N) | (F))
 #define ISSET(N, F)	(((N) & (F)) != 0)
+#define PATH_MAX 2048
 
 static int QUIET = 0;
 static int DEBUG = 0;
@@ -392,7 +393,7 @@ int ptracer_loop(long sys, int argn, long argv, char *path, int flags, int f_err
         if (ISSET(flags, DO_CHECKPATH) && ptracer_check_path(pid) != 0) {
 	    /* path is different, this is not a binary we want to mess with */
             debug("%lu: disabling seccomp for the child (different binary)\n", pid)
-            ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_SUSPEND_SECCOMP);
+            //ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_SUSPEND_SECCOMP);
             ptrace(PTRACE_CONT, pid, 0, 0);
             continue;
         }
@@ -605,7 +606,7 @@ main(int argc, char **argv)
     }
 
     if (ISSET(flags, DO_CHECKPATH)) {
-        realpath(EXECUTABLE_PATH, EXECUTABLE_PATH);
+        //realpath(EXECUTABLE_PATH, EXECUTABLE_PATH);
         warning("Path checking mode enabled, "
             "I will only check for binary %s\n", EXECUTABLE_PATH);
     }
