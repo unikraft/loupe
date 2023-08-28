@@ -1,4 +1,4 @@
-# Loupe: Syscall Usage Analysis Tool
+# :mag: Loupe: Syscall Usage Analysis Tool
 
 Loupe is a tool designed to help you analyze the system call usage of your
 application.
@@ -354,15 +354,14 @@ Generated plots will be located under `paperplots`.
 
 Here we describe advanced features supported by Loupe.
 
-:warning: this section is temporary and might get outdated. Some of the
-features may not be fully integrated in the `loupe` main wrapper, and may not
-be stable.
+:warning: some of the features below may not be fully integrated in the `loupe`
+main wrapper, and may not be stable.
 
 ### Integration with debhelper
 
 We provide a script that integrates Loupe with [`debhelper`](https://man7.org/linux/man-pages/man7/debhelper.7.html). 
-Our script automatically downloads the debian sources of a package, builds it and then runs the test suite with loupe.
-We use `dh_test_auto` to run the testsuite. `dh_test_auto` returns 0 if the test suite executed succesfully.
+Our script automatically downloads the debian sources of a package, builds it and then runs the test suite with loupe (if supported by the package).
+We use `dh_test_auto` to run the testsuite. `dh_test_auto` returns 0 if the test suite executed successfully.
 
 Example of usage with memcached:
 
@@ -392,9 +391,11 @@ TODO: We can get from the automatic build all the binaries being buit, and such 
 ### Performance & Resource Usage Impact Analysis
 
 Loupe can analyze, for each system call stubbed/faked, the impact on
-performance and resource usage. For that, the test script must be extended to
-support benchmarking (usually very simple!), and `explore.py` must be called
-with particular arguments.
+performance and resource usage.
+
+For that...
+- the test script must be extended to support benchmarking (usually very simple!);
+- and `explore.py` must be called with particular arguments.
 
 **Step 1**: Add support to the test script. The test script may be passed an
 argument. If the value of the argument is `benchmark`, then the script is asked
@@ -466,6 +467,8 @@ TODO: Integrate performance and resource usage analysis in the main `loupe` wrap
 Redis, and iPerf3 [here](doc/PERF_METRICS.md).
 
 ### Generating Coverage
+
+You may be wondering what portion of the code a particular workload is exercising under a full Loupe analysis. Here is how to obtain a precise report.
 
 **Step 1**: Check the Dockerfile of the application. If it already contains a
 version of the software built with coverage, then proceed to step 2. Otherwise,
