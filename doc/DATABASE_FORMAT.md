@@ -17,7 +17,7 @@ Overall, the database is structured around the distinction between *applications
   - `cmd.txt` describes the Loupe command which was used to generate the results, to help users reproduce the run.
   - `Dockerfile.$appname` is the [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to build the test environment of the application and start the Loupe analysis. If the Dockerfile is [carefully constructed](doc/GOOD_DOCKERFILES.md), reproducing this measurement will almost always yield the same results; this is why the Dockerfile is used as identifier for the directory.
   - `dockerfile_data` are any files required to build `Dockerfile.$appname`, e.g., the application test script.
-  - `data` is the folder containing analysis results (whose formats are documented i[further down below](https://github.com/unikraft/loupe/blob/staging/doc/DBFORMAT.md#format-of-analysis-data)):
+  - `data` is the folder containing analysis results (whose formats are documented [further down below](https://github.com/unikraft/loupe/blob/staging/doc/DATABASE_FORMAT.md#format-of-analysis-data)):
     - `dyn.csv` for Loupe analysis;
     - `static_binary.csv` for static binary analysis;
     - and `static_sources.csv` for static source analysis ([not automatically generated](https://github.com/unikraft/loupe/tree/staging/src/static-source-analyser)).
