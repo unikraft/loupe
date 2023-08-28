@@ -68,7 +68,7 @@ numbers.
 
 ## 2. Dependencies & Install
 
-- Docker
+- [Docker](https://docs.docker.com/engine/install/)
 - python3, with [python-git](https://pypi.org/project/python-git/)
   (`pip3 install gitpython`)
 - a recent-enough Linux kernel to support seccomp and ptrace (i.e., if your Linux kernel doesn't support them, you really seriously should update your setup :innocent:)
@@ -354,7 +354,7 @@ Generated plots will be located under `paperplots`.
 
 Here we describe advanced features supported by Loupe.
 
-:warning: some of the features below may not be fully integrated in the `loupe`
+:warning: Some of the features below may not be fully integrated in the `loupe`
 main wrapper, and may not be stable.
 
 ### Integration with debhelper
