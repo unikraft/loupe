@@ -71,7 +71,7 @@ numbers.
 - Docker
 - python3, with [python-git](https://pypi.org/project/python-git/)
   (`pip3 install gitpython`)
-- a recent-enough Linux kernel to support seccomp and ptrace
+- a recent-enough Linux kernel to support seccomp and ptrace (i.e., if your Linux kernel doesn't support them, you really seriously should update your setup :innocent:)
 
 Once these dependencies have been installed, the setup is very simple: `make
 all`
@@ -84,12 +84,11 @@ application.
 ### Example 1: Dynamic + Static System Call Usage Analysis of Nginx
 
 Loupe considers two types of workloads: benchmarks and test suites. Both
-measurements are independent. In this example, we'll measure the dynamic system
-call analysis for Nginx.
-
-Let's take a look at benchmarks first.
+measurements are independent. In this example, we'll illustrate both for Nginx.
 
 #### Benchmark workload
+
+Let's take a look at benchmarks first.
 
 **Step 0**: first you'll need to generate the `loupe-base` container image as
 follows (in loupe's root directory):
@@ -265,12 +264,16 @@ $ loupe generate -b -db ../../../../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.
 
 `git diff` can then be used to visualize changes.
 
+### Notes
+
+In practice, you likely want to write your Docker containers a little bit more carefully to ensure that the analysis remains stable and reproducible over time. We provide recommendations in [`GOOD_DOCKERFILES.md`](https://github.com/unikraft/loupe/blob/staging/doc/GOOD_DOCKERFILES.md).
+
 ## 4. Retrieving and Processing Data
 
 Once the analysis completed, you can check the database (`loupedb` in the
 previous examples). You will see a number of uncommitted changes - they are the
 results of the analysis. The database is formatted in a custom text-based
-layout documented [here]().
+layout documented [here](https://github.com/unikraft/loupe/blob/staging/doc/DATABASE_FORMAT.md).
 
 As a user, you do not need to understand this format; `loupe search` takes care
 of analyzing the data in the database for you.
@@ -517,7 +520,9 @@ The resulting html report is there.
 
 This is a list of known issues, along with their solution. If your issue is not
 in this list, feel free to open a bug report and [contribute a
-fix](https://github.com/unikraft/loupe#8-contributing).
+fix](https://github.com/unikraft/loupe#8-contributing). This README is not exhaustive,
+before opening a bug report, please check the help feature of the relevant binary or
+script with `-h`.
 
 **Issue:** You want to rebuild the base container, but running `make docker` doesn't do anything.
 
@@ -548,7 +553,7 @@ Solution: We likely forgot to add `ARG DEBIAN_FRONTEND=noninteractive` in the Do
 ```
 ...and the value for the memory usage of one or more system calls is -1.
 
-Solution: It is likely that the program is crashing, and that Loupe is consequently unable to measure the peak process memory usage. You should assume that those system calls cannot be faked or stubbed.
+Solution: It is likely that the program is crashing during performance analysis, and that Loupe is consequently unable to measure the peak process memory usage. You should assume that those system calls cannot be faked or stubbed.
 
 **Issue:** Performance measurement shows with the following error:
 ```
@@ -572,12 +577,14 @@ Loupe has been developed over a span of 3 years, during which we generated
 various results, not all taking advantage of the full set of features that
 Loupe offers in its current state.
 
+We are working on implementing [best practices](https://github.com/unikraft/loupe/blob/staging/doc/GOOD_DOCKERFILES.md) over the data set.
+
 ## 7. Additional Documentation
 
 In addition to this README, interested readers may want to take a look at...
 
 - [`STRUCTURE.md`](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md), which describes the structure of this repository
-- [`DATABASE_FORMAT.md`](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md), which describes the structure of a Loupe database
+- [`DATABASE_FORMAT.md`](https://github.com/unikraft/loupe/blob/staging/doc/DATABASE_FORMAT.md), which describes the structure of a Loupe database
 - [`GOOD_DOCKERFILES.md`](https://github.com/unikraft/loupe/blob/staging/doc/GOOD_DOCKERFILES.md), which provides advice on writing Dockerfiles for reproducible Loupe analysis
 
 ## 8. Zenodo Artifact, Tags, and ASPLOS'24 Artifact Evaluation
@@ -589,6 +596,8 @@ this repository. These are provided for the main purpose of archival. You can
 generate a new snapshot with `make zenodo`.
 
 We tagged both repositories with `asplos24-ae` before submission.
+
+We did not apply for the [reproduced badge](https://www.acm.org/publications/policies/artifact-review-badging) because the cost (in time and resources) of reproducing our data set goes beyond what can be expected from ASPLOS'24 artifact evaluators.
 
 ## 9. Contributing
 
