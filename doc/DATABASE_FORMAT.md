@@ -12,7 +12,8 @@ Overall, the database is structured around the distinction between *applications
 - Each application directory contains exactly one folder per workload.
   - These folders follow the following convention: if the workload is the official test suite, it must be called `suite`; if it is a benchmark called `$X`, it must be called `benchmark-$X`.
   - Loupe does not currently support multiple alternative test suites, although support for this could be trivially added following the benchmark model (`suite-$X` for any alternative suite called `$X`).
-- Each workload directory contains one folder per *run environment*. Runs are identified by the hash of the Dockerfile that describes the run environment.
+- Each workload directory contains one folder per *run environment*.
+  - Runs are identified by the hash of the Dockerfile that describes the run environment.
 - Each run environment folder contains two files (`cmd.txt`, `Dockerfile.$appname`) and two folders (`data` and `dockerfile_data`, the latter optional).
   - `cmd.txt` describes the Loupe command which was used to generate the results, to help users reproduce the run.
   - `Dockerfile.$appname` is the [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to build the test environment of the application and start the Loupe analysis. If the Dockerfile is [carefully constructed](doc/GOOD_DOCKERFILES.md), reproducing this measurement will almost always yield the same results; this is why the Dockerfile is used as identifier for the directory.
@@ -128,6 +129,8 @@ loupdb $ tree
 │               └── dyn.csv
 └── ... (abbreviated)
 ```
+
+In this data set, you can also see runs identified by `imported`, which is clearly not a Dockerfile hash. These contain data imported from runs of Loupe that predate this data base format.
 
 ## Format of Analysis Data
 

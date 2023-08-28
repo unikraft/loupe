@@ -51,7 +51,7 @@ Markdown editor.
 - [5. Advanced Features](#5-advanced-features)
 - [6. Troubleshooting](#6-troubleshooting)
 - [7. Additional Documentation)](#7-additional-documentation)
-- [8. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)](#8-zenodo-artifact--tags-asplos24-artifact-evaluation)
+- [8. Zenodo Artifact, Tags, and ASPLOS'24 Artifact Evaluation](#8-zenodo-artifact-tags-and-asplos24-artifact-evaluation)
 - [9. Contributing](#9-contributing)
 - [10. Disclaimer](#10-disclaimer)
 - [11. Acknowledgements](#11-acknowledgements)
@@ -574,13 +574,13 @@ Loupe offers in its current state.
 
 ## 7. Additional Documentation
 
-We included a
-[description](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md) of
-the structure of this repository, which you may find useful to get started.
+In addition to this README, interested readers may want to take a look at...
 
-TODO: complete this section.
+- [`STRUCTURE.md`](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md), which describes the structure of this repository
+- [`DATABASE_FORMAT.md`](https://github.com/unikraft/loupe/blob/staging/doc/STRUCTURE.md), which describes the structure of a Loupe database
+- [`GOOD_DOCKERFILES.md`](https://github.com/unikraft/loupe/blob/staging/doc/GOOD_DOCKERFILES.md), which provides advice on writing Dockerfiles for reproducible Loupe analysis
 
-## 8. Zenodo Artifact & Tags (ASPLOS'24 Artifact Evaluation)
+## 8. Zenodo Artifact, Tags, and ASPLOS'24 Artifact Evaluation
 
 In addition to this repository, we have archived this artifact on Zenodo. In
 order to make the Zenodo artifact as self-contained as possible, we included a

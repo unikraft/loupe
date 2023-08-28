@@ -52,3 +52,7 @@ The following information is true as of ASPLOS'24 release:
 and a set of wrapper scripts over the debhelper tool.
 - Automates the build process of the target application.
 - Automates the running of Loupe on the test suite of the app (EXPERIMENTAL)
+
+**doc/**
+
+- Contains additional documentation on Loupe.
