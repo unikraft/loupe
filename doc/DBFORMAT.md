@@ -7,16 +7,20 @@ The Loupe database uses a human-readable, text-based format, as described below.
 Overall, the database is structured around the distinction between *applications*, *workloads*, and *distinct run environments*:
 
 - Each application has exactly one directory at the root, named after the application, e.g., [`redis`](https://redis.io/), or [`aio-stress`](https://www.vi4io.org/tools/benchmarks/aio-stress).
-- All *files* at the root of the database directory (e.g., [`README.md`](https://github.com/unikraft/loupedb/blob/staging/README.md) or [`OSv.syscalls`](https://github.com/unikraft/loupedb/blob/staging/Osv.syscalls)) are ignored. In the ASPLOS'24 dataset, we just stored a README, the paper appendix, and OS syscall support descriptions.
+- All *files* at the root of the database directory (e.g., [`README.md`](https://github.com/unikraft/loupedb/blob/staging/README.md) or [`OSv.syscalls`](https://github.com/unikraft/loupedb/blob/staging/Osv.syscalls)) are ignored.
+  - In the ASPLOS'24 dataset, we just stored a README, the paper appendix, and OS syscall support descriptions.
 - Each application directory contains exactly one folder per workload.
   - These folders follow the following convention: if the workload is the official test suite, it must be called `suite`; if it is a benchmark called `$X`, it must be called `benchmark-$X`.
   - Loupe does not currently support multiple alternative test suites, although support for this could be trivially added following the benchmark model (`suite-$X` for any alternative suite called `$X`).
 - Each workload directory contains one folder per *run environment*. Runs are identified by the hash of the Dockerfile that describes the run environment.
 - Each run environment folder contains two files (`cmd.txt`, `Dockerfile.$appname`) and two folders (`data` and `dockerfile_data`, the latter optional).
-  - `cmd.txt` describes the Loupe command which was used to generate the results.
-  - `Dockerfile.$appname` is the [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to build the test environement of the application and start the Loupe analysis. If the Dockerfile is carefully constructed, reproducing this measurement will almost always yield the same results; this is why the Dockerfile is used as identifier for the directory.
+  - `cmd.txt` describes the Loupe command which was used to generate the results, to help users reproduce the run.
+  - `Dockerfile.$appname` is the [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to build the test environment of the application and start the Loupe analysis. If the Dockerfile is [carefully constructed](doc/GOOD_DOCKERFILES.md), reproducing this measurement will almost always yield the same results; this is why the Dockerfile is used as identifier for the directory.
   - `dockerfile_data` are any files required to build `Dockerfile.$appname`, e.g., the application test script.
-  - `data` is the folder containing analysis results: `dyn.csv` for Loupe analysis, `static_binary.csv` for static binary analysis, and `static_sources.csv` for static source analysis ([not automatically generated](https://github.com/unikraft/loupe/tree/staging/src/static-source-analyser)).
+  - `data` is the folder containing analysis results:
+    - `dyn.csv` for Loupe analysis;
+    - `static_binary.csv` for static binary analysis;
+    - and `static_sources.csv` for static source analysis ([not automatically generated](https://github.com/unikraft/loupe/tree/staging/src/static-source-analyser)).
 
 Here is an abbreviated example of the directory tree of the ASPLOS'24 data set:
 
@@ -127,10 +131,44 @@ loupdb $ tree
 
 ## Format of Analysis Data
 
+### Dynamic Analysis
+
 The format of `dyn.csv` is as following:
 
-TODO.
+- The first line contains an explanatory comment on the format.
+- Then, each line in CSV format contains:
+  - The system call number (`0`, `1`, `2`, ...)
+  - Followed by a boolean (`Y` or `N`) indicating whether or not the analysis determined that the system call is used.
+  - Followed by a boolean (`Y` or `N`) indicating whether or not the analysis determined that the system call can be faked.
+  - Followed by a boolean (`Y` or `N`) indicating whether or not the analysis determined that the system call can be stubbed.
+  - Followed by a boolean (`Y` or `N`) indicating whether or not the analysis determined that the system call can be faked and stubbed.
+
+Here is an abbreviated example from the ASPLOS'24 data set:
+```
+$ cat loupedb/lighttpd/benchmark-wrk/681bd60a89599a42b6b2b79957152ea6/data/dyn.csv
+# syscall, used, works faked, works stubbed, works both
+0,Y,N,N,N
+1,Y,N,N,N
+2,N,N,N,N
+3,Y,Y,N,N
+... (abbreviated)
+```
+
+### Static Analysis
 
 The format of static analysis files (`static_binary.csv`, `static_sources.csv`) is as following:
 
-TODO.
+- The first line contains an explanatory comment on the format.
+- Then, each line in CSV format contains:
+  - The system call number (`0`, `1`, `2`, ...)
+  - Followed by a boolean (`Y` or `N`) indicating whether or not the analysis determined that the system call is used.
+
+Here is an abbreviated example from the ASPLOS'24 data set:
+```
+$ cat loupedb/lighttpd/benchmark-wrk/681bd60a89599a42b6b2b79957152ea6/data/static_binary.csv
+# syscall, used
+0,Y
+1,Y
+2,Y
+3,Y
+```
