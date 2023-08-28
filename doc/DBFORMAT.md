@@ -2,18 +2,21 @@
 
 The Loupe database uses a human-readable, text-based format, as described below.
 
+## Directory Tree
+
 Overall, the database is structured around the distinction between *applications*, *workloads*, and *distinct run environments*:
 
 - Each application has exactly one directory at the root, named after the application, e.g., [`redis`](https://redis.io/), or [`aio-stress`](https://www.vi4io.org/tools/benchmarks/aio-stress).
 - All *files* at the root of the database directory (e.g., [`README.md`](https://github.com/unikraft/loupedb/blob/staging/README.md) or [`OSv.syscalls`](https://github.com/unikraft/loupedb/blob/staging/Osv.syscalls)) are ignored. In the ASPLOS'24 dataset, we just stored a README, the paper appendix, and OS syscall support descriptions.
-- Each application directory contains exactly one folder per workload. These folders follow the following convention: if the workload is the official test suite, it must be called `suite`; if it is a benchmark called `$X`, it must be called `benchmark-$X`. We do not currently support multiple alternative test suites, although support for this could be trivially added following the benchmark model (`suite-$X` for any alternative suite called `$X`).
+- Each application directory contains exactly one folder per workload.
+  - These folders follow the following convention: if the workload is the official test suite, it must be called `suite`; if it is a benchmark called `$X`, it must be called `benchmark-$X`.
+  - Loupe does not currently support multiple alternative test suites, although support for this could be trivially added following the benchmark model (`suite-$X` for any alternative suite called `$X`).
 - Each workload directory contains one folder per *run environment*. Runs are identified by the hash of the Dockerfile that describes the run environment.
 - Each run environment folder contains two files (`cmd.txt`, `Dockerfile.$appname`) and two folders (`data` and `dockerfile_data`, the latter optional).
-- `cmd.txt` describes the Loupe command which was used to generate the results.
-- `Dockerfile.$appname` is the [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to build the test environement of the application and start the Loupe analysis.
-- If the Dockerfile is carefully constructed, reproducing this measurement will almost always yield the same results; this is why the Dockerfile is used as identifier for the directory.
-- `dockerfile_data` are any files required to build `Dockerfile.$appname`, e.g., the application test script.
-- `data` is the folder containing analysis results: `dyn.csv` for Loupe analysis, `static_binary.csv` for static binary analysis, and `static_sources.csv` for static source analysis ([not automatically generated](https://github.com/unikraft/loupe/tree/staging/src/static-source-analyser)).
+  - `cmd.txt` describes the Loupe command which was used to generate the results.
+  - `Dockerfile.$appname` is the [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to build the test environement of the application and start the Loupe analysis. If the Dockerfile is carefully constructed, reproducing this measurement will almost always yield the same results; this is why the Dockerfile is used as identifier for the directory.
+  - `dockerfile_data` are any files required to build `Dockerfile.$appname`, e.g., the application test script.
+  - `data` is the folder containing analysis results: `dyn.csv` for Loupe analysis, `static_binary.csv` for static binary analysis, and `static_sources.csv` for static source analysis ([not automatically generated](https://github.com/unikraft/loupe/tree/staging/src/static-source-analyser)).
 
 Here is an abbreviated example of the directory tree of the ASPLOS'24 data set:
 
@@ -121,6 +124,8 @@ loupdb $ tree
 │               └── dyn.csv
 └── ... (abbreviated)
 ```
+
+## Format of Analysis Data
 
 The format of `dyn.csv` is as following:
 
