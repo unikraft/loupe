@@ -17,7 +17,7 @@ Overall, the database is structured around the distinction between *applications
   - `cmd.txt` describes the Loupe command which was used to generate the results, to help users reproduce the run.
   - `Dockerfile.$appname` is the [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to build the test environment of the application and start the Loupe analysis. If the Dockerfile is [carefully constructed](doc/GOOD_DOCKERFILES.md), reproducing this measurement will almost always yield the same results; this is why the Dockerfile is used as identifier for the directory.
   - `dockerfile_data` are any files required to build `Dockerfile.$appname`, e.g., the application test script.
-  - `data` is the folder containing analysis results:
+  - `data` is the folder containing analysis results (whose formats are documented i[further down below](https://github.com/unikraft/loupe/blob/staging/doc/DBFORMAT.md#format-of-analysis-data)):
     - `dyn.csv` for Loupe analysis;
     - `static_binary.csv` for static binary analysis;
     - and `static_sources.csv` for static source analysis ([not automatically generated](https://github.com/unikraft/loupe/tree/staging/src/static-source-analyser)).
@@ -138,10 +138,11 @@ The format of `dyn.csv` is as following:
 - The first line contains an explanatory comment on the format.
 - Then, each line in CSV format contains:
   - The system call number (`0`, `1`, `2`, ...)
-  - Followed by a boolean (`Y` or `N`) indicating whether or not the analysis determined that the system call is used.
-  - Followed by a boolean (`Y` or `N`) indicating whether or not the analysis determined that the system call can be faked.
-  - Followed by a boolean (`Y` or `N`) indicating whether or not the analysis determined that the system call can be stubbed.
-  - Followed by a boolean (`Y` or `N`) indicating whether or not the analysis determined that the system call can be faked and stubbed.
+  - Followed by four booleans (`Y` or `N`) indicating whether or not...
+    - the analysis determined that the system call is used.
+    - the analysis determined that the system call can be faked.
+    - the analysis determined that the system call can be stubbed.
+    - the analysis determined that the system call can be faked and stubbed.
 
 Here is an abbreviated example from the ASPLOS'24 data set:
 ```
