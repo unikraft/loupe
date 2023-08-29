@@ -527,17 +527,17 @@ fix](https://github.com/unikraft/loupe#8-contributing). This README is not exhau
 before opening a bug report, please check the help feature of the relevant binary or
 script with `-h`.
 
-**Issue:** You want to rebuild the base container, but running `make docker` doesn't do anything.
+**Issue 1:** You want to rebuild the base container, but running `make docker` doesn't do anything.
 
 Solution: You can use `make rebuild-docker` instead of `make docker`.
 
-**Issue:** Loupe fails with the following error message:
+**Issue 2:** Loupe fails with the following error message:
 ```
 [E] Database /home/hle/Development/loupedb is dirty; commit your changes before running this tool.
 ```
 Solution: You should either commit your changes to the database, or ignore the changes with `--allow-dirty-db`
 
-**Issue:** The container hangs while building, with the following error:
+**Issue 3:** The container hangs while building, with the following error:
 ```
 Please select the geographic area in which you live. Subsequent configuration
 questions will narrow this down by presenting a list of cities, representing
@@ -550,7 +550,7 @@ Geographic area:
 ```
 Solution: We likely forgot to add `ARG DEBIAN_FRONTEND=noninteractive` in the Dockerfile. Try to add it, it should address the issue.
 
-**Issue:** Performance measurement shows with the following error:
+**Issue 4:** Performance measurement shows with the following error:
 ```
 [E] Bug here! Failed to determine VmPeak.
 ```
@@ -558,7 +558,7 @@ Solution: We likely forgot to add `ARG DEBIAN_FRONTEND=noninteractive` in the Do
 
 Solution: It is likely that the program is crashing during performance analysis, and that Loupe is consequently unable to measure the peak process memory usage. You should assume that those system calls cannot be faked or stubbed.
 
-**Issue:** Performance measurement shows with the following error:
+**Issue 5:** Performance measurement shows with the following error:
 ```
 [E] Bug here! VmPeak not in kB:${something}
 ```
@@ -566,7 +566,7 @@ Solution: It is likely that the program is crashing during performance analysis,
 
 Solution: This is a bug in Loupe. Please submit a bug report.
 
-**Issue:** I cannot reproduce certain measurements, despite of running the
+**Issue 6:** I cannot reproduce certain measurements, despite of running the
 reproduce command as instructed in the
 [README.md](https://github.com/unikraft/loupe/tree/staging#example-2-reproducing-existing-runs).
 
