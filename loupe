@@ -49,6 +49,8 @@ ENABLE_DIRTY_DB = False
 NUMBER_GENERATE_REPLICAS = 2
 NUMBER_PARALLEL_REPLICAS = 2
 
+ONLY_DOCKER_OPT = "--only-build-docker"
+
 assert(NUMBER_GENERATE_REPLICAS % NUMBER_PARALLEL_REPLICAS == 0)
 
 def open_syscall_file(path):
@@ -557,7 +559,7 @@ def select_files_for_copy_in_db(dockerfile):
                     break
     return lines
 
-def run_tests(path_db, application, workload, path_dockerfile):
+def run_tests(path_db, application, workload, path_dockerfile, only_build_docker=False):
     info("Building container...")
     if not path_dockerfile.exists():
         error("Dockerfile %s does not exist" % str(path_dockerfile))
@@ -588,6 +590,10 @@ def run_tests(path_db, application, workload, path_dockerfile):
     if (not container_exists(containername)):
         error("Problem building the container?")
         return False
+
+    if (only_build_docker):
+        info("Done building the container, exiting (called with " + ONLY_DOCKER_OPT + ").")
+        return True
 
     info("Running dynamic analysis in the container ({} replicas)...".format(
         NUMBER_GENERATE_REPLICAS))
@@ -878,11 +884,15 @@ run_parse_req_args.add_argument("-w", "--workload-name", type=str, required=True
 run_parse_req_args.add_argument("-d", "--dockerfile", type=pathlib.Path, required=True,
         help="path to the dockerfile that performs the analysis")
 
-run_parse_other_args = run_parser.add_argument_group('classifier arguments')
-run_parse_other_args.add_argument("-b", action="store_true", dest="isbenchmark",
+run_parse_classifier_args = run_parser.add_argument_group('classifier arguments (exactly one required)')
+run_parse_classifier_args.add_argument("-b", action="store_true", dest="isbenchmark",
         help="consider this workload as a benchmark")
-run_parse_other_args.add_argument("-s", action="store_true", dest="issuite",
+run_parse_classifier_args.add_argument("-s", action="store_true", dest="issuite",
         help="consider this workload as a testsuite")
+
+run_parse_other_args = run_parser.add_argument_group('optional arguments')
+run_parse_other_args.add_argument(ONLY_DOCKER_OPT, action="store_true", dest="onlydocker",
+        help="only build the Docker container, do not run the analysis")
 
 search_parser = subparsers.add_parser("search",
         help="retrieve and analyze data from the database")
@@ -1295,7 +1305,7 @@ if (args.cmd == "generate"):
             error("Cannot understand that answer ('%s')." % ans)
             exit(1)
 
-    ex = run_tests(args.dbpath, args.application, wl, args.dockerfile)
+    ex = run_tests(args.dbpath, args.application, wl, args.dockerfile, args.onlydocker)
     if not ex:
         exit(1)
     exit(0)

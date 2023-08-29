@@ -478,12 +478,10 @@ is visible [here](https://github.com/unikraft/loupedb/blob/87439475881b64de0203d
 
 **Step 2**: Build the application container, e.g., for nginx:
 ```
-$ ./loupe generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
+$ ./loupe generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx --only-build-docker
 ```
 We don't need to perform the actual system call measurement, we only need the
-container to be built, so you can kill this command (CTRL+C) as soon as the
-container is built. In the future we'll extend Loupe with an option to only do
-that.
+container to be built, so we pass `--only-build-docker`.
 
 **Step 3**: Enter the container and generate coverage. It's as simple as running
 the instrumented software. For example, with Nginx:
