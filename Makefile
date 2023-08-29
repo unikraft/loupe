@@ -29,11 +29,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-.PHONY: docker
+WORKDIR ?= $(CURDIR)
+GITHUB_PREFIX ?= "https://github.com/"
 
 src/seccomp-run:
 	gcc src/seccomp-run.c -o src/seccomp-run
 
+.PHONY: docker
 docker:
 	docker build --tag loupe-base -f docker/Dockerfile.loupe-base .
 
@@ -58,5 +60,15 @@ paperplots: cleanfigs
 	# syscall usage cumulative
 	./loupe -v search --static-source --cumulative-plot -db ../loupedb -a "*" -w bench
 	mv *.svg paperplots
+
+# Prepare the Zenodo archive
+zenodo:
+	mkdir -p $(WORKDIR)/repositories
+	# clone all repos in the conffuzz organization
+	cd $(WORKDIR)/repositories && git clone $(GITHUB_PREFIX)/unikraft/loupe.git
+	cd $(WORKDIR)/repositories && git clone $(GITHUB_PREFIX)/unikraft/loupedb.git
+	find $(WORKDIR)/repositories/* -name '.git' | xargs rm -rf
+	cd $(WORKDIR) && tar -cvzf ../loupe-artifact.tar.gz repositories/
+	rm -rf $(WORKDIR)/repositories
 
 all: clean clonedb src/seccomp-run docker
