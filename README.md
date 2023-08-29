@@ -580,6 +580,10 @@ Loupe offers in its current state.
 
 We are working on implementing [best practices](https://github.com/unikraft/loupe/blob/staging/doc/GOOD_DOCKERFILES.md) over the data set.
 
+**Issue 7:** Loupe fails to build the Docker container with `404 Not Found` errors on an APT command.
+
+Solution: The APT command is likely missing a `apt-get update -q -y &&` prefix - however you do not necessarily need to modify the Docker container. You can simply rebuild the base container with `make rebuild-docker` and re-run Loupe.
+
 ## 7. Additional Documentation
 
 In addition to this README, interested readers may want to take a look at...
