@@ -50,7 +50,7 @@ Markdown editor.
 - [4. Retrieving and Processing Data](#4-retrieving-and-processing-data)
 - [5. Advanced Features](#5-advanced-features)
 - [6. Troubleshooting](#6-troubleshooting)
-- [7. Additional Documentation)](#7-additional-documentation)
+- [7. Additional Documentation](#7-additional-documentation)
 - [8. Zenodo Artifact, Tags, and ASPLOS'24 Artifact Evaluation](#8-zenodo-artifact-tags-and-asplos24-artifact-evaluation)
 - [9. Contributing](#9-contributing)
 - [10. Disclaimer](#10-disclaimer)
@@ -380,13 +380,15 @@ The next step is to run loupe:
 sudo docker container run --rm --privileged -e "BINARY=memcached-debug" -e "APP=memcached" -it loupe-dbhelper
 ```
 
-Or if you would want to run loupe manually from the conainter:
+Or if you would want to run loupe manually from the container:
 
 ```
 sudo docker container run --rm --privileged -e "BINARY=memcached-debug" -e "APP=memcached" -it loupe-dbhelper /bin/bash
 ```
 
 TODO: We can get from the automatic build all the binaries being buit, and such we could pass them to `BINARY` without user input.
+
+Although we did not deploy this at a large scale, it is known to work with, at least: LigHTTPd, webfsd, Memcached.
 
 ### Performance & Resource Usage Impact Analysis
 
