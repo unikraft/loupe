@@ -766,6 +766,8 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
         shutil.rmtree(os.path.join(runpath, "data"))
         if os.path.exists(os.path.join(runpath, "cmd.txt")):
             os.remove(os.path.join(runpath, "cmd.txt"))
+        if os.path.exists(os.path.join(runpath, "explore.logs")):
+            os.remove(os.path.join(runpath, "explore.logs"))
 
     if not os.path.exists(os.path.join(runpath, "data")):
         os.makedirs(os.path.join(runpath, "data"))
@@ -781,6 +783,9 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
 
     with open(os.path.join(runpath, "cmd.txt"), "a+") as outf:
         outf.write(" ".join(sys.argv))
+
+    # contains all concatenated explore.py logs
+    shutil.move(QUIET_LOG, os.path.join(runpath, "explore.logs"))
 
     info("Done!")
     print(" -- Make sure to commit the changes to the database :-)")
@@ -1304,6 +1309,9 @@ if (args.cmd == "generate"):
         else:
             error("Cannot understand that answer ('%s')." % ans)
             exit(1)
+
+    # remove potential logs from previous runs
+    os.remove(QUIET_LOGS)
 
     ex = run_tests(args.dbpath, args.application, wl, args.dockerfile, args.onlydocker)
     if not ex:
