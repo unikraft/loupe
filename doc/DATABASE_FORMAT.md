@@ -14,9 +14,10 @@ Overall, the database is structured around the distinction between *applications
   - Loupe does not currently support multiple alternative test suites, although support for this could be trivially added following the benchmark model (`suite-$X` for any alternative suite called `$X`).
 - Each workload directory contains one folder per *run environment*.
   - Runs are identified by the hash of the Dockerfile that describes the run environment.
-- Each run environment folder contains two files (`cmd.txt`, `Dockerfile.$appname`) and two folders (`data` and `dockerfile_data`, the latter optional).
-  - `cmd.txt` describes the Loupe command which was used to generate the results, to help users reproduce the run.
+- Each run environment folder contains three files (`Dockerfile.$appname`, `cmd.txt`, `explore.logs`) and two folders (`data` and `dockerfile_data`, the latter optional).
   - `Dockerfile.$appname` is the [Dockerfile](https://docs.docker.com/engine/reference/builder/) used to build the test environment of the application and start the Loupe analysis. If the Dockerfile is [carefully constructed](doc/GOOD_DOCKERFILES.md), reproducing this measurement will almost always yield the same results; this is why the Dockerfile is used as identifier for the directory.
+  - `cmd.txt` describes the Loupe command which was used to generate the results, to help users reproduce the run.
+  - `explore.logs` contains the logs of explore.py for debugging and reproducibility purposes.
   - `dockerfile_data` are any files required to build `Dockerfile.$appname`, e.g., the application test script.
   - `data` is the folder containing analysis results (whose formats are documented [further down below](https://github.com/unikraft/loupe/blob/staging/doc/DATABASE_FORMAT.md#format-of-analysis-data)):
     - `dyn.csv` for Loupe analysis;
@@ -131,6 +132,8 @@ loupdb $ tree
 ```
 
 In this data set, you can also see runs identified by `imported`, which is clearly not a Dockerfile hash. These contain data imported from runs of Loupe that predate this data base format.
+
+Not all entries feature `explore.logs` as it was introduced recently.
 
 ## Format of Analysis Data
 
