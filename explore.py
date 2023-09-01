@@ -107,6 +107,8 @@ SYSCALL_FLAGS_FILES = {
 INITIAL_SCAN_STDERR = "/tmp/dynsystmp"
 INITIAL_SCAN_STDOUT = "/tmp/dynsystmp-stdout"
 
+CSV_OPT = "--output-csv"
+
 # ============
 # USAGE CHECKS
 
@@ -508,13 +510,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose", action="store_true", dest="verbose",
         help="enable debug output")
 parser.add_argument("-q", "--quiet", action="store_true", dest="quiet",
-        help="disable any non-error output")
+        help="disable any non-error output (non-error output will be provided through " + QUIET_LOG + ")")
 parser.add_argument("--no-strace", action="store_true", dest="nostrace",
         help="perform initial scan without strace (slower!)")
 parser.add_argument("--output-sys-names", action="store_true", dest="outputnames",
         help="output system call names instead of numbers")
-parser.add_argument("--output-csv", action="store_true", dest="outputcsv",
-        help="output data as CSV")
+parser.add_argument(CSV_OPT, action="store_true", dest="outputcsv",
+        help="output data as CSV to stdout (implies --quiet)")
 parser.add_argument("--partial-support", action="store_true",
         help="enable partial support analysis", dest="partialsupport")
 parser.add_argument("--perf-analysis", action="store_true",
@@ -557,6 +559,7 @@ OUTPUT_CSV = (args.outputcsv is True)
 common.OUTPUT_NAMES = (args.outputnames is True)
 common.ENABLE_VERBOSE = (args.verbose is True)
 common.ENABLE_QUIET = (args.quiet is True)
+
 if args.maxsys is not None:
     MAX_SYSCALL = args.maxsys
 
@@ -568,11 +571,11 @@ if ZBINARY is not None:
     ENABLE_FASTSCAN = False
 
 if common.ENABLE_VERBOSE and common.ENABLE_QUIET:
-    error("--verbose and --quiet incompatible.")
+    error("--verbose and --quiet are incompatible.")
     exit(1)
 
 if common.ENABLE_VERBOSE and OUTPUT_CSV:
-    error("--verbose and --csv incompatible.")
+    error("--verbose and " + OPT_CSV + " are incompatible.")
     exit(1)
 
 if OUTPUT_CSV:
