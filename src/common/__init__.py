@@ -46,6 +46,15 @@ ENABLE_VERBOSE = False
 ENABLE_QUIET = False
 OUTPUT_NAMES = False
 
+QUIET_LOG = "/tmp/loupe_explore.log"
+
+def print_wrapper(string):
+    if not ENABLE_QUIET:
+        print(string)
+    else:
+        with open(QUIET_LOG, "a+") as qlog:
+            qlog.write(string)
+
 def error(string):
     print("[E] " + string)
 
