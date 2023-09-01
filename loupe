@@ -1310,6 +1310,21 @@ if (args.cmd == "generate"):
             error("Cannot understand that answer ('%s')." % ans)
             exit(1)
 
+    # check Dockerfile for obvious errors
+    # we just provide that as a quick sanity check for confused users
+    # hopefully this does reduce the amount of bug reports we get :)
+    with open(args.dockerfile) as dockerf:
+        if "loupe-base:latest" not in dockerf.read():
+            warning("Dockerfile (%s) does not base on the loupe-base container - here be dragons.")
+
+        if "explore.py" not in dockerf.read():
+            error("Dockerfile (%s) does not seem to be calling explore.py in the CMD rule.")
+            exit(1)
+
+        if "--output-csv" not in dockerf.read():
+            error("Dockerfile (%s) calls explore.py without the --output-csv option, which is mandatory when using the loupe wrapper.")
+            exit(1)
+
     # remove potential logs from previous runs
     os.remove(QUIET_LOGS)
 
