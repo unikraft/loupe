@@ -640,8 +640,8 @@ if (ENABLE_FINAL_CHECK):
     if u:
         info("Final check analysis for stubbing succeeded; the entire set can be stubbed simultaneously.")
     else:
-        info("Final check analysis for stubbing failed; the entire set cannot be stubbed simultaneously.")
-        info("We recommend a manual pass with seccomp_run to find the culprit.")
+        warning("Final check analysis for stubbing failed; the entire set cannot be stubbed simultaneously.")
+        warning("We recommend a manual pass with seccomp_run to find the culprit.")
 
 info("Finding system calls that work when we fake (errno = 0)...")
 
@@ -654,8 +654,8 @@ if (ENABLE_FINAL_CHECK):
     if u:
         info("Final check analysis for faking succeeded; the entire set can be faked simultaneously.")
     else:
-        info("Final check analysis for faking failed; the entire set cannot be faked simultaneously.")
-        info("We recommend a manual pass with seccomp_run to find the culprit.")
+        warning("Final check analysis for faking failed; the entire set cannot be faked simultaneously.")
+        warning("We recommend a manual pass with seccomp_run to find the culprit.")
 
 require_impl = list(((set(used)) - set(probably_works_stubbed)) - set(probably_works_lying))
 require_impl.sort()

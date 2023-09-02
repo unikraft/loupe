@@ -623,9 +623,9 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     results = [None] * NUMBER_GENERATE_REPLICAS
     static_results_array = [None]
     for j in range(NUMBER_GENERATE_REPLICAS // NUMBER_PARALLEL_REPLICAS):
-        debug("Starting replica batch (%d/%d)" % ((
+        debug("Starting replica batch (%d/%d), batch size %d" % ((
             j * NUMBER_PARALLEL_REPLICAS) + NUMBER_PARALLEL_REPLICAS,
-            NUMBER_GENERATE_REPLICAS))
+            NUMBER_GENERATE_REPLICAS, NUMBER_PARALLEL_REPLICAS))
 
         for i in range(NUMBER_PARALLEL_REPLICAS):
             t = threading.Thread(target=_run_test, args=(containername,
@@ -784,7 +784,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
         with open(os.path.join(runpath, "data", "static_binary.csv"), "a+") as outf:
             outf.write(static_results)
 
-    debug("Outputing additional reproducibility information...")
+    debug("Outputing additional reproducibility and debugging information...")
 
     with open(os.path.join(runpath, "cmd.txt"), "a+") as outf:
         outf.write(" ".join(sys.argv))
@@ -800,6 +800,25 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                     with open(os.path.join(tmpbuild, file), "r") as logf:
                         outf.write(logf.read())
                     repnum += 1
+
+    debug("Checking explorer logs...")
+    with open(os.path.join(runpath, "explore.logs")) as logf:
+        content = logf.read()
+        err = False
+
+        if "Final check analysis for faking failed; the entire set cannot" in content:
+            warning("At least one replica reported issues when consolidating stubbing")
+            warning("and faking measurements. Please check %s." %
+                    os.path.join(runpath, "explore.logs"))
+            err = True
+
+        if "[E] " in content:
+            warning("At least one replica reported an error. Please check %s."
+                    % os.path.join(runpath, "explore.logs"))
+            err = True
+
+        if not err:
+            debug("explorer logs all OK.")
 
     end = datetime.now()
 
@@ -1329,6 +1348,7 @@ if (args.cmd == "generate"):
     # check Dockerfile for obvious errors
     # we just provide that as a quick sanity check for confused users
     # hopefully this does reduce the amount of bug reports we get :)
+    debug("Checking Dockerfile...")
     with open(args.dockerfile) as dockerf:
         content = dockerf.read()
         if "loupe-base:latest" not in content:
@@ -1344,6 +1364,10 @@ if (args.cmd == "generate"):
             error("Dockerfile (%s) calls explore.py without the --output-csv "
                   "option, which is mandatory when using the loupe wrapper." % args.dockerfile)
             exit(1)
+
+        if "--final-check" not in content:
+            warning("Dockerfile (%s) calls explore.py without the --final-check "
+                  "option, which is recommended." % args.dockerfile)
 
     # remove potential logs from previous runs
     try:
