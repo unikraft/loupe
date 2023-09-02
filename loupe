@@ -44,6 +44,7 @@ import subprocess
 import threading
 from distutils.dir_util import copy_tree
 from src.common import *
+from datetime import datetime
 
 ENABLE_DIRTY_DB = False
 NUMBER_GENERATE_REPLICAS = 2
@@ -560,6 +561,8 @@ def select_files_for_copy_in_db(dockerfile):
     return lines
 
 def run_tests(path_db, application, workload, path_dockerfile, only_build_docker=False):
+    start = datetime.now()
+
     info("Building container...")
     if not path_dockerfile.exists():
         error("Dockerfile %s does not exist" % str(path_dockerfile))
@@ -787,7 +790,9 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     # contains all concatenated explore.py logs
     shutil.move(QUIET_LOG, os.path.join(runpath, "explore.logs"))
 
-    info("Done!")
+    end = datetime.now()
+
+    info("Done! Full analysis last %s." % str(end - start))
     print(" -- Make sure to commit the changes to the database :-)")
 
     return True
@@ -1336,6 +1341,7 @@ if (args.cmd == "generate"):
         pass
 
     ex = run_tests(args.dbpath, args.application, wl, args.dockerfile, args.onlydocker)
+
     if not ex:
         exit(1)
     exit(0)
