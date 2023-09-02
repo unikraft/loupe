@@ -51,6 +51,9 @@ cleanfigs:
 clean: cleanfigs
 	rm -rf src/seccomp-run
 
+properclean: clean
+	rm -rf Dockerfile.* dockerfile_data
+
 paperplots: cleanfigs
 	mkdir -p paperplots
 	# syscall usage histogram
