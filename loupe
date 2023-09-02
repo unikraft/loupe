@@ -656,7 +656,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
             l += 1
         if (l != MAX_SYSCALL + 2):
             error("Somehow the binary static analysis output does not have the " +
-                "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
+                "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL + 2, l))
             print(static_results)
             return False
 
