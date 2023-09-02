@@ -721,7 +721,7 @@ else:
                 isused, canfake, canstub, canboth))
 
 if ENABLE_STATIC:
-    info("\nFinding used system calls using static analysis...")
+    info("Finding used system calls using static analysis...")
 
     # In "consider-only" mode, it is the binary to be considered that we should
     # analyze, not the invocation command
@@ -737,7 +737,7 @@ if ENABLE_STATIC:
             "--csv=true", "--display=false", "--verbose=false"]
     print(subprocess.check_output(runcmd).decode('utf-8'))
 else:
-    info("\nSkipping static analysis...")
+    info("Skipping static analysis...")
 
     if (OUTPUT_CSV):
         print()

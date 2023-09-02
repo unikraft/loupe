@@ -29,7 +29,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import tempfile, os, sys, re, hashlib
+import tempfile, os, sys, re, hashlib, socket
 
 # =========
 # CONSTANTS
@@ -49,9 +49,9 @@ OUTPUT_NAMES = False
 DOCKER_SHAREDIR = "/loupe-host"
 
 if (os.path.isdir(DOCKER_SHAREDIR)):
-    # TODO here we should be using a unique name, since multiple replicas may
+    # postpend with docker container name (unique), since multiple replicas may
     # be running in parallel
-    QUIET_LOG = DOCKER_SHAREDIR + "/loupe_explore.log"
+    QUIET_LOG = DOCKER_SHAREDIR + "/loupe_explore_" + socket.gethostname() + ".log"
 else:
     QUIET_LOG = "/tmp/loupe_explore.log"
 
