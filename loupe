@@ -570,7 +570,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
 
     containername = "%s-loupe" % application
 
-    # build container in /tmp to at least any reference to a local directory
+    # build container in /tmp to at least detect any reference to a local directory
     # that could be needed
     tmpbuild = get_temp_dir()
     shutil.copyfile(path_dockerfile, os.path.join(tmpbuild, "Dockerfile.%s" % application))
@@ -602,7 +602,9 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
         NUMBER_GENERATE_REPLICAS))
 
     def _run_test(n, i, r, s):
-        runcmd = ["docker", "container", "run", "--rm", "--privileged", n]
+        # share build temporary directory to store quiet output
+        runcmd = ["docker", "container", "run", "--rm", "--privileged", "-v",
+                  tmpbuild + ":" + DOCKER_SHAREDIR, n]
         try:
             local = threading.local()
             local.o = subprocess.check_output(runcmd).decode('utf-8')
@@ -788,7 +790,8 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
         outf.write(" ".join(sys.argv))
 
     # contains all concatenated explore.py logs
-    shutil.move(QUIET_LOG, os.path.join(runpath, "explore.logs"))
+    # FIXME this will fail if we have simultaneous replicas
+    shutil.move(os.path.join(tmpbuild, "loupe_explore.log"), os.path.join(runpath, "explore.logs"))
 
     end = datetime.now()
 

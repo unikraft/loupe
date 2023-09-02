@@ -46,25 +46,30 @@ ENABLE_VERBOSE = False
 ENABLE_QUIET = False
 OUTPUT_NAMES = False
 
-QUIET_LOG = "/tmp/loupe_explore.log"
+DOCKER_SHAREDIR = "/loupe-host"
+
+if (os.path.isdir(DOCKER_SHAREDIR)):
+    # TODO here we should be using a unique name, since multiple replicas may
+    # be running in parallel
+    QUIET_LOG = DOCKER_SHAREDIR + "/loupe_explore.log"
+else:
+    QUIET_LOG = "/tmp/loupe_explore.log"
 
 def print_wrapper(string):
     if not ENABLE_QUIET:
         print(string)
     else:
         with open(QUIET_LOG, "a+") as qlog:
-            qlog.write(string)
+            qlog.write(string + "\n")
 
 def error(string):
     print("[E] " + string)
 
 def warning(string):
-    if not ENABLE_QUIET:
-        print("[W] " + string)
+    print_wrapper("[W] " + string)
 
 def info(string):
-    if not ENABLE_QUIET:
-        print("[I] " + string)
+    print_wrapper("[I] " + string)
 
 def debug(string):
     if ENABLE_VERBOSE:
