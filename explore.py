@@ -732,7 +732,6 @@ if ENABLE_STATIC:
     if (OUTPUT_CSV):
         print()
 
-    print("# syscall, used")
     runcmd = [str(os.path.join(os.path.realpath(os.path.dirname(__file__)),
             "src/static-binary-analyser/static_analyser.py")), "-a", str(binary_path),
             "--csv=true", "--display=false", "--verbose=false"]
