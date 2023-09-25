@@ -37,6 +37,8 @@ been accepted to appear in [ASPLOS'24](https://www.asplos-conference.org/asplos2
 >
 > We further study our measurements and extract several novel key insights. Overall, we show that the burden of building compatibility layers is significantly less than what previous works suggest: in some cases, only as few as 20% of system calls reported by static analysis, and 50% of those reported by naive dynamic analysis need an implementation for an application to successfully run standard benchmarks.
 
+Information on Loupe can also be found in Vlad-Radu Schiller's [3rd year project report](https://github.com/SchillV/unikraft-test-suite/blob/main/Investigating%20Application%20Compatibility%20in%20Prototype%20Operating%20Systems:%20Vlad-Radu%20Schiller.pdf).
+
 ## 0. Table of Contents & Links
 
 If at all possible, please read through this entire document before installing
