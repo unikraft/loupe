@@ -13,9 +13,10 @@ analysis data.  We put the emphasis on *reproducible* analysis: measurements
 are made in a Docker container.
 
 Loupe stores analysis results in a custom database. A Loupe database is nothing
-more than a git repository with a [particular layout](). We offer an online, open
-[database](https://github.com/unikraft/loupedb) maintained by the community.
-Feel free to pull request your analysis results!
+more than a git repository with a [particular
+layout](https://github.com/unikraft/loupe/blob/staging/doc/DATABASE_FORMAT.md).
+We offer an online, open [database](https://github.com/unikraft/loupedb)
+maintained by the community.  Feel free to pull request your analysis results!
 
 ### Loupe is not your regular strace!
 
@@ -70,9 +71,14 @@ numbers.
 
 ## 2. Dependencies & Install
 
+Loupe has been tested on Debian 12. While this is not a hard requirement (it
+will likely work on any Linux distribution), we have not tested other
+environments. Please do report an issue if Loupe does not run on your
+Linux-based system.
+
 - [Docker](https://docs.docker.com/engine/install/)
-- python3, with [python-git](https://pypi.org/project/python-git/)
-  (`pip3 install gitpython`)
+- python3 (should work with any version of Python 3, known to work with at least 3.10.5)
+- [python-git](https://pypi.org/project/python-git/) (`pip3 install gitpython`, known to work with at least 3.1.27)
 - a recent-enough Linux kernel to support seccomp and ptrace (i.e., if your Linux kernel doesn't support them, you really seriously should update your setup :innocent:)
 
 Once these dependencies have been installed, the setup is very simple: `make
