@@ -1,5 +1,4 @@
-# Note for E3: this is the same file as for E1, except that we do not start
-# explore.py automatically.
+# Note for E3: this is the same file as for E1.
 
 # The loupe-base Docker container contains a functioning Loupe framework.
 
@@ -27,6 +26,11 @@ RUN mkdir /root/nginx/logs
 COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
 RUN chmod a+x /root/nginx-test.sh
 
-# 3. Here, we do not start explore.py automatically - we will do so manually.
-# Eventually performance evaluation will be integrated in the main loupe
-# wrapper and we will not need to do this anymore.
+# 3. Include the CMD line because Loupe checks for it, but it practice we will
+# not start explore.py automatically - we will do so manually.  Eventually
+# performance evaluation will be integrated in the main loupe wrapper and we
+# will not need to do this hack anymore.
+
+CMD /root/explore.py --output-csv -t /root/nginx-test.sh \
+		     -b /root/nginx/objs/nginx \
+		     -- -p /root/nginx -g "daemon off;"
