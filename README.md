@@ -1,5 +1,10 @@
 # :mag: Loupe: Syscall Usage Analysis Tool
 
+:warning: This is the ASPLOS'24 artifact evaluation branch of Loupe. It
+contains additional examples needed for the artifact evaluation process. It
+will not be rebased on top of future Loupe releases. If you simply want to use
+Loupe, please clone the default `master` branch.
+
 Loupe is a tool designed to help you analyze the system call usage of your
 application.
 

@@ -1,7 +1,7 @@
 seccomp-run
 /*.svg
 /*.dat
-dockerfile_data
+/dockerfile_data/
 /Dockerfile.*
 paperplots
 

@@ -1,0 +1,36 @@
+# The loupe-base Docker container contains a functioning Loupe framework.
+
+FROM loupe-base:latest
+
+# 1. We install wrk, and configure and build Nginx.
+
+RUN apt update
+RUN apt install -y wrk
+
+RUN apt build-dep -y nginx
+RUN wget https://nginx.org/download/nginx-1.20.1.tar.gz
+RUN tar -xf nginx-1.20.1.tar.gz
+RUN mv nginx-1.20.1 nginx
+
+RUN cd nginx && ./configure \
+	--sbin-path=$(pwd)/nginx \
+	--conf-path=$(pwd)/conf/nginx.conf \
+	--pid-path=$(pwd)/nginx.pid
+RUN cd nginx && make -j
+RUN mkdir /root/nginx/logs
+
+# 2. Copy test script
+
+COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
+RUN chmod a+x /root/nginx-test.sh
+
+# 3. We start explore.py. The arguments are quite important:
+#    --output-csv is necessary to enable parsing by Loupe
+#    -t /root/nginx-test.sh indicates our test script
+#    -b /root/nginx-1.20.1/objs/nginx indicates our binary
+#    -- denotes arguments that are passed on to nginx (remember
+#       that we want to call objs/nginx -p $(pwd) -g 'daemon off;')
+
+CMD /root/explore.py --output-csv -t /root/nginx-test.sh \
+		     -b /root/nginx/objs/nginx \
+		     -- -p /root/nginx -g "daemon off;"
