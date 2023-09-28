@@ -594,6 +594,12 @@ We are working on implementing [best practices](https://github.com/unikraft/loup
 
 Solution: The APT command is likely missing a `apt-get update -q -y &&` prefix - however you do not necessarily need to modify the Docker container. You can simply rebuild the base container with `make rebuild-docker` and re-run Loupe.
 
+**Issue 8:** Loupe output messages like "write /dev/stdout: broken pipe" during the analysis.
+
+Solution: This is a known issue - Loupe is not redirecting the output of all
+children to `/dev/null` during the analysis. You can safely ignore this
+message.
+
 ## 7. Additional Documentation
 
 In addition to this README, interested readers may want to take a look at...
