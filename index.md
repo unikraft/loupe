@@ -19,4 +19,4 @@ Loupe stores analysis results in a custom database. A Loupe database is nothing 
 
 * * *
 
-Loupe is supported in part by a studentship from NEC Labs Europe, a Microsoft Research PhD Fellowship, UK’s EPSRC grants EP/V012134/1 (UniFaaS), EP/V000225/1 (SCorCH), and the EPSRC/Innovate UK grant EP/X015610/1 (FlexCap), the EU H2020 grants 825377 (UNICORE), 871793 (ACCORDION) and 758815 (CORNET), and VMWare gift funding.
+Loupe is supported in part by a studentship from NEC Labs Europe, a Microsoft Research PhD Fellowship, UK’s EPSRC grants EP/V012134/1 (UniFaaS), EP/V000225/1 (SCorCH), and the EPSRC/Innovate UK grant EP/X015610/1 (FlexCap), the EU H2020 grants 825377 (UNICORE), 871793 (ACCORDION) and 758815 (CORNET), and a VMWare gift funding.
