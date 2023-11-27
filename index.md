@@ -1,6 +1,8 @@
 **News**
 - Loupe's paper, [Loupe: Driving the Development of OS Compatibility Layers
 ](https://arxiv.org/pdf/2309.15996.pdf), has been accepted in [ASPLOS'24](https://www.asplos-conference.org/asplos2024/)!
+- We gave a talk at FOSDEM'23 regarding [application compatibility in custom operating systems](https://fosdem.org/2023/schedule/event/loupe/)
+- Check out this [Usenix ;login: article](https://www.usenix.org/publications/loginonline/unikraft-and-coming-age-unikernels) regarding POSIX/Linux compatibility for unikernels
 
 * * *
 
