@@ -624,8 +624,6 @@ generate a new snapshot with `make zenodo`.
 We tagged both repositories with `asplos24-ae-v1` before submission. Future
 iterations on the artifact will be tagged with `-v2`, etc.
 
-We did not apply for the [reproduced badge](https://www.acm.org/publications/policies/artifact-review-badging) because the cost (in time and resources) of reproducing our data set goes beyond what can be expected from ASPLOS'24 artifact evaluators.
-
 ## 9. Contributing
 
 We welcome contributions from anyone. This is [free
