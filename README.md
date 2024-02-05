@@ -2,7 +2,7 @@
 
 # :mag: Loupe: Syscall Usage Analysis Tool
 
-![](https://img.shields.io/badge/arXiv-paper-red)](https://arxiv.org/abs/2309.15996)
+[![](https://img.shields.io/badge/arXiv-paper-red)](https://arxiv.org/abs/2309.15996)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8386116.svg)](https://doi.org/10.5281/zenodo.8386116)
 
 Loupe is a tool designed to help you analyze the system call usage of your
