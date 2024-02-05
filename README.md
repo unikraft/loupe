@@ -1,5 +1,8 @@
+<img width="35%" src="https://user-images.githubusercontent.com/905927/113136804-14c70f80-9224-11eb-8d44-f910166660dd.png" align="right" />
+
 # :mag: Loupe: Syscall Usage Analysis Tool
 
+![](https://img.shields.io/badge/arXiv-paper-red)](https://arxiv.org/abs/2309.15996)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8386116.svg)](https://doi.org/10.5281/zenodo.8386116)
 
 Loupe is a tool designed to help you analyze the system call usage of your
