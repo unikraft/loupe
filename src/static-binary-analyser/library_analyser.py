@@ -111,7 +111,7 @@ class Library:
 
 
 class LibraryUsageAnalyser:
-    """LibraryUsageAnalyser(binary) -> CodeAnalyser
+    """LibraryUsageAnalyser(binary, path) -> CodeAnalyser
 
     Class use to store information about and analyse the shared libraries
     used by an ELF executable.
@@ -137,7 +137,7 @@ class LibraryUsageAnalyser:
     __libraries = {}
 
 
-    def __init__(self, binary):
+    def __init__(self, binary, path):
 
         if not is_valid_binary(binary):
             raise StaticAnalyserException("The given binary is not a CLASS64 "
@@ -156,7 +156,7 @@ class LibraryUsageAnalyser:
         self.__got_rel = {rel.address: rel
                           for rel in self.__got_rel}
 
-        self.__binary_path = binary.name
+        self.__binary_path = path
         self.__md = Cs(CS_ARCH_X86, CS_MODE_64)
         self.__md.detail = True
         # This may lead to errors. So a warning is throwed if indeed data is

@@ -60,7 +60,7 @@ def is_valid_binary(binary):
     """
 
     return (binary is not None
-            and binary.format == lief.EXE_FORMATS.ELF
+            and binary.format == lief.Binary.FORMATS.ELF
             and binary.header.identity_class == lief.ELF.ELF_CLASS.CLASS64
             and binary.header.machine_type == lief.ELF.ARCH.x86_64)
 
