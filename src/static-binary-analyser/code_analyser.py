@@ -114,7 +114,7 @@ class CodeAnalyser:
 
         try:
             self.__lib_analyser = library_analyser.LibraryUsageAnalyser(
-                    self.__binary)
+                    self.__binary, self.__path)
         except StaticAnalyserException as e:
             if utils.verbose:
                 sys.stderr.write(f"[ERROR] library analyser of {self.__path} "
