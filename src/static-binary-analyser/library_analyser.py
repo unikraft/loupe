@@ -231,16 +231,16 @@ class LibraryUsageAnalyser:
         got_rel_addr = self.__get_got_rel_address(operand)
 
         rel = self.__got_rel[got_rel_addr]
-        if (lief.ELF.RELOCATION_X86_64(rel.type)
-            == lief.ELF.RELOCATION_X86_64.JUMP_SLOT):
+        if (rel and lief.ELF.Relocation.TYPE(rel.type)
+            == lief.ELF.Relocation.TYPE.X86_64_JUMP_SLOT):
             if rel.symbol.symbol_version.has_auxiliary_version:
                 return self.__find_function_with_name(
                         rel.symbol.name,
                         rel.symbol.symbol_version.symbol_version_auxiliary
                         .name)
             return self.__find_function_with_name(rel.symbol.name)
-        if (lief.ELF.RELOCATION_X86_64(rel.type)
-            == lief.ELF.RELOCATION_X86_64.IRELATIVE):
+        if (rel and lief.ELF.Relocation.TYPE(rel.type)
+            == lief.ELF.Relocation.TYPE.X86_64_IRELATIVE):
             if rel.addend:
                 return [LibFunction(name="", library_path=self.__binary_path,
                                     boundaries=(rel.addend, -1))]
