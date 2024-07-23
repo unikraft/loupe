@@ -54,7 +54,7 @@ RUN git clone https://github.com/capstone-engine/capstone.git
 RUN cd capstone && git checkout 4.0.2 && ./make.sh && ./make.sh install
 
 # Install more static analysis deps
-RUN pip install lief==0.15.0
+RUN pip3 install lief==0.15.0
 RUN pip3 install capstone
 
 # Necessary for build-dep
