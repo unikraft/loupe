@@ -33,8 +33,9 @@ maintained by the community.  Feel free to pull request your analysis results!
 ### ASPLOS'24 Paper
 
 Loupe is the result of a collaboration between The University of Manchester,
-Liège Université, University Politehnica of Bucharest, and Unikraft.io. It has
-been accepted to appear in [ASPLOS'24](https://www.asplos-conference.org/asplos2024/).
+Liège Université, University Politehnica of Bucharest, and Unikraft.io. The
+[paper](https://arxiv.org/pdf/2309.15996) describing Loupe has been accepted
+to appear in [ASPLOS'24](https://www.asplos-conference.org/asplos2024/).
 
 > **Abstract**: Supporting mainstream applications is fundamental for a new OS to have impact, and is generally achieved by developing a layer of compatibility such that applications developed for a mainstream OS like Linux can work, unmodified, on the new OS. Building such a layer, as we will show, results in large inefficiencies in terms of engineering effort due to the lack of efficient methods to precisely measure the OS features required by a set of applications.
 >
