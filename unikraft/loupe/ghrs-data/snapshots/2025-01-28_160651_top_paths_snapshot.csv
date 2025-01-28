@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/unikraft/loupe,15,13
+/unikraft/loupe/issues/14,6,4
+/unikraft/loupe/blob/staging/README.md,5,2
+/unikraft/loupe/tree/staging/docker,3,2
+/unikraft/loupe/tree/staging/src,3,2
+/unikraft/loupe/tree/staging/src/static-source-analyser,2,2
+/unikraft/loupe/blob/staging/docker/Dockerfile.loupe-base,2,1
+/unikraft/loupe/tree/staging,2,1
+/unikraft/loupe/blob/staging/docker/Dockerfile.loupe-plot,1,1
+/unikraft/loupe/blob/staging/index.md,1,1
