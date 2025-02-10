@@ -92,6 +92,9 @@ all`
 
 ## 3. Gathering Data
 
+Below is a quick *getting started* example showing how to run the analysis with Nginx.
+For a more detailed tutorial on how to port applications to Loupe please refer to the [wiki](https://github.com/unikraft/loupe/wiki).
+
 `loupe generate` takes care of analyzing the system call usage of your
 application.
 
