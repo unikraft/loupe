@@ -42,7 +42,7 @@ def saveResultsHtml(output, covFolder):
     isExist = os.path.exists(htmlPath)
     if not isExist:
         os.makedirs(htmlPath)
-        
+
     for name, htmlFile in covFolder.mapHtmlFile.items():
         if len(htmlFile.linesNotCov) > 0:
             with open(os.path.join(htmlPath, htmlFile.name), "w") as f:
@@ -85,7 +85,7 @@ def checkIncludeFile(gObj, key, appName):
     return info
 
 def saveAggregateHtmlUnique(gObj, maxDisplay, outAggregatedUnique, covFolder, resultsFolder):
-    
+
     strBuilder = StringIO()
     i = 0
     total = len(covFolder.allSyscalls)
@@ -109,7 +109,7 @@ def saveAggregateHtmlUnique(gObj, maxDisplay, outAggregatedUnique, covFolder, re
             strBuilder.write("\t<tr><td><a href=" + os.path.join("pdf_files", s + ".pdf") + ">" + s + "</a></td></tr>\n")
             j += 1
     strBuilder.write("</tbody></table></div>\n")
-    
+
     #for s in covFolder.allSyscalls:
     #    if s not in covFolder.covSyscalls and s not in covFolder.notCovSyscalls:
     #        print(s)
@@ -117,14 +117,14 @@ def saveAggregateHtmlUnique(gObj, maxDisplay, outAggregatedUnique, covFolder, re
     total = i+j
     strBuilder.write("\n<div><hr><p>Syscalls coverage: {:.2f}".format((i/total) * 100)+ "%</p><hr></div>")
     print("Syscalls coverage: {}/{} = {:.2f}".format(i, total, (i/total) * 100))
-    
+
     with open(os.path.join(resultsFolder, "small.html"), "w") as file:
         file.write("<hr><div><h3>Static syscalls only (not compiled in the final binary)</h3><table><tbody>")
         for s in covFolder.allSyscalls:
             if s not in covFolder.notCovSyscalls and s not in covFolder.covSyscalls:
                 file.write("<tr><td><a href=" + os.path.join("pdf_files", s + ".pdf") + ">" + s + "</a></td></tr>")
         file.write("</tbody></table></div>")
-    
+
     strBuilder.write("\n<br><div><h3>functions not covered</h3><div><p><i>st</i>: static - <i>mc</i>: macro - <i>unk</i>: unknown</p></div><table><tbody>")
     i = 0
     for key, values in covFolder.notCovFct.items():
@@ -150,6 +150,6 @@ def saveAggregateHtmlUnique(gObj, maxDisplay, outAggregatedUnique, covFolder, re
         i += 1
 
     strBuilder.write("</tbody></table></div></body></html>")
-    
+
     with open(outAggregatedUnique, "w") as f:
         f.write(strBuilder.getvalue())

@@ -84,8 +84,12 @@ Linux-based system.
 
 - [Docker](https://docs.docker.com/engine/install/)
 - python3 (should work with any version of Python 3, known to work with at least 3.10.5)
-- [python-git](https://pypi.org/project/python-git/) (`pip3 install gitpython`, known to work with at least 3.1.27)
 - a recent-enough Linux kernel to support seccomp and ptrace (i.e., if your Linux kernel doesn't support them, you really seriously should update your setup :innocent:)
+
+Python dependencies which may be installed using `pip install -r requirements.txt`
+
+- [python-git](https://pypi.org/project/python-git/)
+- [pre-commit](https://pre-commit.com/)
 
 Once these dependencies have been installed, the setup is very simple: `make
 all`
@@ -373,7 +377,7 @@ main wrapper, and may not be stable.
 
 ### Integration with debhelper
 
-We provide a script that integrates Loupe with [`debhelper`](https://man7.org/linux/man-pages/man7/debhelper.7.html). 
+We provide a script that integrates Loupe with [`debhelper`](https://man7.org/linux/man-pages/man7/debhelper.7.html).
 Our script automatically downloads the debian sources of a package, builds it and then runs the test suite with loupe (if supported by the package).
 We use `dh_test_auto` to run the testsuite. `dh_test_auto` returns 0 if the test suite executed successfully.
 
@@ -637,6 +641,12 @@ significant-enough changes, consider adding yourself to `COPYING.md`.
 Here are a few ideas of contributions to get started:
 - Add support to convert Loupe databases to SQLite.
 - Fix [open bug reports](https://github.com/unikraft/loupe/issues).
+
+It is recommended to make use of the [pre-commit](https://pre-commit.com/) to ensure consistent formatting between files. You should have already installed pre-commit from within the `requirements.txt`, after which run:
+```bash
+pre-commit install
+```
+Which will ensure that whenever you make a commit, all files will be automatically formatted.
 
 ## 10. Disclaimer
 

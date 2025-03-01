@@ -221,4 +221,3 @@ if __name__ == "__main__":
             print("----------- " + os + " below -----------")
             scores[os] = get_scores_in_time(data[os])
             print_timeline(data[os], scores[os])
-

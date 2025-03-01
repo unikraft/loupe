@@ -44,14 +44,14 @@ def addSyscalls(syscallName, covFolder, used):
     else:
         covFolder.notCovSyscalls.add(syscallName)
         covFolder.manualSetSyscalls.add(syscallName)
-            
+
 def readCsvManual(covFolder):
-    
+
     if COVERAGE_SUITE in covFolder.htmlFolder:
         colIndex = 2
     else:
         colIndex = 1
-    
+
     try:
         csvReader = csv.reader(open(covFolder.csvFile, 'r'), delimiter=',')
         for row in csvReader:
@@ -61,4 +61,3 @@ def readCsvManual(covFolder):
     except:
         print("[Error]: cannot read the CSV file: " + covFolder.csvFile)
         pass
-    
