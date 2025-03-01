@@ -1,0 +1,2 @@
+pre-commit==4.0.1
+gitpython==3.1.27

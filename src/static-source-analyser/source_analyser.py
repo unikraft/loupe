@@ -73,7 +73,7 @@ def search_function(line, cv):
             # It is only a keyword so return
             print_verbose("[" + cv +"] Ignore: [" + matches[0].replace(" ", "") + "]\n-------", verbose)
             return None
-        
+
         print_verbose("[" + cv +"] Take:   [" + matches[0].replace(" ", "") + "]\n-------", verbose)
 
         htmlLine = HtmlLine(line)
@@ -99,7 +99,7 @@ def getHtmlLines(filename, covFolder):
 
         for span in htmlContent.find_all("span", {"class": LINECOV}):
             htmlLine = search_function(span.get_text(), LINECOV)
-            
+
             if htmlLine:
                 htmlFile.linesCov.append(htmlLine)
                 for fct in htmlLine.fctList:
@@ -109,7 +109,7 @@ def getHtmlLines(filename, covFolder):
                     try:
                         covFolder.covFct[fct].add(filename + "#" + str(span.parent['name']))
                     except:
-                        covFolder.covFct[fct].add(filename)             
+                        covFolder.covFct[fct].add(filename)
 
         for span in htmlContent.find_all("span", {"class": LINENOCOV}):
             htmlLine = search_function(span.get_text(), LINENOCOV)
@@ -124,7 +124,7 @@ def getHtmlLines(filename, covFolder):
                         covFolder.notCovFct[fct].add(filename + "#" + str(span.parent['name']))
                     except:
                         covFolder.notCovFct[fct].add(filename)
-    
+
     covFolder.mapHtmlFile[filename] = htmlFile
 
 def iterateHtmlFolder(covFolder):
@@ -142,7 +142,7 @@ def iterateExtandFolder(gObj):
 
     pathlist = Path(gObj.expandFolder).glob('**/*.expand')
     for path in pathlist:
-        
+
         str_path = str(path)
         print_verbose("Gathering info of: " + str(str_path), verbose)
         if not os.path.isfile(str_path) or not os.access(str_path, os.R_OK):
@@ -218,7 +218,7 @@ def main():
     # Use clang parser to analyse source code
     print("[INFO] Perfoming clang analysis... (this may take some times...)")
     output_dict = process_source_code(args.folder, args.verbose)
-    
+
     # Build the graph
     if expandFolder != None:
         gObj = GraphObject(expandFolder)
@@ -232,7 +232,7 @@ def main():
             # Add pdf and dot folders to gCov
             gObj.outDotFolder = os.path.join(resultsFolder, "dot_files")
             gObj.outPdfFolder = os.path.join(resultsFolder, "pdf_files")
-        
+
             # Manual inspection of data (sanitize)
             if os.path.exists(os.path.join(args.folder, appName + ".csv")):
                 readCsvManual(covFolder)
@@ -259,7 +259,7 @@ def main():
         for s in output_dict['all_system_calls']:
             print(s)
 
-    # Write syscalls in a CSV file with the following format (syscall number, covered {Y|N})        
+    # Write syscalls in a CSV file with the following format (syscall number, covered {Y|N})
     if args.csv:
         with open(os.path.join(args.folder, "syscalls_" + appName + ".csv"), "w") as f:
             for k,v in syscall_list.items():

@@ -175,7 +175,7 @@ def find_funcs_and_calls(tu):
             funcs.append(c)
             # filter name to take only the name if necessary
             funcName = filter_func_name(c.displayname)
-            
+
             #increment counter
             if funcName not in global_funcs:
                 global_funcs[funcName].append(1)
@@ -223,7 +223,7 @@ def compare_syscalls(syscalls):
     define_syscalls = defaultdict(list)
 
     for key, value in global_calls.items():
-        
+
         if key in syscalls or key in alias_syscalls_list:
             print_verbose(key,verbose)
             called_syscalls[key] = value
@@ -245,7 +245,7 @@ def compare_syscalls(syscalls):
     return (called_syscalls, define_syscalls)
 
 def process_source_code(folder, v):
-    global verbose 
+    global verbose
     verbose = v
     includePaths = get_include_paths(folder)
     check_input_path(folder, includePaths)
@@ -273,21 +273,21 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--folder','-f', help='Path to the folder (source files) of the application to analyse', required=True)
     parser.add_argument('--output', '-o', help='Path to the output resulting json file')
-    parser.add_argument('--verbose', '-v', type=str2bool, 
+    parser.add_argument('--verbose', '-v', type=str2bool,
                         nargs='?', const=True, default=False,
                         help='Verbose mode')
-    parser.add_argument('--display', '-d', type=str2bool, 
+    parser.add_argument('--display', '-d', type=str2bool,
                         nargs='?', const=True, default=False,
                         help='Display all syscalls')
     args = parser.parse_args()
-    
+
     verbose = args.verbose
     output_dict = process_source_code(args.folder, args.verbose)
     if args.output is None:
         output_file = sys.stdout
     else:
         output_file = open(args.output, "w")
-        
+
     if args.display:
         for s in output_dict['all_system_calls']:
             print(s)
