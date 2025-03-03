@@ -379,7 +379,7 @@ def buildAll(gObj, args):
     full_call_graph(gObj.functions, exclude=getExcludeRegex(args), no_externs=args.no_externs)
 
 def buildCaller(gObj, covFolder, caller_lst, args, isCovered=False):
-    
+
     for caller in caller_lst:
         if caller not in gObj.functions:
             print_warn("Can't find caller \"{}\" in RTL data!".format(caller))

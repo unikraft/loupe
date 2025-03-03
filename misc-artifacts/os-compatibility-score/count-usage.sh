@@ -105,4 +105,3 @@ for p in "all" "suite" "bench"; do
 done
 
 echo "Done!"
-

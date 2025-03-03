@@ -106,11 +106,3 @@ if __name__ == "__main__":
         topdata = get_top_all(data, top)
         print("top " + str(top) + ": " + str(topdata) + " (total " + \
                 str(len(topdata)) + ")")
-
-
-
-
-
-
-
-
