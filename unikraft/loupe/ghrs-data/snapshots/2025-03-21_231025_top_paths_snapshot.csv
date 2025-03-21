@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/unikraft/loupe,32,27
+/unikraft/loupe/issues/19,5,4
+/unikraft/loupe/tree/staging/src,5,4
+/unikraft/loupe/issues/23,5,3
+/unikraft/loupe/tree/staging/src/static-binary-analyser,4,3
+/unikraft/loupe/pull/24,3,3
+/unikraft/loupe/tree/staging,3,3
+/unikraft/loupe/blob/staging/explore.py,3,2
+/unikraft/loupe/blob/staging/src/static-binary-analyser/elf_analyser.py,3,2
+/unikraft/loupe/blob/staging/src/static-source-analyser/utility.py,3,2
