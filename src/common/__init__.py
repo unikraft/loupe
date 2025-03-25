@@ -29,12 +29,16 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import tempfile, os, sys, re, hashlib, socket
+import tempfile, os, sys, re, hashlib, socket, platform
 
 # =========
 # CONSTANTS
+os_info = platform.freedesktop_os_release()
 
-SYSCALL_MAPPING_FILE = "/usr/include/x86_64-linux-gnu/asm/unistd_64.h"
+if os_info['ID'] == 'fedora':
+	SYSCALL_MAPPING_FILE = "/usr/include/asm/unistd_64.h"
+else:
+	SYSCALL_MAPPING_FILE = "/usr/include/x86_64-linux-gnu/asm/unistd_64.h"
 
 # get it from /usr/include/x86_64-linux-gnu/asm/unistd_64.h
 MAX_SYSCALL = 334
