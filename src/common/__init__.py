@@ -29,18 +29,33 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import tempfile, os, sys, re, hashlib, socket, platform
+import tempfile, os, sys, re, hashlib, socket, platform, subprocess
 
 # =========
 # CONSTANTS
+
+def find_first_file(directory, name_pattern):
+    result = subprocess.run(
+        ['find', directory, '-name', name_pattern],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+)
+    
+    # Split output into lines and take the first non-empty line
+    files = result.stdout.strip().split('\n')
+    return files[0] if files else None
+
 os_info = platform.freedesktop_os_release()
 
-if os_info['ID'] == 'fedora':
-	SYSCALL_MAPPING_FILE = "/usr/include/asm/unistd_64.h"
-else:
-	SYSCALL_MAPPING_FILE = "/usr/include/x86_64-linux-gnu/asm/unistd_64.h"
+match os_info['ID']:
+    case 'fedora':
+        SYSCALL_MAPPING_FILE = "/usr/include/asm/unistd_64.h"
+    case 'nixos':
+        SYSCALL_MAPPING_FILE = find_first_file("/nix/store", "unistd_64.h")
+    case _:
+        SYSCALL_MAPPING_FILE = "/usr/include/x86_64-linux-gnu/asm/unistd_64.h"
 
-# get it from /usr/include/x86_64-linux-gnu/asm/unistd_64.h
 MAX_SYSCALL = 334
 
 # =======
