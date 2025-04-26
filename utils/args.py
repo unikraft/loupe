@@ -4,6 +4,8 @@ import src.common as common
 ONLY_DOCKER_OPT = "--only-build-docker"
 
 def parse_args():
+    """Process the arguments passed in
+    """
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest='cmd')
     parser.add_argument("-v", "--verbose", action="store_true", dest="verbose",
@@ -77,4 +79,6 @@ def parse_args():
     if (args.cmd is None):
         parser.print_help()
         exit(1)
+
+    return args
 

@@ -46,7 +46,7 @@ from distutils.dir_util import copy_tree
 from src.common import *
 from datetime import datetime
 
-import lib.args as args
+import utils.args as args
 
 ENABLE_DIRTY_DB = False
 NUMBER_GENERATE_REPLICAS = 2
