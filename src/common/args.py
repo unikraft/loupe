@@ -13,7 +13,6 @@ def parse_args() -> argparse.Namespace:
     A namespace of the the arguments passed in via the command line
     """
 
-    print("Hi mom!")
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="cmd")
     parser.add_argument(
