@@ -46,7 +46,7 @@ from distutils.dir_util import copy_tree
 from src.common import *
 from datetime import datetime
 
-import utils.args as args
+import src.common.args as args
 
 ENABLE_DIRTY_DB = False
 NUMBER_GENERATE_REPLICAS = 2
@@ -54,7 +54,8 @@ NUMBER_PARALLEL_REPLICAS = 2
 
 ONLY_DOCKER_OPT = "--only-build-docker"
 
-assert(NUMBER_GENERATE_REPLICAS % NUMBER_PARALLEL_REPLICAS == 0)
+assert NUMBER_GENERATE_REPLICAS % NUMBER_PARALLEL_REPLICAS == 0
+
 
 def open_syscall_file(path):
     with open(path, "r") as f:
@@ -63,12 +64,14 @@ def open_syscall_file(path):
         l.sort()
         return l
 
+
 # init a fresh database
 def init_db(path):
-    if (not os.path.isdir(path)):
+    if not os.path.isdir(path):
         os.mkdir(path)
     g = git.cmd.Git(path)
     g.init()
+
 
 # check that the db is sane
 def db_check(path):
@@ -78,7 +81,7 @@ def db_check(path):
     except git.exc.NoSuchPathError:
         error("Database %s does not exist" % path)
         create = input("Create it? [y/n] ")
-        if create.lower()[0] == 'y': 
+        if create.lower()[0] == "y":
             init_db(path)
             return True
         else:
@@ -89,14 +92,18 @@ def db_check(path):
 
     # it may not have uncommited changes
     git_repo = git.Repo(path, search_parent_directories=True)
-    if (git_repo.is_dirty() or len(git_repo.untracked_files) != 0):
-        if (not ENABLE_DIRTY_DB):
-            error("Database %s is dirty; commit your changes before running this tool." % path)
+    if git_repo.is_dirty() or len(git_repo.untracked_files) != 0:
+        if not ENABLE_DIRTY_DB:
+            error(
+                "Database %s is dirty; commit your changes before running this tool."
+                % path
+            )
             return False
         else:
             warning("DB dirty, ignoring.")
 
     return True
+
 
 # return an in-memory representation of the DB:
 # {
@@ -134,32 +141,38 @@ def db_load(path):
 
         changed = False
         for w in [e for e in a.iterdir() if e.is_dir()]:
-            if (os.path.basename(w).startswith("benchmark")):
+            if os.path.basename(w).startswith("benchmark"):
                 if bench_wl_folder is None:
                     bench_wl_folder = w
                 elif os.path.getctime(w) > os.path.getctime(bench_wl_folder):
                     bench_wl_folder = w
                     changed = True
-            elif (os.path.basename(w).startswith("suite")):
+            elif os.path.basename(w).startswith("suite"):
                 if suite_wl_folder is None:
                     suite_wl_folder = w
                 elif os.path.getctime(w) > os.path.getctime(suite_wl_folder):
                     suite_wl_folder = w
                     changed = True
             else:
-                error("Detected malformed DB: incorrect name " + str(w) +
-                      " (should start with 'benchmark' or 'suite')")
+                error(
+                    "Detected malformed DB: incorrect name "
+                    + str(w)
+                    + " (should start with 'benchmark' or 'suite')"
+                )
                 exit(1)
 
-        if (changed):
-            debug("App directory {} has multiple entries".format(str(a)) +
-                  ", went for most recent ones: {} and {}".format(str(bench_wl_folder),
-                      str(suite_wl_folder)))
+        if changed:
+            debug(
+                "App directory {} has multiple entries".format(str(a))
+                + ", went for most recent ones: {} and {}".format(
+                    str(bench_wl_folder), str(suite_wl_folder)
+                )
+            )
 
         bench_workload = {"dynamic": [], "static_binary": [], "static_source": []}
         found_static_binary = False
         found_static_source = False
-        if (bench_wl_folder is not None):
+        if bench_wl_folder is not None:
             # if there are multiple runs for this workload, take the latest
             m = None
             i = 0
@@ -168,28 +181,31 @@ def db_load(path):
                 if m is None or os.path.getctime(_m) > os.path.getctime(m):
                     m = _m
 
-            if (i != 1):
-                debug("Workload directory {} has multiple entries".format(
-                      str(bench_wl_folder)) + ", went for most recent: {}".format(
-                          str(m)))
+            if i != 1:
+                debug(
+                    "Workload directory {} has multiple entries".format(
+                        str(bench_wl_folder)
+                    )
+                    + ", went for most recent: {}".format(str(m))
+                )
 
             # iterate over CSV data files
 
             ml = list()
             with open(os.path.join(str(m), "data", "dyn.csv"), "r") as f:
                 for line in f:
-                    if (line[0] == '#'):
+                    if line[0] == "#":
                         continue
-                    ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                    ml.append(re.sub(r"[\n\t\s]*", "", line).split(","))
             bench_workload["dynamic"] = ml
 
             ml = list()
             try:
                 with open(os.path.join(str(m), "data", "static_binary.csv"), "r") as f:
                     for line in f:
-                        if (line[0] == '#'):
+                        if line[0] == "#":
                             continue
-                        ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                        ml.append(re.sub(r"[\n\t\s]*", "", line).split(","))
                     found_static_binary = True
             except FileNotFoundError:
                 ml = None
@@ -199,9 +215,9 @@ def db_load(path):
             try:
                 with open(os.path.join(str(m), "data", "static_sources.csv"), "r") as f:
                     for line in f:
-                        if (line[0] == '#'):
+                        if line[0] == "#":
                             continue
-                        ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                        ml.append(re.sub(r"[\n\t\s]*", "", line).split(","))
                     found_static_source = True
             except FileNotFoundError:
                 ml = None
@@ -210,7 +226,7 @@ def db_load(path):
             debug("App directory %s does not feature benchmark data" % str(a))
 
         suite_workload = {"dynamic": [], "static_binary": [], "static_source": []}
-        if (suite_wl_folder is not None):
+        if suite_wl_folder is not None:
             # if there are multiple runs for this workload, take the latest
             m = None
             i = 0
@@ -219,10 +235,13 @@ def db_load(path):
                 if m is None or os.path.getctime(_m) > os.path.getctime(m):
                     m = _m
 
-            if (i != 1):
-                debug("Workload directory {} has multiple entries".format(
-                    str(suite_wl_folder)) + ", went for most recent: {}".format(
-                        str(m)))
+            if i != 1:
+                debug(
+                    "Workload directory {} has multiple entries".format(
+                        str(suite_wl_folder)
+                    )
+                    + ", went for most recent: {}".format(str(m))
+                )
 
             ml = list()
 
@@ -231,18 +250,18 @@ def db_load(path):
             ml = list()
             with open(os.path.join(str(m), "data", "dyn.csv"), "r") as f:
                 for line in f:
-                    if (line[0] == '#'):
+                    if line[0] == "#":
                         continue
-                    ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                    ml.append(re.sub(r"[\n\t\s]*", "", line).split(","))
             suite_workload["dynamic"] = ml
 
             ml = list()
             try:
                 with open(os.path.join(str(m), "data", "static_binary.csv"), "r") as f:
                     for line in f:
-                        if (line[0] == '#'):
+                        if line[0] == "#":
                             continue
-                        ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                        ml.append(re.sub(r"[\n\t\s]*", "", line).split(","))
                     found_static_binary = True
             except FileNotFoundError:
                 ml = None
@@ -252,9 +271,9 @@ def db_load(path):
             try:
                 with open(os.path.join(str(m), "data", "static_sources.csv"), "r") as f:
                     for line in f:
-                        if (line[0] == '#'):
+                        if line[0] == "#":
                             continue
-                        ml.append(re.sub(r"[\n\t\s]*", '', line).split(","))
+                        ml.append(re.sub(r"[\n\t\s]*", "", line).split(","))
                     found_static_source = True
             except FileNotFoundError:
                 ml = None
@@ -274,11 +293,14 @@ def db_load(path):
 
     return db
 
-def get_workloads(db, applist, bench=False, suite=False,
-        static_binary=False, static_source=False):
 
+def get_workloads(
+    db, applist, bench=False, suite=False, static_binary=False, static_source=False
+):
     if "*" in applist and len(applist) > 1:
-        warning("* in the application list but other entries are specified: " + str(applist))
+        warning(
+            "* in the application list but other entries are specified: " + str(applist)
+        )
         warning("Ignoring them.")
         applist = db.keys()
     elif "*" in applist:
@@ -300,21 +322,25 @@ def get_workloads(db, applist, bench=False, suite=False,
             continue
 
         if static_binary:
-            if (db[app]["benchmark"]["static_binary"] is not None and
-               len(db[app]["benchmark"]["static_binary"])):
+            if db[app]["benchmark"]["static_binary"] is not None and len(
+                db[app]["benchmark"]["static_binary"]
+            ):
                 tmp.append(db[app]["benchmark"]["static_binary"])
-            elif (db[app]["testsuite"]["static_binary"] is not None and
-               len(db[app]["testsuite"]["static_binary"])):
+            elif db[app]["testsuite"]["static_binary"] is not None and len(
+                db[app]["testsuite"]["static_binary"]
+            ):
                 tmp.append(db[app]["testsuite"]["static_binary"])
             else:
                 continue
 
         if static_source:
-            if (db[app]["benchmark"]["static_source"] is not None and
-               len(db[app]["benchmark"]["static_source"])):
+            if db[app]["benchmark"]["static_source"] is not None and len(
+                db[app]["benchmark"]["static_source"]
+            ):
                 tmp.append(db[app]["benchmark"]["static_source"])
-            elif( db[app]["testsuite"]["static_source"] is not None and
-               len(db[app]["testsuite"]["static_source"])):
+            elif db[app]["testsuite"]["static_source"] is not None and len(
+                db[app]["testsuite"]["static_source"]
+            ):
                 tmp.append(db[app]["testsuite"]["static_source"])
             else:
                 continue
@@ -323,6 +349,7 @@ def get_workloads(db, applist, bench=False, suite=False,
         considered_apps.append(app)
 
     return (workloads, considered_apps)
+
 
 # returns a tuple of two arrays (required, used) in the form of
 # (
@@ -334,10 +361,17 @@ def get_workloads(db, applist, bench=False, suite=False,
 #
 # if passed static_binary=True or static_source=True, the second element of
 # the Tuple (used) will be None to represent N/A.
-def process_cumulative(db, applist, bench=False, suite=False,
-        static_binary=False, static_source=False, ignore_fake=False):
-    assert(bench or suite or static_binary or static_source)
-    assert('*' not in applist)
+def process_cumulative(
+    db,
+    applist,
+    bench=False,
+    suite=False,
+    static_binary=False,
+    static_source=False,
+    ignore_fake=False,
+):
+    assert bench or suite or static_binary or static_source
+    assert "*" not in applist
 
     cumulative_required = {}
     cumulative_executed = {}
@@ -350,7 +384,9 @@ def process_cumulative(db, applist, bench=False, suite=False,
     n = 0
     for app in applist:
         # collect all relevant measurements
-        workloads = get_workloads(db, [app], bench, suite, static_binary, static_source)[0]
+        workloads = get_workloads(
+            db, [app], bench, suite, static_binary, static_source
+        )[0]
 
         if len(workloads):
             n += 1
@@ -389,6 +425,7 @@ def process_cumulative(db, applist, bench=False, suite=False,
 
     return (cumulative_required, cumulative_executed)
 
+
 # return, for a given application list, the system calls that are required, those
 # that can be faked, stubbed, or faked AND stubbed:
 # {
@@ -400,9 +437,10 @@ def process_cumulative(db, applist, bench=False, suite=False,
 #   both: {...}
 # }
 # FIXME has a lot of duplicated code
-def used_by_apps(db, applist, bench=False, suite=False,
-        static_binary=False, static_source=False):
-    assert(bench or suite or static_binary or static_source)
+def used_by_apps(
+    db, applist, bench=False, suite=False, static_binary=False, static_source=False
+):
+    assert bench or suite or static_binary or static_source
 
     if "*" in applist:
         applist = db.keys()
@@ -413,13 +451,15 @@ def used_by_apps(db, applist, bench=False, suite=False,
             error("Valid entries are: " + str(db.keys()))
             exit(1)
 
-        req  = []
+        req = []
         stub = []
         fake = []
         both = []
 
         # collect all relevant measurements
-        workloads = get_workloads(db, [app], bench, suite, static_binary, static_source)[0]
+        workloads = get_workloads(
+            db, [app], bench, suite, static_binary, static_source
+        )[0]
 
         # populate req, stub, fake
         for i in range(0, MAX_SYSCALL + 1):
@@ -430,34 +470,33 @@ def used_by_apps(db, applist, bench=False, suite=False,
 
             for w in workloads:
                 if bench or suite:
-                    if (w[i][1] == "N"):
+                    if w[i][1] == "N":
                         continue
-                    elif ((w[i][2] == "Y" and w[i][3] == "Y") or
-                          (w[i][4] == "Y")):
+                    elif (w[i][2] == "Y" and w[i][3] == "Y") or (w[i][4] == "Y"):
                         # can be stubbed and faked
-                        if (iss is not None or isf is not None):
+                        if iss is not None or isf is not None:
                             continue
                         isr = False
                         iss = True
                         isf = True
                         isb = True
-                    elif (w[i][2] == "Y" and w[i][3] == "N"):
+                    elif w[i][2] == "Y" and w[i][3] == "N":
                         # can be stubbed
                         isf = False
                         isb = False
-                        if (iss is not None):
+                        if iss is not None:
                             continue
                         isr = False
                         iss = True
-                    elif (w[i][2] == "N" and w[i][3] == "Y"):
+                    elif w[i][2] == "N" and w[i][3] == "Y":
                         # can be faked
                         iss = False
                         isb = False
-                        if (isf is not None):
+                        if isf is not None:
                             continue
                         isr = False
                         isf = True
-                    elif (w[i][2] == "N" and w[i][3] == "N" and w[i][4] == "N"):
+                    elif w[i][2] == "N" and w[i][3] == "N" and w[i][4] == "N":
                         # required
                         isr = True
                         iss = False
@@ -465,9 +504,9 @@ def used_by_apps(db, applist, bench=False, suite=False,
                         isb = False
                         break
                 else:
-                    if (w[i][1] == "Y"):
+                    if w[i][1] == "Y":
                         isr = True
-                    elif (w[i][1] == "N" and isr is None):
+                    elif w[i][1] == "N" and isr is None:
                         isr = False
 
             if isr:
@@ -485,7 +524,7 @@ def used_by_apps(db, applist, bench=False, suite=False,
     for a in applist:
         pdb[a] = _used_by_app(a)
 
-    req  = []
+    req = []
     stub = []
     fake = []
     both = []
@@ -497,30 +536,30 @@ def used_by_apps(db, applist, bench=False, suite=False,
         isb = None
 
         for a in applist:
-            if (i in pdb[a]["both"]):
-                if (iss is not None or isf is not None):
+            if i in pdb[a]["both"]:
+                if iss is not None or isf is not None:
                     continue
                 isr = False
                 iss = True
                 isf = True
                 isb = True
-            elif (i in pdb[a]["stubbed"]):
+            elif i in pdb[a]["stubbed"]:
                 # can be stubbed
                 isf = False
                 isb = False
-                if (iss is not None):
+                if iss is not None:
                     continue
                 isr = False
                 iss = True
-            elif (i in pdb[a]["faked"]):
+            elif i in pdb[a]["faked"]:
                 # can be faked
                 iss = False
                 isb = False
-                if (isf is not None):
+                if isf is not None:
                     continue
                 isr = False
                 isf = True
-            elif (i in pdb[a]["required"]):
+            elif i in pdb[a]["required"]:
                 # required
                 isr = True
                 iss = False
@@ -539,10 +578,12 @@ def used_by_apps(db, applist, bench=False, suite=False,
 
     return {"required": req, "stubbed": stub, "faked": fake, "both": both}
 
+
 def container_exists(name):
     runcmd = ["docker", "images"]
-    out = subprocess.check_output(runcmd).decode('utf-8')
+    out = subprocess.check_output(runcmd).decode("utf-8")
     return re.search("^%s" % name, out, re.MULTILINE) is not None
+
 
 def remove_container(name):
     info("Removing stale container...")
@@ -550,17 +591,19 @@ def remove_container(name):
     process = subprocess.Popen(runcmd)
     process.wait()
 
+
 def select_files_for_copy_in_db(dockerfile):
-    tmp = dockerfile.split('\n')
+    tmp = dockerfile.split("\n")
     lines = []
     for line in tmp:
-        if(line.find("COPY") == 0  or line.find("ADD") == 0):
-            aux = line.split(' ')
+        if line.find("COPY") == 0 or line.find("ADD") == 0:
+            aux = line.split(" ")
             for word in aux:
-                if(word.find("dockerfile_data") == 0):
+                if word.find("dockerfile_data") == 0:
                     lines.append(word.split("dockerfile_data/")[1])
                     break
     return lines
+
 
 def run_tests(path_db, application, workload, path_dockerfile, only_build_docker=False):
     start = datetime.now()
@@ -575,63 +618,100 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     # build container in /tmp to at least detect any reference to a local directory
     # that could be needed
     tmpbuild = get_temp_dir()
-    shutil.copyfile(path_dockerfile, os.path.join(tmpbuild, "Dockerfile.%s" % application))
-    if (pathlib.Path("./dockerfile_data").exists()):
+    shutil.copyfile(
+        path_dockerfile, os.path.join(tmpbuild, "Dockerfile.%s" % application)
+    )
+    if pathlib.Path("./dockerfile_data").exists():
         shutil.copytree("./dockerfile_data", os.path.join(tmpbuild, "dockerfile_data"))
 
     cwd = os.getcwd()
     os.chdir(tmpbuild)
-    runcmd = ["docker", "build", "--tag", containername, "-f", str(path_dockerfile), "."]
+    runcmd = [
+        "docker",
+        "build",
+        "--tag",
+        containername,
+        "-f",
+        str(path_dockerfile),
+        ".",
+    ]
     process = subprocess.Popen(runcmd)
 
     process.wait()
     os.chdir(cwd)
 
     ret = process.returncode
-    if (ret != 0):
+    if ret != 0:
         error("Problem building the container? Error code %d" % ret)
         return False
 
-    if (not container_exists(containername)):
+    if not container_exists(containername):
         error("Problem building the container?")
         return False
 
-    if (only_build_docker):
-        info("Done building the container, exiting (called with " + ONLY_DOCKER_OPT + ").")
+    if only_build_docker:
+        info(
+            "Done building the container, exiting (called with "
+            + ONLY_DOCKER_OPT
+            + ")."
+        )
         return True
 
-    info("Running dynamic analysis in the container ({} replicas)...".format(
-        NUMBER_GENERATE_REPLICAS))
+    info(
+        "Running dynamic analysis in the container ({} replicas)...".format(
+            NUMBER_GENERATE_REPLICAS
+        )
+    )
 
     def _run_test(n, i, r, s):
         # share build temporary directory to store quiet output
-        runcmd = ["docker", "container", "run", "--rm", "--privileged", "-v",
-                  tmpbuild + ":" + DOCKER_SHAREDIR, n]
+        runcmd = [
+            "docker",
+            "container",
+            "run",
+            "--rm",
+            "--privileged",
+            "-v",
+            tmpbuild + ":" + DOCKER_SHAREDIR,
+            n,
+        ]
         try:
             local = threading.local()
-            local.o = subprocess.check_output(runcmd).decode('utf-8')
+            local.o = subprocess.check_output(runcmd).decode("utf-8")
             local.split = local.o.split("\n\n")
 
             r[i] = local.split[0]
             # only write static_results if we are replica 0, they cannot have
             # any variation anyways
-            if (i == 0):
+            if i == 0:
                 s[0] = local.split[1]
         except subprocess.CalledProcessError as e:
-            r[i]  = str(e.output)
+            r[i] = str(e.output)
 
     # run configured number of replicas
     threads = [None] * NUMBER_GENERATE_REPLICAS
     results = [None] * NUMBER_GENERATE_REPLICAS
     static_results_array = [None]
     for j in range(NUMBER_GENERATE_REPLICAS // NUMBER_PARALLEL_REPLICAS):
-        debug("Starting replica batch (%d/%d), batch size %d" % ((
-            j * NUMBER_PARALLEL_REPLICAS) + NUMBER_PARALLEL_REPLICAS,
-            NUMBER_GENERATE_REPLICAS, NUMBER_PARALLEL_REPLICAS))
+        debug(
+            "Starting replica batch (%d/%d), batch size %d"
+            % (
+                (j * NUMBER_PARALLEL_REPLICAS) + NUMBER_PARALLEL_REPLICAS,
+                NUMBER_GENERATE_REPLICAS,
+                NUMBER_PARALLEL_REPLICAS,
+            )
+        )
 
         for i in range(NUMBER_PARALLEL_REPLICAS):
-            t = threading.Thread(target=_run_test, args=(containername,
-                (j * NUMBER_PARALLEL_REPLICAS) + i, results, static_results_array))
+            t = threading.Thread(
+                target=_run_test,
+                args=(
+                    containername,
+                    (j * NUMBER_PARALLEL_REPLICAS) + i,
+                    results,
+                    static_results_array,
+                ),
+            )
             threads[j + i] = t
             t.start()
 
@@ -649,18 +729,23 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
 
     static_results = static_results_array[0].strip()
 
-    if(static_results != "Static analysis skipped"):
+    if static_results != "Static analysis skipped":
         l = 0
         for line in static_results.splitlines():
-            if (len(re.sub("[^,]", "", line)) != 1):
-                error("Line %d of the binary static analysis output seems " % l +
-                    "corrupted. Dumping.")
+            if len(re.sub("[^,]", "", line)) != 1:
+                error(
+                    "Line %d of the binary static analysis output seems " % l
+                    + "corrupted. Dumping."
+                )
                 print(static_results)
                 return False
             l += 1
-        if (l != MAX_SYSCALL + 2):
-            error("Somehow the binary static analysis output does not have the " +
-                "right size... Expected %d lines, got %d. Dumping." % (MAX_SYSCALL + 2, l))
+        if l != MAX_SYSCALL + 2:
+            error(
+                "Somehow the binary static analysis output does not have the "
+                + "right size... Expected %d lines, got %d. Dumping."
+                % (MAX_SYSCALL + 2, l)
+            )
             print(static_results)
             return False
 
@@ -673,15 +758,19 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
 
         l = 0
         for line in r.splitlines():
-            if (len(re.sub("[^,]", "", line)) != 4):
-                error("Line %d of replica %d's test output seems " % (l, x) +
-                      "corrupted. Dumping.")
+            if len(re.sub("[^,]", "", line)) != 4:
+                error(
+                    "Line %d of replica %d's test output seems " % (l, x)
+                    + "corrupted. Dumping."
+                )
                 print(r)
                 return False
             l += 1
-        if (l != MAX_SYSCALL + 2):
-            error("Somehow replica %d's file does not have the right size... " % x +
-                  "Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l))
+        if l != MAX_SYSCALL + 2:
+            error(
+                "Somehow replica %d's file does not have the right size... " % x
+                + "Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l)
+            )
             print(r)
             return False
         x += 1
@@ -696,7 +785,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
             for r in results:
                 if r is not None and r.splitlines()[i] not in known:
                     known.append(r.splitlines()[i])
-            if (len(known) != 1):
+            if len(known) != 1:
                 sys = known[0].split(",")[0]
                 used = "N"
                 worksfaked = "Y"
@@ -704,20 +793,21 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                 worksboth = "Y"
 
                 for k in known:
-                    if (len(k.split(",")) < 4):
+                    if len(k.split(",")) < 4:
                         print("Invalid output line: " + k)
                         exit(1)
 
-                    if (k.split(",")[1] == "Y"):
+                    if k.split(",")[1] == "Y":
                         used = "Y"
-                    if (k.split(",")[2] == "N"):
+                    if k.split(",")[2] == "N":
                         worksfaked = "N"
                         worksboth = "N"
-                    if (k.split(",")[3] == "N"):
+                    if k.split(",")[3] == "N":
                         worksstubbed = "N"
                         worksboth = "N"
-                final_csv += "{},{},{},{},{}\n".format(sys, used, worksfaked,
-                                                       worksstubbed, worksboth)
+                final_csv += "{},{},{},{},{}\n".format(
+                    sys, used, worksfaked, worksstubbed, worksboth
+                )
                 d += 1
             else:
                 final_csv += known[0] + "\n"
@@ -727,24 +817,26 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     def _check_results_valid(csv):
         used = faked = stubbed = both = 0
         for line in csv.splitlines():
-            tmp = line.split(',')
-            if(tmp[1] == 'Y'):
+            tmp = line.split(",")
+            if tmp[1] == "Y":
                 used += 1
-            if(tmp[2] == 'Y'):
+            if tmp[2] == "Y":
                 faked += 1
-            if(tmp[3] == 'Y'):
+            if tmp[3] == "Y":
                 stubbed += 1
-            if(tmp[4] == 'Y'):
+            if tmp[4] == "Y":
                 both += 1
         sum = faked + stubbed + both
-        if(sum == 0 or sum == used):
+        if sum == 0 or sum == used:
             return False
         return True
 
     out = _merge_cvs(results)
     if not _check_results_valid(out):
-        error("Dynamic analysis results are invalid (all or none of the " +
-            "syscalls invoked can be stubbed/faked")
+        error(
+            "Dynamic analysis results are invalid (all or none of the "
+            + "syscalls invoked can be stubbed/faked"
+        )
         return False
 
     # write to the db
@@ -755,15 +847,18 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     runpath = os.path.join(path_db, application, workload, hashdf)
     if not os.path.exists(runpath):
         os.makedirs(runpath)
-        shutil.copyfile(path_dockerfile,
-                        os.path.join(runpath, "Dockerfile.%s" % application))
-        if (pathlib.Path("./dockerfile_data").exists()):
+        shutil.copyfile(
+            path_dockerfile, os.path.join(runpath, "Dockerfile.%s" % application)
+        )
+        if pathlib.Path("./dockerfile_data").exists():
             os.makedirs(os.path.join(runpath, "dockerfile_data"))
-            df = open(path_dockerfile, 'r')
+            df = open(path_dockerfile, "r")
             files = select_files_for_copy_in_db(df.read())
             for file in files:
                 source = os.path.abspath(os.path.join("./dockerfile_data/%s" % file))
-                destination = os.path.abspath(os.path.join(runpath, "dockerfile_data/%s" % file))
+                destination = os.path.abspath(
+                    os.path.join(runpath, "dockerfile_data/%s" % file)
+                )
                 if os.path.isdir(source):
                     copy_tree(source, destination)
                 else:
@@ -782,7 +877,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     with open(os.path.join(runpath, "data", "dyn.csv"), "a+") as outf:
         outf.write(out)
 
-    if(static_results != "Static analysis skipped"):
+    if static_results != "Static analysis skipped":
         with open(os.path.join(runpath, "data", "static_binary.csv"), "a+") as outf:
             outf.write(static_results)
 
@@ -793,7 +888,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
 
     # concatenate all explore logs and save them in explore.logs in the database
     repnum = 0
-    reg = re.compile('.*\.log')
+    reg = re.compile(".*\.log")
     for subdir, dirs, files in os.walk(tmpbuild):
         with open(os.path.join(runpath, "explore.logs"), "a+") as outf:
             for file in files:
@@ -810,13 +905,17 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
 
         if "Final check analysis for faking failed; the entire set cannot" in content:
             warning("At least one replica reported issues when consolidating stubbing")
-            warning("and faking measurements. Please check %s." %
-                    os.path.join(runpath, "explore.logs"))
+            warning(
+                "and faking measurements. Please check %s."
+                % os.path.join(runpath, "explore.logs")
+            )
             err = True
 
         if "[E] " in content:
-            warning("At least one replica reported an error. Please check %s."
-                    % os.path.join(runpath, "explore.logs"))
+            warning(
+                "At least one replica reported an error. Please check %s."
+                % os.path.join(runpath, "explore.logs")
+            )
             err = True
 
         if not err:
@@ -829,6 +928,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
 
     return True
 
+
 def support_plan(applist, supported):
     if "*" in applist:
         applist = db.keys()
@@ -838,18 +938,18 @@ def support_plan(applist, supported):
     per_app_syscalls = {}
     for app in applist:
         per_app_syscalls[app] = {}
-        per_app_syscalls[app]["required"] = \
-                format_syscall_list(used_by_apps(db, [app], benchmark,
-                    testsuite)["required"])
-        per_app_syscalls[app]["faked"] = \
-                format_syscall_list(used_by_apps(db, [app], benchmark,
-                    testsuite)["faked"])
-        per_app_syscalls[app]["stubbed"] = \
-                format_syscall_list(used_by_apps(db, [app], benchmark,
-                    testsuite)["stubbed"])
-        per_app_syscalls[app]["both"] = \
-                format_syscall_list(used_by_apps(db, [app], benchmark,
-                    testsuite)["both"])
+        per_app_syscalls[app]["required"] = format_syscall_list(
+            used_by_apps(db, [app], benchmark, testsuite)["required"]
+        )
+        per_app_syscalls[app]["faked"] = format_syscall_list(
+            used_by_apps(db, [app], benchmark, testsuite)["faked"]
+        )
+        per_app_syscalls[app]["stubbed"] = format_syscall_list(
+            used_by_apps(db, [app], benchmark, testsuite)["stubbed"]
+        )
+        per_app_syscalls[app]["both"] = format_syscall_list(
+            used_by_apps(db, [app], benchmark, testsuite)["both"]
+        )
 
     already_supported = []
     for app in per_app_syscalls:
@@ -867,26 +967,43 @@ def support_plan(applist, supported):
     apps_to_support = []
     while per_app_syscalls:
         next_app = list(per_app_syscalls.keys())[0]
-        next_app_impl = set(per_app_syscalls[next_app]["required"])\
-                .difference(set(supported))
+        next_app_impl = set(per_app_syscalls[next_app]["required"]).difference(
+            set(supported)
+        )
         for app in per_app_syscalls:
-            impl_required = set(per_app_syscalls[app]["required"])\
-                    .difference(set(supported))
+            impl_required = set(per_app_syscalls[app]["required"]).difference(
+                set(supported)
+            )
             if len(impl_required) < len(next_app_impl):
                 next_app = app
                 next_app_impl = impl_required
 
-        stub_needed = (set(per_app_syscalls[next_app]["stubbed"])\
-                .union(set(per_app_syscalls[next_app]["both"]))).difference(set(supported))\
-                .difference(already_stubbed)
-        fake_needed = set(per_app_syscalls[next_app]["faked"]).difference(set(supported)).\
-                difference(already_faked)
+        stub_needed = (
+            (
+                set(per_app_syscalls[next_app]["stubbed"]).union(
+                    set(per_app_syscalls[next_app]["both"])
+                )
+            )
+            .difference(set(supported))
+            .difference(already_stubbed)
+        )
+        fake_needed = (
+            set(per_app_syscalls[next_app]["faked"])
+            .difference(set(supported))
+            .difference(already_faked)
+        )
         already_stubbed = already_stubbed.union(stub_needed)
         already_faked = already_faked.union(fake_needed)
 
         apps_to_support.append(next_app)
         if next_app_impl or stub_needed or fake_needed:
-            print("- Step " + str(step) + " - to support " + ', '.join(apps_to_support) + ":")
+            print(
+                "- Step "
+                + str(step)
+                + " - to support "
+                + ", ".join(apps_to_support)
+                + ":"
+            )
 
         if next_app_impl:
             print("  - implement " + str(format_syscall_list_to_names(next_app_impl)))
@@ -911,26 +1028,35 @@ if __name__ == "__main__":
         error("Problem with the database, exiting.")
         exit(1)
 
-    if (args.cmd == "search"):
-        if ((args.applist is None or args.wllist is None) and
-                args.paperhistogramplot is not True):
-            error("Application list (-a/--applications) and workload list " +
-                "(-w/--workloads) are required for this option.")
+    if args.cmd == "search":
+        if (
+            args.applist is None or args.wllist is None
+        ) and args.paperhistogramplot is not True:
+            error(
+                "Application list (-a/--applications) and workload list "
+                + "(-w/--workloads) are required for this option."
+            )
             error("Call with --help for more information.")
             exit(1)
 
-        common.OUTPUT_NAMES = (args.outputnames is True)
+        common.OUTPUT_NAMES = args.outputnames is True
 
         db = db_load(args.dbpath)
 
         benchmark = False
         testsuite = False
 
-        if (args.showusage is True or args.cumulativeplot is True or
-                args.heatmapplot is True or args.supportfile is not None):
+        if (
+            args.showusage is True
+            or args.cumulativeplot is True
+            or args.heatmapplot is True
+            or args.supportfile is not None
+        ):
             if "*" in args.wllist and len(args.wllist) > 1:
-                warning("* in the workload list but other entries are specified: " +
-                        str(args.wllist))
+                warning(
+                    "* in the workload list but other entries are specified: "
+                    + str(args.wllist)
+                )
                 warning("Ignoring them.")
                 benchmark = True
                 testsuite = True
@@ -942,32 +1068,46 @@ if __name__ == "__main__":
             elif "testsuite" in args.wllist or "suite" in args.wllist:
                 testsuite = True
             else:
-                error("Invalid workload passed (valid: '*', 'benchmark'/'bench', 'testsuite'/'suite')")
+                error(
+                    "Invalid workload passed (valid: '*', 'benchmark'/'bench', 'testsuite'/'suite')"
+                )
                 exit(1)
 
         usage = []
 
-        if (args.showusage is True or args.supportfile is not None):
-            usage = used_by_apps(db, args.applist.split(","), bench=benchmark, suite=testsuite)
+        if args.showusage is True or args.supportfile is not None:
+            usage = used_by_apps(
+                db, args.applist.split(","), bench=benchmark, suite=testsuite
+            )
 
-        if (args.heatmapplot is True or args.cumulativeplot is True or
-                                        args.paperhistogramplot is True):
+        if (
+            args.heatmapplot is True
+            or args.cumulativeplot is True
+            or args.paperhistogramplot is True
+        ):
             # build plot container
             info("Building plot container")
-            runcmd = ["docker", "build", "--tag", "loupe-plot",
-                    "-f", "docker/Dockerfile.loupe-plot", "."]
+            runcmd = [
+                "docker",
+                "build",
+                "--tag",
+                "loupe-plot",
+                "-f",
+                "docker/Dockerfile.loupe-plot",
+                ".",
+            ]
             process = subprocess.Popen(runcmd)
             process.wait()
 
             # remove data file
-            fileList = glob.glob('./*.dat')
+            fileList = glob.glob("./*.dat")
             for filePath in fileList:
                 try:
                     os.remove(filePath)
                 except:
                     pass
 
-        if (args.showusage is True):
+        if args.showusage is True:
             print("Required:")
             print(format_syscall_list(usage["required"]))
             print("Can be stubbed:")
@@ -976,9 +1116,16 @@ if __name__ == "__main__":
             print(format_syscall_list(usage["faked"]))
             print("Can be both stubbed or faked:")
             print(format_syscall_list(usage["both"]))
-        elif (args.paperhistogramplot is True):
-            apps = ["haproxy", "lighttpd", "memcached", "nginx", "redis",
-                    "sqlite", "weborf"]
+        elif args.paperhistogramplot is True:
+            apps = [
+                "haproxy",
+                "lighttpd",
+                "memcached",
+                "nginx",
+                "redis",
+                "sqlite",
+                "weborf",
+            ]
 
             # process data
             info("Processing data")
@@ -986,86 +1133,127 @@ if __name__ == "__main__":
             # 1. check that apps are featured in the database
             error = False
             for a in apps:
-                if (a not in db.keys()):
-                    error("Application missing from the database " +
-                        "(and required for the plot): " + a)
+                if a not in db.keys():
+                    error(
+                        "Application missing from the database "
+                        + "(and required for the plot): "
+                        + a
+                    )
                     error = True
 
-            if (error):
+            if error:
                 exit(1)
 
             # 2. generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
             # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
             missingBars = False
             for a in apps:
-                if ("benchmark" not in db[a].keys() or
-                    len(db[a]["benchmark"].keys()) == 0 or
-                    len(db[a]["benchmark"]["dynamic"]) == 0):
+                if (
+                    "benchmark" not in db[a].keys()
+                    or len(db[a]["benchmark"].keys()) == 0
+                    or len(db[a]["benchmark"]["dynamic"]) == 0
+                ):
                     missingBars = True
                 dat_bench = used_by_apps(db, [a], True, False, False, False)
 
-                if ("testsuite" not in db[a].keys() or
-                    len(db[a]["testsuite"].keys()) == 0 or
-                    len(db[a]["testsuite"]["dynamic"]) == 0):
+                if (
+                    "testsuite" not in db[a].keys()
+                    or len(db[a]["testsuite"].keys()) == 0
+                    or len(db[a]["testsuite"]["dynamic"]) == 0
+                ):
                     missingBars = True
                 dat_suite = used_by_apps(db, [a], False, True, False, False)
 
                 dat_static_binary = used_by_apps(db, [a], False, False, True, False)
-                if (not len(dat_static_binary["required"])):
+                if not len(dat_static_binary["required"]):
                     missingBars = True
 
                 dat_static_source = used_by_apps(db, [a], False, False, False, True)
-                if (not len(dat_static_source["required"])):
+                if not len(dat_static_source["required"]):
                     missingBars = True
 
                 with open(os.path.join("./" + a + ".dat"), "a") as outf:
                     # header
-                    outf.write(a + " staticsrc   staticbin   required    stubonly    fakeonly    fakeorstub\n")
+                    outf.write(
+                        a
+                        + " staticsrc   staticbin   required    stubonly    fakeonly    fakeorstub\n"
+                    )
                     # binary
-                    outf.write("all     0           {}         0           0           0           0\n".format(
-                        str(len(dat_static_binary["required"]))))
+                    outf.write(
+                        "all     0           {}         0           0           0           0\n".format(
+                            str(len(dat_static_binary["required"]))
+                        )
+                    )
                     # source
-                    outf.write("all     {}          0          0           0           0           0\n".format(
-                        str(len(dat_static_source["required"]))))
+                    outf.write(
+                        "all     {}          0          0           0           0           0\n".format(
+                            str(len(dat_static_source["required"]))
+                        )
+                    )
                     # suite
-                    outf.write("suite   0           0          {}          {}          {}          {}\n".format(
-                        str(len(dat_suite["required"])), str(len(dat_suite["stubbed"])),
-                        str(len(dat_suite["faked"])), str(len(dat_suite["both"]))))
+                    outf.write(
+                        "suite   0           0          {}          {}          {}          {}\n".format(
+                            str(len(dat_suite["required"])),
+                            str(len(dat_suite["stubbed"])),
+                            str(len(dat_suite["faked"])),
+                            str(len(dat_suite["both"])),
+                        )
+                    )
                     # bench
-                    outf.write("bench   0           0          {}          {}          {}          {}\n".format(
-                        str(len(dat_bench["required"])), str(len(dat_bench["stubbed"])),
-                        str(len(dat_bench["faked"])), str(len(dat_bench["both"]))))
+                    outf.write(
+                        "bench   0           0          {}          {}          {}          {}\n".format(
+                            str(len(dat_bench["required"])),
+                            str(len(dat_bench["stubbed"])),
+                            str(len(dat_bench["faked"])),
+                            str(len(dat_bench["both"])),
+                        )
+                    )
 
             info("Building plot")
             cwd = os.getcwd()
-            runcmd = ["docker", "run", "-it", "--rm", "-v", cwd+ ":/mnt", "loupe-plot",
-                    "gnuplot", "/mnt/resources/paper-histogram-plot.gnu"]
+            runcmd = [
+                "docker",
+                "run",
+                "-it",
+                "--rm",
+                "-v",
+                cwd + ":/mnt",
+                "loupe-plot",
+                "gnuplot",
+                "/mnt/resources/paper-histogram-plot.gnu",
+            ]
             print(" ".join(runcmd))
             process = subprocess.Popen(runcmd)
             process.wait()
 
             if missingBars:
-                warning("The plot is missing bars because certain measurements are not provided")
+                warning(
+                    "The plot is missing bars because certain measurements are not provided"
+                )
 
             # notify user
             print("Plot: ./paper-histogram.svg")
-        elif (args.heatmapplot is True):
+        elif args.heatmapplot is True:
             # process data
             info("Processing data")
 
             # we need to be able to use the same dataset for all plots
-            considered = get_workloads(db, args.applist.split(","), benchmark,
-                    testsuite, True, True)[1]
-            info("Apps considered in this plot: " + ' '.join(considered))
+            considered = get_workloads(
+                db, args.applist.split(","), benchmark, testsuite, True, True
+            )[1]
+            info("Apps considered in this plot: " + " ".join(considered))
 
-            cumulative = process_cumulative(db, considered,
-                    bench=benchmark, suite=testsuite)
+            cumulative = process_cumulative(
+                db, considered, bench=benchmark, suite=testsuite
+            )
 
-            cumulative_binary = process_cumulative(db, considered,
-                    False, False, True, False)
+            cumulative_binary = process_cumulative(
+                db, considered, False, False, True, False
+            )
 
-            cumulative_source = process_cumulative(db, considered,
-                    False, False, False, True)
+            cumulative_source = process_cumulative(
+                db, considered, False, False, False, True
+            )
 
             # generate data files (./data-staticsource.dat, ./data-staticbinary.dat,
             # ./data-dynused.dat, ./data-dynstubfake.dat)
@@ -1080,31 +1268,36 @@ if __name__ == "__main__":
                 y = (i - 1) // 24
                 i += 1
 
-                if (x == 0 and y != 0):
+                if x == 0 and y != 0:
                     staticsourcedat += "\n"
                     staticbindat += "\n"
                     dynuseddat += "\n"
                     dynstubfakedat += "\n"
 
                 p = 0
-                if (sysnumber <= MAX_SYSCALL):
+                if sysnumber <= MAX_SYSCALL:
                     p = cumulative[1][sysnumber]
-                dynuseddat += str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+                dynuseddat += (
+                    str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+                )
 
-                if (sysnumber <= MAX_SYSCALL):
+                if sysnumber <= MAX_SYSCALL:
                     p = cumulative[0][sysnumber]
-                dynstubfakedat += str(x) + " " + str(y) + " " + str(p) + " " + \
-                                str(sysnumber) + "\n"
+                dynstubfakedat += (
+                    str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+                )
 
-                if (sysnumber <= MAX_SYSCALL):
+                if sysnumber <= MAX_SYSCALL:
                     p = cumulative_binary[0][sysnumber]
-                staticbindat += str(x) + " " + str(y) + " " + str(p) + " " + \
-                                str(sysnumber) + "\n"
+                staticbindat += (
+                    str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+                )
 
-                if (sysnumber <= MAX_SYSCALL):
+                if sysnumber <= MAX_SYSCALL:
                     p = cumulative_source[0][sysnumber]
-                staticsourcedat += str(x) + " " + str(y) + " " + str(p) + " " + \
-                                str(sysnumber) + "\n"
+                staticsourcedat += (
+                    str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+                )
 
             with open(os.path.join("./data-staticsource.dat"), "a") as outf:
                 outf.write(staticsourcedat)
@@ -1120,8 +1313,9 @@ if __name__ == "__main__":
             dynstubfakedat_dump = ""
             dynstubdat_dump = ""
 
-            cumulative_nofake = process_cumulative(db, considered,
-                    bench=benchmark, suite=testsuite, ignore_fake=True)
+            cumulative_nofake = process_cumulative(
+                db, considered, bench=benchmark, suite=testsuite, ignore_fake=True
+            )
 
             for sysnumber in range(MAX_SYSCALL):
                 p = cumulative[1][sysnumber]
@@ -1142,8 +1336,17 @@ if __name__ == "__main__":
 
             info("Building plot")
             cwd = os.getcwd()
-            runcmd = ["docker", "run", "-it", "--rm", "-v", cwd+ ":/mnt", "loupe-plot",
-                    "gnuplot", "/mnt/resources/heatmap-plot.gnu"]
+            runcmd = [
+                "docker",
+                "run",
+                "-it",
+                "--rm",
+                "-v",
+                cwd + ":/mnt",
+                "loupe-plot",
+                "gnuplot",
+                "/mnt/resources/heatmap-plot.gnu",
+            ]
             print(" ".join(runcmd))
             process = subprocess.Popen(runcmd)
             process.wait()
@@ -1153,60 +1356,72 @@ if __name__ == "__main__":
             print("Plot: ./heapmap-dynamic-stubfake.svg")
             print("Plot: ./heapmap-static-binary.svg")
 
-            if (args.ssource is not True):
+            if args.ssource is not True:
                 os.remove("./heapmap-static-source.svg")
             else:
                 print("Plot: ./heapmap-static-source.svg")
-        elif (args.cumulativeplot is True):
+        elif args.cumulativeplot is True:
             # process data
             info("Processing data")
 
             # we need to be able to use the same dataset for all lines
-            considered = get_workloads(db, args.applist.split(","), benchmark,
-                    False, False, False)[1]
-            info("Apps considered in this plot: " + ' '.join(considered))
+            considered = get_workloads(
+                db, args.applist.split(","), benchmark, False, False, False
+            )[1]
+            info("Apps considered in this plot: " + " ".join(considered))
 
-            cumulative = process_cumulative(db, considered, bench=benchmark,
-                    suite=testsuite)
+            cumulative = process_cumulative(
+                db, considered, bench=benchmark, suite=testsuite
+            )
 
-            cumulative_binary = process_cumulative(db, considered,
-                    False, False, True, False)
+            cumulative_binary = process_cumulative(
+                db, considered, False, False, True, False
+            )
 
-            cumulative_source = process_cumulative(db, considered,
-                    False, False, False, True)
+            cumulative_source = process_cumulative(
+                db, considered, False, False, False, True
+            )
 
             # generate data.dat
             d = {}
             c = 0
             for i in sorted(cumulative_binary[0].values(), reverse=True):
-                d[c] = i;
-                c+=1
+                d[c] = i
+                c += 1
 
-            bin = "# x\tstatic-binary\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in (d.items())])
+            bin = "# x\tstatic-binary\n" + "\n".join(
+                ["%s\t%s" % (k, v) for (k, v) in (d.items())]
+            )
 
             d = {}
             c = 0
             for i in sorted(cumulative_source[0].values(), reverse=True):
-                d[c] = i;
-                c+=1
+                d[c] = i
+                c += 1
 
-            src = "# x\tstatic-source\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in (d.items())])
+            src = "# x\tstatic-source\n" + "\n".join(
+                ["%s\t%s" % (k, v) for (k, v) in (d.items())]
+            )
 
             d = {}
             c = 0
             for i in sorted(cumulative[0].values(), reverse=True):
-                d[c] = i;
-                c+=1
+                d[c] = i
+                c += 1
 
-            req = "# x\tdyn-req\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in (d.items())])
+            req = "# x\tdyn-req\n" + "\n".join(
+                ["%s\t%s" % (k, v) for (k, v) in (d.items())]
+            )
 
             d = {}
             c = 0
             for i in sorted(cumulative[1].values(), reverse=True):
-                d[c] = i;
-                c+=1
+                d[c] = i
+                c += 1
 
-            exe = "# x\tdyn-exe\n" + "\n".join(["%s\t%s" % (k,v) for (k,v) in (d.items())])
+            exe = "# x\tdyn-exe\n" + "\n".join(
+                ["%s\t%s" % (k, v) for (k, v) in (d.items())]
+            )
 
             with open(os.path.join("./data.dat"), "a") as outf:
                 outf.write(bin)
@@ -1219,8 +1434,17 @@ if __name__ == "__main__":
 
             info("Building plot")
             cwd = os.getcwd()
-            runcmd = ["docker", "run", "-it", "--rm", "-v", cwd+ ":/mnt", "loupe-plot",
-                    "gnuplot", "/mnt/resources/cumulative-plot.gnu"]
+            runcmd = [
+                "docker",
+                "run",
+                "-it",
+                "--rm",
+                "-v",
+                cwd + ":/mnt",
+                "loupe-plot",
+                "gnuplot",
+                "/mnt/resources/cumulative-plot.gnu",
+            ]
             print(" ".join(runcmd))
             process = subprocess.Popen(runcmd)
             process.wait()
@@ -1229,7 +1453,7 @@ if __name__ == "__main__":
             print("Plot: ./cumulative-nostatic.svg")
             print("Plot: ./cumulative-nosource.svg")
 
-            if (args.ssource is True):
+            if args.ssource is True:
                 print("Plot: ./cumulative-nobinary.svg")
                 print("Plot: ./cumulative-all.svg")
             else:
@@ -1237,13 +1461,17 @@ if __name__ == "__main__":
                 os.remove("./cumulative-all.svg")
         elif args.supportfile is not None:
             supported = set(format_syscall_list(open_syscall_file(args.supportfile)))
-            required  = set(format_syscall_list(usage["required"]))
-            stubbed   = set(format_syscall_list(usage["stubbed"]))
-            faked     = set(format_syscall_list(usage["faked"]))
+            required = set(format_syscall_list(usage["required"]))
+            stubbed = set(format_syscall_list(usage["stubbed"]))
+            faked = set(format_syscall_list(usage["faked"]))
             print("Missing a full implementation:")
-            print(str(format_syscall_list_to_names(list(required.difference(supported)))))
+            print(
+                str(format_syscall_list_to_names(list(required.difference(supported))))
+            )
             print("Missing a stub:")
-            print(str(format_syscall_list_to_names(list(stubbed.difference(supported)))))
+            print(
+                str(format_syscall_list_to_names(list(stubbed.difference(supported))))
+            )
             print("Missing a fake:")
             print(str(format_syscall_list_to_names(list(faked.difference(supported)))))
 
@@ -1253,23 +1481,33 @@ if __name__ == "__main__":
             warning("Not implemented yet.")
             exit(0)
 
-    if (args.cmd == "generate"):
+    if args.cmd == "generate":
         wl = args.workload
         if (args.isbenchmark is True) and (args.issuite is True):
             error("Workload cannot be both a benchmark (-b) and a test suite (-s)")
             exit(1)
-        elif (args.isbenchmark is True):
+        elif args.isbenchmark is True:
             wl = "benchmark-" + wl
-        elif (args.issuite is True):
+        elif args.issuite is True:
             if wl != "":
                 wl = "suite-" + wl
             else:
                 wl = "suite"
         else:
-            ans = str(input("Is this workload a benchmark or a testsuite? [bench/suite] "))
-            if ans.lower() == "b" or ans.lower() == "benchmark" or ans.lower() == "bench":
+            ans = str(
+                input("Is this workload a benchmark or a testsuite? [bench/suite] ")
+            )
+            if (
+                ans.lower() == "b"
+                or ans.lower() == "benchmark"
+                or ans.lower() == "bench"
+            ):
                 wl = "benchmark-" + wl
-            elif ans.lower() == "s" or ans.lower() == "testsuite" or ans.lower() == "suite":
+            elif (
+                ans.lower() == "s"
+                or ans.lower() == "testsuite"
+                or ans.lower() == "suite"
+            ):
                 wl = "suite-" + wl
             else:
                 error("Cannot understand that answer ('%s')." % ans)
@@ -1282,22 +1520,31 @@ if __name__ == "__main__":
         with open(args.dockerfile) as dockerf:
             content = dockerf.read()
             if "loupe-base:latest" not in content:
-                warning("Dockerfile (%s) does not base on the loupe-base container "
-                        "- here be dragons." % args.dockerfile)
+                warning(
+                    "Dockerfile (%s) does not base on the loupe-base container "
+                    "- here be dragons." % args.dockerfile
+                )
 
             if "explore.py" not in content:
-                error("Dockerfile (%s) does not seem to be calling explore.py in "
-                    "the CMD rule." % args.dockerfile)
+                error(
+                    "Dockerfile (%s) does not seem to be calling explore.py in "
+                    "the CMD rule." % args.dockerfile
+                )
                 exit(1)
 
             if "--output-csv" not in content:
-                error("Dockerfile (%s) calls explore.py without the --output-csv "
-                    "option, which is mandatory when using the loupe wrapper." % args.dockerfile)
+                error(
+                    "Dockerfile (%s) calls explore.py without the --output-csv "
+                    "option, which is mandatory when using the loupe wrapper."
+                    % args.dockerfile
+                )
                 exit(1)
 
             if "--final-check" not in content:
-                warning("Dockerfile (%s) calls explore.py without the --final-check "
-                    "option, which is recommended." % args.dockerfile)
+                warning(
+                    "Dockerfile (%s) calls explore.py without the --final-check "
+                    "option, which is recommended." % args.dockerfile
+                )
 
         # remove potential logs from previous runs
         try:
@@ -1305,7 +1552,9 @@ if __name__ == "__main__":
         except OSError:
             pass
 
-        ex = run_tests(args.dbpath, args.application, wl, args.dockerfile, args.onlydocker)
+        ex = run_tests(
+            args.dbpath, args.application, wl, args.dockerfile, args.onlydocker
+        )
 
         if not ex:
             exit(1)
