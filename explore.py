@@ -85,24 +85,21 @@ ERRNO_ENOSYS = 38
 STRACE_BINARY = "strace"
 
 SYSCALL_FLAGS = {
-# syscall  : position of the flags argument
-    "mmap" : 3,
-    "mprotect" : 2,
-    "madvise" : 2,
-    "arch_prctl" : 0,
-    "accept4" : 3,
-    "prlimit64" : 1,
-    "setrlimit" : 0,
-    "getrlimit" : 0,
-    "fcntl" : 1,
-    "clock_nanosleep" : 0,
-    "ioctl" : 1
+    # syscall  : position of the flags argument
+    "mmap": 3,
+    "mprotect": 2,
+    "madvise": 2,
+    "arch_prctl": 0,
+    "accept4": 3,
+    "prlimit64": 1,
+    "setrlimit": 0,
+    "getrlimit": 0,
+    "fcntl": 1,
+    "clock_nanosleep": 0,
+    "ioctl": 1,
 }
 
-SYSCALL_FLAGS_FILES = {
-    "open" : 0,
-    "openat" : 1
-}
+SYSCALL_FLAGS_FILES = {"open": 0, "openat": 1}
 
 INITIAL_SCAN_STDERR = "/tmp/dynsystmp"
 INITIAL_SCAN_STDOUT = "/tmp/dynsystmp-stdout"
@@ -119,6 +116,7 @@ binary_options = []
 # =============
 # OPTION CHECKS
 
+
 def strace_recent_enough():
     cmd = [STRACE_BINARY, "-n", "who"]
     ps = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -126,6 +124,7 @@ def strace_recent_enough():
     if "strace: invalid option -- 'n'" in str(output):
         return False
     return True
+
 
 if not strace_recent_enough():
     print("WARN: strace is old on this system and does not support -n")
@@ -137,6 +136,7 @@ if not strace_recent_enough():
 # =======
 # HELPERS
 
+
 def smart_wait(process, logfs):
     ret = -1
 
@@ -145,18 +145,20 @@ def smart_wait(process, logfs):
     for i in range(SMART_WAIT_REPEAT):
         try:
             ret = process.wait(timeout=TEST_TIMEOUT)
-        except(subprocess.TimeoutExpired):
+        except subprocess.TimeoutExpired:
             newhash = get_file_hash(logf)
-            if (loghash != newhash):
+            if loghash != newhash:
                 loghash = newhash
             else:
                 break
     return ret
 
+
 def cleanup():
     # make sure to have a clean system
     os.system("killall -9 %s > /dev/null 2>&1" % binary_path)
     os.system("pkill -9 %s > /dev/null 2>&1" % binary_path)
+
 
 def start_seccomp_run(errno, syscalls, logf, prefix=[], opts=[]):
     cleanup()
@@ -166,26 +168,30 @@ def start_seccomp_run(errno, syscalls, logf, prefix=[], opts=[]):
     runcmd.extend([SECCOMPRUN_PATH, "-e", errno, "-n", str(len(syscalls))])
     runcmd.extend(list(map(str, syscalls)))
     if ZBINARY is not None:
-        runcmd.extend(["-y", ''.join(ZBINARY)])
+        runcmd.extend(["-y", "".join(ZBINARY)])
     runcmd.extend(opts)
     runcmd.extend(["--", str(binary_path)])
     runcmd.extend(binary_options)
 
     if ZBINARY is not None:
         try:
-            ret = subprocess.run(runcmd, timeout=TEST_TIMEOUT, stdout=logf, stderr=logf,
-                preexec_fn=os.setsid)
+            ret = subprocess.run(
+                runcmd,
+                timeout=TEST_TIMEOUT,
+                stdout=logf,
+                stderr=logf,
+                preexec_fn=os.setsid,
+            )
         except:
             ret = -1
     else:
-
-        ret = subprocess.Popen(runcmd, stderr=logf, stdout=logf,
-            preexec_fn=os.setsid)
+        ret = subprocess.Popen(runcmd, stderr=logf, stdout=logf, preexec_fn=os.setsid)
 
     # small sleep in case the program needs time to initialize
     time.sleep(WAIT_STARTUP_TIME)
 
     return ret
+
 
 def start_test_cmd(log, test_log):
     if testscript_path is None:
@@ -195,15 +201,20 @@ def start_test_cmd(log, test_log):
     ret = 0
     try:
         with open(test_log, "w+") as test_logfile:
-          ret = subprocess.call(testcmd, stdout=test_logfile,
-             stderr=subprocess.STDOUT, timeout=TEST_TIMEOUT)
-    except(subprocess.TimeoutExpired):
+            ret = subprocess.call(
+                testcmd,
+                stdout=test_logfile,
+                stderr=subprocess.STDOUT,
+                timeout=TEST_TIMEOUT,
+            )
+    except subprocess.TimeoutExpired:
         ret = 1
     return ret
 
+
 # return (is used, success)
 def analyze_one_pass(errno, syscalls, log, errs, prefix=[], opts=[]):
-    with open(log, 'wb') as logf:
+    with open(log, "wb") as logf:
         process = start_seccomp_run(errno, syscalls, logf)
         process_ok = True
         if ENABLE_SEQUENTIAL and (ZBINARY is None):
@@ -213,27 +224,29 @@ def analyze_one_pass(errno, syscalls, log, errs, prefix=[], opts=[]):
 
         ret = start_test_cmd(log, log + ".test.log")
 
-        if (not ret and process_ok):
+        if not ret and process_ok:
             # the program works without this syscall
-            success = (True,True,errs)
-        elif (ret != 200):
-            success = (False,True,errs)
-        elif (ret == 200 and errs == LIMIT_RETRIES):
+            success = (True, True, errs)
+        elif ret != 200:
+            success = (False, True, errs)
+        elif ret == 200 and errs == LIMIT_RETRIES:
             # see the comment below (in explore_perf) regarding retries
-            success = (False,True,errs)
+            success = (False, True, errs)
         else:
             cleanup()
             time.sleep(10)
-            success = (False,False,errs + 1)
+            success = (False, False, errs + 1)
 
         if not ENABLE_SEQUENTIAL:
             os.killpg(os.getpgid(process.pid), signal.SIGKILL)
     return success
 
+
 # ===========
 # EXPLORATION
 
 FEATURE_TRANSLATIONS = {}
+
 
 # this scanning approach is much faster to detect all system calls
 # executed by the application. It uses strace underneath, but the
@@ -257,7 +270,7 @@ def initial_strace_scan():
         if position > 0:
             for i in range(position):
                 regex += "%s, " % farg
-        regex += "\"([^\"]+)\""
+        regex += '"([^"]+)"'
         return regex
 
     cleanup()
@@ -265,19 +278,25 @@ def initial_strace_scan():
     # --status=successful,failed greatly simplifies the output of strace for us to parse
     # and should not impact the number of system calls that we see or their arguments, only
     # their relative ordering, which doesn't matter to us.
-    runcmd = [STRACE_BINARY, "-tfnX", "verbose",  "--status=successful,failed", str(binary_path)]
+    runcmd = [
+        STRACE_BINARY,
+        "-tfnX",
+        "verbose",
+        "--status=successful,failed",
+        str(binary_path),
+    ]
     runcmd.extend(binary_options)
 
     process = None
     success = False
     tries = 0
 
-    while (not success):
+    while not success:
         with open(INITIAL_SCAN_STDERR, "w") as stderr:
             with open(INITIAL_SCAN_STDOUT, "w") as stdout:
-                process = subprocess.Popen(runcmd, stderr=stderr,
-                                            stdout=stdout,
-                                            preexec_fn=os.setsid)
+                process = subprocess.Popen(
+                    runcmd, stderr=stderr, stdout=stdout, preexec_fn=os.setsid
+                )
 
         time.sleep(WAIT_STARTUP_TIME)
 
@@ -286,7 +305,7 @@ def initial_strace_scan():
         if ENABLE_SEQUENTIAL:
             try:
                 traced_program_ret = process.wait(timeout=TEST_TIMEOUT)
-            except(subprocess.TimeoutExpired):
+            except subprocess.TimeoutExpired:
                 pass
             if traced_program_ret:
                 traced_program_ok = False
@@ -304,10 +323,15 @@ def initial_strace_scan():
             exit(1)
         else:
             if ENABLE_SEQUENTIAL:
-                debug("Initial strace scan attempt failed, traced program returned %d, test returned %d" % (traced_program_ret, ret))
+                debug(
+                    "Initial strace scan attempt failed, traced program returned %d, test returned %d"
+                    % (traced_program_ret, ret)
+                )
             else:
-                debug("Initial strace scan attempt failed, test returned %d," \
-                    "test output in %s" % (ret, INITIAL_SCAN_STDOUT + ".test.log"))
+                debug(
+                    "Initial strace scan attempt failed, test returned %d,"
+                    "test output in %s" % (ret, INITIAL_SCAN_STDOUT + ".test.log")
+                )
             cleanup()
             time.sleep(10)
             tries += 1
@@ -322,15 +346,19 @@ def initial_strace_scan():
 
         # parse used features
         for syscall in SYSCALL_FLAGS.keys():
-            regex = re.compile(generate_regex_feature(syscall,
-                               SYSCALL_FLAGS[syscall]))
+            regex = re.compile(generate_regex_feature(syscall, SYSCALL_FLAGS[syscall]))
             features[syscall] = list(set(regex.findall(full)))
-            features[syscall] = list(map(lambda i: int(i[2:], 16)
-                    if i[:2] == "0x" else int(i), features[syscall]))
+            features[syscall] = list(
+                map(
+                    lambda i: int(i[2:], 16) if i[:2] == "0x" else int(i),
+                    features[syscall],
+                )
+            )
 
             FEATURE_TRANSLATIONS[syscall] = {}
-            regex = re.compile(generate_regex_feature(syscall,
-                               SYSCALL_FLAGS[syscall], comment=True))
+            regex = re.compile(
+                generate_regex_feature(syscall, SYSCALL_FLAGS[syscall], comment=True)
+            )
             matches = regex.findall(full)
             for m in matches:
                 if len(m) == 2:
@@ -341,13 +369,17 @@ def initial_strace_scan():
 
         # parse used files
         for syscall in SYSCALL_FLAGS_FILES.keys():
-            regex = re.compile(generate_regex_files(syscall,
-                               SYSCALL_FLAGS_FILES[syscall]))
+            regex = re.compile(
+                generate_regex_files(syscall, SYSCALL_FLAGS_FILES[syscall])
+            )
             files[syscall] = list(set(regex.findall(full)))
 
-    return ([int(e) for e in rets if int(e) <= MAX_SYSCALL],
-            {k:v for (k,v) in features.items() if len(v) > 0},
-            {k:v for (k,v) in files.items() if len(v) > 0})
+    return (
+        [int(e) for e in rets if int(e) <= MAX_SYSCALL],
+        {k: v for (k, v) in features.items() if len(v) > 0},
+        {k: v for (k, v) in files.items() if len(v) > 0},
+    )
+
 
 # given an errno and a list of system calls, return the list of system
 # calls that worked
@@ -360,18 +392,20 @@ def explore_works(errno, syscalls):
         s = False
         errs = 0
 
-        while (not s):
+        while not s:
             (u, s, errs) = analyze_one_pass(errno, [i], log, errs)
-            if (u):
+            if u:
                 # the program works without feature j in syscall i
                 unused.add(i)
     progress_end()
     return unused
 
+
 def syscall_name_to_int(syscall):
-    for (s,n) in syscall_mapping.items():
-        if (s == syscall):
+    for s, n in syscall_mapping.items():
+        if s == syscall:
             return n
+
 
 def explore_works_partial(errno, features):
     retval = dict()
@@ -386,15 +420,21 @@ def explore_works_partial(errno, features):
             success = False
             errs = 0
 
-            while (not success):
-                (used, success, errs) = analyze_one_pass(errno, [syscall_name_to_int(i)], log, errs,
-                        opts=["-p", str(SYSCALL_FLAGS[i]), str(j)])
-                if (used):
+            while not success:
+                (used, success, errs) = analyze_one_pass(
+                    errno,
+                    [syscall_name_to_int(i)],
+                    log,
+                    errs,
+                    opts=["-p", str(SYSCALL_FLAGS[i]), str(j)],
+                )
+                if used:
                     # the program works without feature j in syscall i
                     retval[i].add(j)
             t += 1
     progress_end()
     return retval
+
 
 def explore_works_specialfiles(errno, files):
     retval = dict()
@@ -409,19 +449,26 @@ def explore_works_specialfiles(errno, files):
             success = False
             errs = 0
 
-            while (not success):
-                (used, success, errs) = analyze_one_pass(errno, [syscall_name_to_int(i)], log, errs,
-                        opts=["-t", str(SYSCALL_FLAGS_FILES[i]), j])
-                if (used):
+            while not success:
+                (used, success, errs) = analyze_one_pass(
+                    errno,
+                    [syscall_name_to_int(i)],
+                    log,
+                    errs,
+                    opts=["-t", str(SYSCALL_FLAGS_FILES[i]), j],
+                )
+                if used:
                     # the program works without feature j in syscall i
                     retval[i].add(j)
             t += 1
     progress_end()
     return retval
 
+
 def open_fds(pid):
     files = os.listdir("/proc/%s/fd/" % str(pid))
     return len(files)
+
 
 def peak_memsize(pid):
     size = ""
@@ -431,20 +478,20 @@ def peak_memsize(pid):
             result = re.match(regex, line)
             if result is not None:
                 size = result.group(1).strip()
-    if (size == ""):
+    if size == "":
         error("Bug here! Failed to determine VmPeak.")
         return -1
-    if (size[-3:] != " kB"):
+    if size[-3:] != " kB":
         error("Bug here! VmPeak not in kB:%s" % size[-3:])
         return -1
     return int(size[:-3])
+
 
 # given an errno and a list of system calls, return a mapping of system calls
 # and resulting performance
 def explore_perf(errno, syscalls):
     perf = dict()
     for i in syscalls:
-
         if len(syscalls) > 1:
             # no progress bar when doing baseline
             progress(i, max(syscalls))
@@ -457,21 +504,24 @@ def explore_perf(errno, syscalls):
             log = get_temp_file()
 
             success = False
-            while (not success):
-                with open(log, 'wb') as logf:
-                    process = start_seccomp_run(errno, [i], logf,
-                        prefix=["taskset", "-c", str(TASKSET_CPU)])
+            while not success:
+                with open(log, "wb") as logf:
+                    process = start_seccomp_run(
+                        errno, [i], logf, prefix=["taskset", "-c", str(TASKSET_CPU)]
+                    )
 
                     testcmd = [testscript_path, log, "benchmark"]
 
                     try:
-                        out = subprocess.check_output(testcmd).decode(sys.stdout.encoding)
+                        out = subprocess.check_output(testcmd).decode(
+                            sys.stdout.encoding
+                        )
                         perf[i]["perf"] += float(out)
                         perf[i]["openfds"] += float(open_fds(process.pid))
                         perf[i]["memusage"] += float(peak_memsize(process.pid))
                         os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                         success = True
-                    except(subprocess.CalledProcessError):
+                    except subprocess.CalledProcessError:
                         # in theory, this shouldn't happen
                         # in practice, it happens because ports don't get freed in
                         # time between the starting and stopping of nginx
@@ -479,21 +529,33 @@ def explore_perf(errno, syscalls):
                         # if it happens to many time in a row, just abort, it's bad.
                         os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                         errs += 1
-                        if (errs >= LIMIT_RETRIES):
+                        if errs >= LIMIT_RETRIES:
                             print()
-                            error("Error: syscall " + str(i) + " does not actually seem " +
-                                  "to work with errno " + str(errno) + " OR test script " +
-                                  "doesn't support performance benchmark mode.")
+                            error(
+                                "Error: syscall "
+                                + str(i)
+                                + " does not actually seem "
+                                + "to work with errno "
+                                + str(errno)
+                                + " OR test script "
+                                + "doesn't support performance benchmark mode."
+                            )
                             error("Cause: CalledProcessError")
                             exit(1)
                         else:
                             cleanup()
                             time.sleep(10)
-                    except(ValueError):
+                    except ValueError:
                         print()
-                        error("Error: syscall " + str(i) + " does not actually seem " +
-                              "to work with errno " + str(errno) + " OR test script " +
-                              "doesn't support performance benchmark mode.")
+                        error(
+                            "Error: syscall "
+                            + str(i)
+                            + " does not actually seem "
+                            + "to work with errno "
+                            + str(errno)
+                            + " OR test script "
+                            + "doesn't support performance benchmark mode."
+                        )
                         error("Cause: ValueError")
                         os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                         exit(1)
@@ -506,59 +568,127 @@ def explore_perf(errno, syscalls):
 
     return perf
 
+
 parser = argparse.ArgumentParser()
-parser.add_argument("-v", "--verbose", action="store_true", dest="verbose",
-        help="enable debug output")
-parser.add_argument("-q", "--quiet", action="store_true", dest="quiet",
-        help="disable any non-error output (non-error output will be provided through " + QUIET_LOG + ")")
-parser.add_argument("--no-strace", action="store_true", dest="nostrace",
-        help="perform initial scan without strace (slower!)")
-parser.add_argument("--output-sys-names", action="store_true", dest="outputnames",
-        help="output system call names instead of numbers")
-parser.add_argument(CSV_OPT, action="store_true", dest="outputcsv",
-        help="output data as CSV to stdout (implies --quiet)")
-parser.add_argument("--partial-support", action="store_true",
-        help="enable partial support analysis", dest="partialsupport")
-parser.add_argument("--perf-analysis", action="store_true",
-        help="enable performance and resource usage analysis", dest="perfanalysis")
-parser.add_argument("--disable-static", action="store_true",
-        help="disable the static analysis of the test binary", dest="nostatic")
-parser.add_argument("--timeout", type=int,
-        help="test timeout (default %ds)" % TEST_TIMEOUT, dest="timeout")
-parser.add_argument("--smart-wait-repeat", type=int,
-        help="enable smart wait (if you don't know what this does, don't enable it)", dest="smartwait")
-parser.add_argument("--test-sequential", action="store_true",
-        help="run the binary first, then the test script with the binary's output", dest="seq")
-parser.add_argument("--final-check", action="store_true",
-        help="at the end of the analysis, check that sets can still be faked or stubbed as a whole", dest="fc")
-parser.add_argument("arg_binary", nargs='*',
-        help="additional arguments to pass to the test binary")
-parser.add_argument("-t", dest="testscript",
-        type=pathlib.Path, required=False, help="path to the test script")
-parser.add_argument("--only-consider", dest="zbinary",
-        type=str, help="only consider a given binary in the analysis")
+parser.add_argument(
+    "-v", "--verbose", action="store_true", dest="verbose", help="enable debug output"
+)
+parser.add_argument(
+    "-q",
+    "--quiet",
+    action="store_true",
+    dest="quiet",
+    help="disable any non-error output (non-error output will be provided through "
+    + QUIET_LOG
+    + ")",
+)
+parser.add_argument(
+    "--no-strace",
+    action="store_true",
+    dest="nostrace",
+    help="perform initial scan without strace (slower!)",
+)
+parser.add_argument(
+    "--output-sys-names",
+    action="store_true",
+    dest="outputnames",
+    help="output system call names instead of numbers",
+)
+parser.add_argument(
+    CSV_OPT,
+    action="store_true",
+    dest="outputcsv",
+    help="output data as CSV to stdout (implies --quiet)",
+)
+parser.add_argument(
+    "--partial-support",
+    action="store_true",
+    help="enable partial support analysis",
+    dest="partialsupport",
+)
+parser.add_argument(
+    "--perf-analysis",
+    action="store_true",
+    help="enable performance and resource usage analysis",
+    dest="perfanalysis",
+)
+parser.add_argument(
+    "--disable-static",
+    action="store_true",
+    help="disable the static analysis of the test binary",
+    dest="nostatic",
+)
+parser.add_argument(
+    "--timeout",
+    type=int,
+    help="test timeout (default %ds)" % TEST_TIMEOUT,
+    dest="timeout",
+)
+parser.add_argument(
+    "--smart-wait-repeat",
+    type=int,
+    help="enable smart wait (if you don't know what this does, don't enable it)",
+    dest="smartwait",
+)
+parser.add_argument(
+    "--test-sequential",
+    action="store_true",
+    help="run the binary first, then the test script with the binary's output",
+    dest="seq",
+)
+parser.add_argument(
+    "--final-check",
+    action="store_true",
+    help="at the end of the analysis, check that sets can still be faked or stubbed as a whole",
+    dest="fc",
+)
+parser.add_argument(
+    "arg_binary", nargs="*", help="additional arguments to pass to the test binary"
+)
+parser.add_argument(
+    "-t",
+    dest="testscript",
+    type=pathlib.Path,
+    required=False,
+    help="path to the test script",
+)
+parser.add_argument(
+    "--only-consider",
+    dest="zbinary",
+    type=str,
+    help="only consider a given binary in the analysis",
+)
 
-required_args = parser.add_argument_group('required arguments')
-required_args.add_argument("-b", dest="testbinary",
-        type=pathlib.Path, required=True, help="path to the test binary")
+required_args = parser.add_argument_group("required arguments")
+required_args.add_argument(
+    "-b",
+    dest="testbinary",
+    type=pathlib.Path,
+    required=True,
+    help="path to the test binary",
+)
 
-required_args = parser.add_argument_group('debug arguments')
-required_args.add_argument("--maxsys", dest="maxsys",
-        type=int, help="maximum number of system calls to consider")
+required_args = parser.add_argument_group("debug arguments")
+required_args.add_argument(
+    "--maxsys",
+    dest="maxsys",
+    type=int,
+    help="maximum number of system calls to consider",
+)
 
 args = parser.parse_args()
 
 # setup according to command line arguments
 ENABLE_SEQUENTIAL = args.seq
-ENABLE_FINAL_CHECK = (args.fc is True)
-ENABLE_FASTSCAN = (args.nostrace is False)
-ENABLE_STATIC = (args.nostatic is False)
-PARTIAL_SUPPORT_ANALYSIS = (args.partialsupport is True)
-PERFORMANCE_ANALYSIS = (args.perfanalysis is True)
-OUTPUT_CSV = (args.outputcsv is True)
-common.OUTPUT_NAMES = (args.outputnames is True)
-common.ENABLE_VERBOSE = (args.verbose is True)
-common.ENABLE_QUIET = (args.quiet is True)
+ENABLE_FINAL_CHECK = args.fc is True
+ENABLE_FASTSCAN = args.nostrace is False
+ENABLE_STATIC = args.nostatic is False
+PARTIAL_SUPPORT_ANALYSIS = args.partialsupport is True
+PERFORMANCE_ANALYSIS = args.perfanalysis is True
+OUTPUT_CSV = args.outputcsv is True
+common.OUTPUT_NAMES = args.outputnames is True
+common.ENABLE_VERBOSE = args.verbose is True
+common.ENABLE_QUIET = args.quiet is True
 
 if args.maxsys is not None:
     MAX_SYSCALL = args.maxsys
@@ -604,8 +734,10 @@ if OUTPUT_CSV and (PARTIAL_SUPPORT_ANALYSIS or PERFORMANCE_ANALYSIS):
     exit(1)
 
 if not ENABLE_FASTSCAN and PARTIAL_SUPPORT_ANALYSIS:
-    error("Partial system call support exploration only " +
-          "available with strace (and --no-strace was passed).")
+    error(
+        "Partial system call support exploration only "
+        + "available with strace (and --no-strace was passed)."
+    )
     exit(1)
 
 # start analysis
@@ -623,7 +755,13 @@ if ENABLE_FASTSCAN:
     features = ret[1]
     files = ret[2]
     info("Fast scan done!")
-    info("Traced %d syscalls, estimated total (worst case) test time: %s" % (len(ret[0]), str(datetime.timedelta(seconds=end_time-start_time)*len(ret[0]*2))))
+    info(
+        "Traced %d syscalls, estimated total (worst case) test time: %s"
+        % (
+            len(ret[0]),
+            str(datetime.timedelta(seconds=end_time - start_time) * len(ret[0] * 2)),
+        )
+    )
 else:
     unused = explore_works("crash", all_syscalls)
     used = list(set(all_syscalls) - unused)
@@ -634,13 +772,17 @@ info("Finding system calls that work with ENOSYS...")
 probably_works_stubbed = list(explore_works(str(ERRNO_ENOSYS), used))
 probably_works_stubbed.sort()
 
-if (ENABLE_FINAL_CHECK):
+if ENABLE_FINAL_CHECK:
     log = get_temp_file()
     (u, s, r) = analyze_one_pass(str(ERRNO_ENOSYS), probably_works_stubbed, log, 0)
     if u:
-        info("Final check analysis for stubbing succeeded; the entire set can be stubbed simultaneously.")
+        info(
+            "Final check analysis for stubbing succeeded; the entire set can be stubbed simultaneously."
+        )
     else:
-        warning("Final check analysis for stubbing failed; the entire set cannot be stubbed simultaneously.")
+        warning(
+            "Final check analysis for stubbing failed; the entire set cannot be stubbed simultaneously."
+        )
         warning("We recommend a manual pass with seccomp_run to find the culprit.")
 
 info("Finding system calls that work when we fake (errno = 0)...")
@@ -648,58 +790,83 @@ info("Finding system calls that work when we fake (errno = 0)...")
 probably_works_lying = list(explore_works("0", used))
 probably_works_lying.sort()
 
-if (ENABLE_FINAL_CHECK):
+if ENABLE_FINAL_CHECK:
     log = get_temp_file()
     (u, s, r) = analyze_one_pass("0", probably_works_lying, log, 0)
     if u:
-        info("Final check analysis for faking succeeded; the entire set can be faked simultaneously.")
+        info(
+            "Final check analysis for faking succeeded; the entire set can be faked simultaneously."
+        )
     else:
-        warning("Final check analysis for faking failed; the entire set cannot be faked simultaneously.")
+        warning(
+            "Final check analysis for faking failed; the entire set cannot be faked simultaneously."
+        )
         warning("We recommend a manual pass with seccomp_run to find the culprit.")
 
-require_impl = list(((set(used)) - set(probably_works_stubbed)) - set(probably_works_lying))
+require_impl = list(
+    ((set(used)) - set(probably_works_stubbed)) - set(probably_works_lying)
+)
 require_impl.sort()
 
-probably_works_stubbed_and_lying_and_impled = list(set(probably_works_stubbed).intersection(
-                                                   set(probably_works_lying)))
+probably_works_stubbed_and_lying_and_impled = list(
+    set(probably_works_stubbed).intersection(set(probably_works_lying))
+)
 probably_works_stubbed_and_lying_and_impled.sort()
 
-probably_works_stubbed_and_impled = list(set(probably_works_stubbed) -
-                                         set(probably_works_lying))
+probably_works_stubbed_and_impled = list(
+    set(probably_works_stubbed) - set(probably_works_lying)
+)
 probably_works_stubbed_and_impled.sort()
 
-probably_works_lying_and_impled = list(set(probably_works_lying) -
-                                       set(probably_works_stubbed))
+probably_works_lying_and_impled = list(
+    set(probably_works_lying) - set(probably_works_stubbed)
+)
 probably_works_lying_and_impled.sort()
 
 if not OUTPUT_CSV:
     print_header("Usage analysis")
 
     print("Used system calls: " + str(len(used)))
-    if (len(used)):
+    if len(used):
         print(format_syscall_list(used))
 
     print()
     print("[NOTE] The following categories are all non overlapping!")
 
-    print("System calls that require an implementation: " + str(len(require_impl)) +
-              "/" + str(len(used)))
-    if (len(require_impl)):
+    print(
+        "System calls that require an implementation: "
+        + str(len(require_impl))
+        + "/"
+        + str(len(used))
+    )
+    if len(require_impl):
         print(format_syscall_list(require_impl))
 
-    print("System calls that seem to work stubbed (but NOT lying): " + str(len(probably_works_stubbed_and_impled)) +
-              "/" + str(len(used)))
-    if (len(probably_works_stubbed_and_impled)):
+    print(
+        "System calls that seem to work stubbed (but NOT lying): "
+        + str(len(probably_works_stubbed_and_impled))
+        + "/"
+        + str(len(used))
+    )
+    if len(probably_works_stubbed_and_impled):
         print(format_syscall_list(probably_works_stubbed_and_impled))
 
-    print("System calls that seem to work lying (but NOT stubbed): " + str(len(probably_works_lying_and_impled)) +
-              "/" + str(len(used)))
-    if (len(probably_works_lying_and_impled)):
+    print(
+        "System calls that seem to work lying (but NOT stubbed): "
+        + str(len(probably_works_lying_and_impled))
+        + "/"
+        + str(len(used))
+    )
+    if len(probably_works_lying_and_impled):
         print(format_syscall_list(probably_works_lying_and_impled))
 
-    print("System calls that seem to work stubbed AND lying: " + str(len(probably_works_stubbed_and_lying_and_impled)) +
-              "/" + str(len(used)))
-    if (len(probably_works_stubbed_and_lying_and_impled)):
+    print(
+        "System calls that seem to work stubbed AND lying: "
+        + str(len(probably_works_stubbed_and_lying_and_impled))
+        + "/"
+        + str(len(used))
+    )
+    if len(probably_works_stubbed_and_lying_and_impled):
         print(format_syscall_list(probably_works_stubbed_and_lying_and_impled))
 else:
     print("# syscall, used, works faked, works stubbed, works both")
@@ -716,9 +883,10 @@ else:
         canboth = "N"
         if sys in probably_works_stubbed_and_lying_and_impled:
             canboth = "Y"
-        print("%s,%s,%s,%s,%s" % (
-                str(format_syscall_list([sys])[0]),
-                isused, canfake, canstub, canboth))
+        print(
+            "%s,%s,%s,%s,%s"
+            % (str(format_syscall_list([sys])[0]), isused, canfake, canstub, canboth)
+        )
 
 if ENABLE_STATIC:
     info("Finding used system calls using static analysis...")
@@ -729,21 +897,30 @@ if ENABLE_STATIC:
     if ZBINARY is not None:
         binary_path = ZBINARY
 
-    if (OUTPUT_CSV):
+    if OUTPUT_CSV:
         print()
 
-    runcmd = [str(os.path.join(os.path.realpath(os.path.dirname(__file__)),
-            "src/static-binary-analyser/static_analyser.py")), "-a", str(binary_path),
-            "--csv=true", "--display=false", "--verbose=false"]
-    print(subprocess.check_output(runcmd).decode('utf-8'))
+    runcmd = [
+        str(
+            os.path.join(
+                os.path.realpath(os.path.dirname(__file__)),
+                "src/static-binary-analyser/static_analyser.py",
+            )
+        ),
+        "-a",
+        str(binary_path),
+        "--csv=true",
+        "--display=false",
+        "--verbose=false",
+    ]
+    print(subprocess.check_output(runcmd).decode("utf-8"))
 else:
     info("Skipping static analysis...")
 
-    if (OUTPUT_CSV):
+    if OUTPUT_CSV:
         print()
 
     print("Static analysis skipped")
-
 
 
 def print_set(s, printer):
@@ -754,15 +931,18 @@ def print_set(s, printer):
         printer(s, syscall)
     print()
 
+
 if PARTIAL_SUPPORT_ANALYSIS:
+
     def print_values(l, sys):
         def print_value(f, e):
             if f in FEATURE_TRANSLATIONS[sys]:
-                print("0x{:x} (%s)".format(f) % FEATURE_TRANSLATIONS[sys][f], end = e)
+                print("0x{:x} (%s)".format(f) % FEATURE_TRANSLATIONS[sys][f], end=e)
             else:
-                print("0x{:x}".format(f), end = e)
+                print("0x{:x}".format(f), end=e)
+
         if not len(l):
-            print ("-")
+            print("-")
             return
         for f in l[:-1]:
             print_value(f, ", ")
@@ -777,7 +957,7 @@ if PARTIAL_SUPPORT_ANALYSIS:
     keys = list(SYSCALL_FLAGS.keys())
     keys.sort()
     for syscall in keys[:-1]:
-        print(syscall + " (arg #%d)" % SYSCALL_FLAGS[syscall], end =", ")
+        print(syscall + " (arg #%d)" % SYSCALL_FLAGS[syscall], end=", ")
     print(keys[-1] + " (arg #%d)" % SYSCALL_FLAGS[keys[-1]])
     print()
 
@@ -793,8 +973,10 @@ if PARTIAL_SUPPORT_ANALYSIS:
     for syscall in features.keys():
         works_partial_only_impled[syscall] = []
         for f in features[syscall]:
-            if (f not in works_partial_stubbed[syscall] and
-                f not in works_partial_faked[syscall]):
+            if (
+                f not in works_partial_stubbed[syscall]
+                and f not in works_partial_faked[syscall]
+            ):
                 works_partial_only_impled[syscall].append(f)
 
     works_partial_stubbed_and_faked = {}
@@ -822,34 +1004,48 @@ if PARTIAL_SUPPORT_ANALYSIS:
     print("Used features (%d):" % lengthof(features))
     print_set(features, print_values)
 
-    print("Features that *must* be implemented (%d/%d):" %
-            (lengthof(works_partial_only_impled), lengthof(features)))
+    print(
+        "Features that *must* be implemented (%d/%d):"
+        % (lengthof(works_partial_only_impled), lengthof(features))
+    )
     print_set(works_partial_only_impled, print_values)
 
-    print("Features that may be stubbed but not faked (%d/%d):" %
-            (lengthof(works_partial_stubbed_but_not_faked), lengthof(features)))
+    print(
+        "Features that may be stubbed but not faked (%d/%d):"
+        % (lengthof(works_partial_stubbed_but_not_faked), lengthof(features))
+    )
     print_set(works_partial_stubbed_but_not_faked, print_values)
 
-    print("Features that may be faked but not stubbed (%d/%d):" %
-            (lengthof(works_partial_faked_but_not_stubbed), lengthof(features)))
+    print(
+        "Features that may be faked but not stubbed (%d/%d):"
+        % (lengthof(works_partial_faked_but_not_stubbed), lengthof(features))
+    )
     print_set(works_partial_faked_but_not_stubbed, print_values)
 
-    print("Features that may be faked and stubbed (%d/%d):" %
-            (lengthof(works_partial_stubbed_and_faked), lengthof(features)))
+    print(
+        "Features that may be faked and stubbed (%d/%d):"
+        % (lengthof(works_partial_stubbed_and_faked), lengthof(features))
+    )
     print_set(works_partial_stubbed_and_faked, print_values)
 
 if PERFORMANCE_ANALYSIS:
+
     def print_perf(p, baseline):
         if BEAUTIFY_PERF_OUTPUT:
             print("syscall: perf openfds memusage (relative to the baseline)")
             for k, v in p.items():
-                print(str(format_syscall_list([k])[0]) + ": %s %s %s (%s,%s,%s)" %
-                        (str(round(v["perf"], 2)),
+                print(
+                    str(format_syscall_list([k])[0])
+                    + ": %s %s %s (%s,%s,%s)"
+                    % (
+                        str(round(v["perf"], 2)),
                         str(round(v["openfds"], 2)),
                         str(round(v["memusage"], 2)),
                         str(round(v["perf"] / baseline_perf["perf"], 2)),
                         str(round(v["openfds"] / baseline_perf["openfds"], 2)),
-                        str(round(v["memusage"] / baseline_perf["memusage"], 2))))
+                        str(round(v["memusage"] / baseline_perf["memusage"], 2)),
+                    )
+                )
             print()
         else:
             print({format_syscall_list([k])["perf"]: v for k, v in p.items()})
@@ -860,15 +1056,20 @@ if PERFORMANCE_ANALYSIS:
     # this is NOT a copy and paste error, do it three times to warm up
     # this has a significant impact on performance
     baseline_raw = []
-    for i in range(WARMUP_ROUNDS): # = WARMUP_ROUNDS + 1 runs
+    for i in range(WARMUP_ROUNDS):  # = WARMUP_ROUNDS + 1 runs
         baseline_raw = explore_perf(str(ERRNO_ENOSYS), [317])
     baseline_perf = baseline_raw[317]
 
     if BEAUTIFY_PERF_OUTPUT:
         print("Baseline: perf openfds memusage")
-        print("Baseline: %s %s %s" % (str(round(baseline_perf["perf"], 2)),
-                                     str(round(baseline_perf["openfds"], 2)),
-                                     str(round(baseline_perf["memusage"], 2))))
+        print(
+            "Baseline: %s %s %s"
+            % (
+                str(round(baseline_perf["perf"], 2)),
+                str(round(baseline_perf["openfds"], 2)),
+                str(round(baseline_perf["memusage"], 2)),
+            )
+        )
         print()
 
     info("Gathering data for stubbing...")
@@ -880,9 +1081,10 @@ if PERFORMANCE_ANALYSIS:
     print_perf(faking_perf, baseline_perf)
 
 if SPECIAL_FILES_ANALYSIS:
-    def print_values(l, x): # x is ignored
+
+    def print_values(l, x):  # x is ignored
         if not len(l):
-            print ("-")
+            print("-")
             return
         for f in l[:-1]:
             print(f, end=", ")
@@ -897,7 +1099,7 @@ if SPECIAL_FILES_ANALYSIS:
     keys = list(SYSCALL_FLAGS_FILES.keys())
     keys.sort()
     for syscall in keys[:-1]:
-        print(syscall + " (arg #%d)" % SYSCALL_FLAGS_FILES[syscall], end =", ")
+        print(syscall + " (arg #%d)" % SYSCALL_FLAGS_FILES[syscall], end=", ")
     print(keys[-1] + " (arg #%d)" % SYSCALL_FLAGS_FILES[keys[-1]])
     print()
 
@@ -913,8 +1115,10 @@ if SPECIAL_FILES_ANALYSIS:
     for syscall in files.keys():
         works_partial_only_impled[syscall] = []
         for f in files[syscall]:
-            if (f not in works_partial_stubbed[syscall] and
-                f not in works_partial_faked[syscall]):
+            if (
+                f not in works_partial_stubbed[syscall]
+                and f not in works_partial_faked[syscall]
+            ):
                 works_partial_only_impled[syscall].append(f)
 
     works_partial_stubbed_and_faked = {}
@@ -942,18 +1146,26 @@ if SPECIAL_FILES_ANALYSIS:
     print("Used files (%d):" % lengthof(files))
     print_set(files, print_values)
 
-    print("Files that *must* be implemented (%d/%d):" %
-            (lengthof(works_partial_only_impled), lengthof(features)))
+    print(
+        "Files that *must* be implemented (%d/%d):"
+        % (lengthof(works_partial_only_impled), lengthof(features))
+    )
     print_set(works_partial_only_impled, print_values)
 
-    print("Files that may be stubbed but not faked (%d/%d):" %
-            (lengthof(works_partial_stubbed_but_not_faked), lengthof(features)))
+    print(
+        "Files that may be stubbed but not faked (%d/%d):"
+        % (lengthof(works_partial_stubbed_but_not_faked), lengthof(features))
+    )
     print_set(works_partial_stubbed_but_not_faked, print_values)
 
-    print("Files that may be faked but not stubbed (%d/%d):" %
-            (lengthof(works_partial_faked_but_not_stubbed), lengthof(features)))
+    print(
+        "Files that may be faked but not stubbed (%d/%d):"
+        % (lengthof(works_partial_faked_but_not_stubbed), lengthof(features))
+    )
     print_set(works_partial_faked_but_not_stubbed, print_values)
 
-    print("Files that may be faked and stubbed (%d/%d):" %
-            (lengthof(works_partial_stubbed_and_faked), lengthof(features)))
+    print(
+        "Files that may be faked and stubbed (%d/%d):"
+        % (lengthof(works_partial_stubbed_and_faked), lengthof(features))
+    )
     print_set(works_partial_stubbed_and_faked, print_values)

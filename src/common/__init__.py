@@ -29,18 +29,35 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import tempfile, os, sys, re, hashlib, socket, platform
+import tempfile, os, sys, re, hashlib, socket, platform, subprocess
 
 # =========
 # CONSTANTS
+
+
+def find_first_file(directory, name_pattern):
+    result = subprocess.run(
+        ["find", directory, "-name", name_pattern],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    # Split output into lines and take the first non-empty line
+    files = result.stdout.strip().split("\n")
+    return files[0] if files else None
+
+
 os_info = platform.freedesktop_os_release()
 
-if os_info['ID'] == 'fedora':
-	SYSCALL_MAPPING_FILE = "/usr/include/asm/unistd_64.h"
-else:
-	SYSCALL_MAPPING_FILE = "/usr/include/x86_64-linux-gnu/asm/unistd_64.h"
+match os_info["ID"]:
+    case "fedora":
+        SYSCALL_MAPPING_FILE = "/usr/include/asm/unistd_64.h"
+    case "nixos":
+        SYSCALL_MAPPING_FILE = find_first_file("/nix/store", "unistd_64.h")
+    case _:
+        SYSCALL_MAPPING_FILE = find_first_file("/usr/include", "unistd_64.h")
 
-# get it from /usr/include/x86_64-linux-gnu/asm/unistd_64.h
 MAX_SYSCALL = 334
 
 # =======
@@ -52,12 +69,13 @@ OUTPUT_NAMES = False
 
 DOCKER_SHAREDIR = "/loupe-host"
 
-if (os.path.isdir(DOCKER_SHAREDIR)):
+if os.path.isdir(DOCKER_SHAREDIR):
     # postpend with docker container name (unique), since multiple replicas may
     # be running in parallel
     QUIET_LOG = DOCKER_SHAREDIR + "/loupe_explore_" + socket.gethostname() + ".log"
 else:
     QUIET_LOG = "/tmp/loupe_explore.log"
+
 
 def print_wrapper(string):
     if not ENABLE_QUIET:
@@ -66,26 +84,32 @@ def print_wrapper(string):
         with open(QUIET_LOG, "a+") as qlog:
             qlog.write(string + "\n")
 
+
 def error(string):
     print("[E] " + string)
+
 
 def warning(string):
     print_wrapper("[W] " + string)
 
+
 def info(string):
     print_wrapper("[I] " + string)
+
 
 def debug(string):
     if ENABLE_VERBOSE:
         print("[D] " + string)
 
+
 def print_header(s):
     if not ENABLE_QUIET:
         print()
-        print("-"*len(s))
+        print("-" * len(s))
         print(s)
-        print("-"*len(s))
+        print("-" * len(s))
         print()
+
 
 def get_sysnum_to_sysname():
     with open(SYSCALL_MAPPING_FILE) as headerf:
@@ -93,28 +117,32 @@ def get_sysnum_to_sysname():
         regex = re.compile("#define __NR_([a-zA-Z1-9_]+)\s(\d+)")
         return dict([(s, int(n)) for (s, n) in regex.findall(header)])
 
+
 syscall_mapping = get_sysnum_to_sysname()
+
 
 def format_syscall_list_to_num(syscall_list):
     out = []
     for syscall in syscall_list:
-        for (s,n) in syscall_mapping.items():
-            if (s == syscall):
+        for s, n in syscall_mapping.items():
+            if s == syscall:
                 out.append(n)
     return out
+
 
 def format_syscall_list_to_names(syscall_list):
     out = []
     for syscall in syscall_list:
-        for (s,n) in syscall_mapping.items():
-            if (n == syscall):
+        for s, n in syscall_mapping.items():
+            if n == syscall:
                 out.append(s)
     return out
+
 
 def format_syscall_list(syscall_list):
     isn = True
     for e in syscall_list:
-        if (not isinstance(e, int) and re.search('[a-zA-Z]', e)):
+        if not isinstance(e, int) and re.search("[a-zA-Z]", e):
             isn = False
 
     if not OUTPUT_NAMES and isn:
@@ -126,6 +154,7 @@ def format_syscall_list(syscall_list):
     elif OUTPUT_NAMES and isn:
         return format_syscall_list_to_names(syscall_list)
 
+
 def progress(count, total):
     if ENABLE_QUIET:
         return
@@ -134,22 +163,26 @@ def progress(count, total):
     filled_len = int(round(bar_len * count / float(total)))
 
     percents = round(100.0 * count / float(total), 1)
-    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+    bar = "=" * filled_len + "-" * (bar_len - filled_len)
 
-    sys.stdout.write('[%s] %s%s\r' % (bar, percents, '%'))
+    sys.stdout.write("[%s] %s%s\r" % (bar, percents, "%"))
     sys.stdout.flush()
+
 
 def progress_end():
     if not ENABLE_QUIET:
         print()
 
+
 def get_temp_file():
     return os.path.join("/tmp", next(tempfile._get_candidate_names())) + ".log"
+
 
 def get_temp_dir():
     d = os.path.join("/tmp", next(tempfile._get_candidate_names()))
     os.mkdir(d)
     return d
+
 
 def get_file_hash(path):
     hashf = ""
