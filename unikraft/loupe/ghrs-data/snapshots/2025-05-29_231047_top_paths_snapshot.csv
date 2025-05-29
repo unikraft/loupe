@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/unikraft/loupe,7,7
+/unikraft/loupe/commit/ab441bb4cb613640cf91cde3ed00bc03d42ed21d,3,3
+/unikraft/loupe/issues/14,2,1
+/unikraft/loupe/pull/15/files,2,1
+/unikraft/loupe/pull/31,2,1
+/unikraft/loupe/blob/28698fc3c7e4c071339d5cbdea140227fb0287b1/src/static-binary-analyser/elf_analyser.py,1,1
+/unikraft/loupe/blob/staging/doc/PERF_METRICS.md,1,1
+/unikraft/loupe/blob/staging/README.md,1,1
+/unikraft/loupe/blob/staging/src/static-binary-analyser/static_analyser.py,1,1
+/unikraft/loupe/pull/15,1,1
