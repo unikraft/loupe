@@ -1030,6 +1030,12 @@ def support_plan(applist, supported):
 if __name__ == "__main__":
     args = args.parse_args()
 
+    if not args.verbose:
+        logger.remove(0)
+        logger.add(
+            sys.stdout, format="<green>{level}</green> | {message}", colorize=True
+        )
+
     logger.info("Checking database...")
     if not db_check(args.dbpath):
         logger.error("Problem with the database, exiting.")
