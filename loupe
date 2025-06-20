@@ -45,6 +45,7 @@ import threading
 from distutils.dir_util import copy_tree
 from src.common import *
 from datetime import datetime
+from loguru import logger
 
 import src.common.args as args
 
@@ -79,7 +80,7 @@ def db_check(path):
     try:
         git_repo = git.Repo(path, search_parent_directories=True)
     except git.exc.NoSuchPathError:
-        error("Database %s does not exist" % path)
+        logger.error("Database %s does not exist" % path)
         create = input("Create it? [y/n] ")
         if create.lower()[0] == "y":
             init_db(path)
@@ -87,20 +88,20 @@ def db_check(path):
         else:
             return False
     except git.exc.InvalidGitRepositoryError:
-        error("Database %s is not a git repository" % path)
+        logger.error("Database %s is not a git repository" % path)
         return False
 
     # it may not have uncommited changes
     git_repo = git.Repo(path, search_parent_directories=True)
     if git_repo.is_dirty() or len(git_repo.untracked_files) != 0:
         if not ENABLE_DIRTY_DB:
-            error(
+            logger.error(
                 "Database %s is dirty; commit your changes before running this tool."
                 % path
             )
             return False
         else:
-            warning("DB dirty, ignoring.")
+            logger.warning("DB dirty, ignoring.")
 
     return True
 
@@ -154,7 +155,7 @@ def db_load(path):
                     suite_wl_folder = w
                     changed = True
             else:
-                error(
+                logger.error(
                     "Detected malformed DB: incorrect name "
                     + str(w)
                     + " (should start with 'benchmark' or 'suite')"
@@ -162,7 +163,7 @@ def db_load(path):
                 exit(1)
 
         if changed:
-            debug(
+            logger.debug(
                 "App directory {} has multiple entries".format(str(a))
                 + ", went for most recent ones: {} and {}".format(
                     str(bench_wl_folder), str(suite_wl_folder)
@@ -182,7 +183,7 @@ def db_load(path):
                     m = _m
 
             if i != 1:
-                debug(
+                logger.debug(
                     "Workload directory {} has multiple entries".format(
                         str(bench_wl_folder)
                     )
@@ -223,7 +224,7 @@ def db_load(path):
                 ml = None
             bench_workload["static_source"] = ml
         else:
-            debug("App directory %s does not feature benchmark data" % str(a))
+            logger.debug("App directory %s does not feature benchmark data" % str(a))
 
         suite_workload = {"dynamic": [], "static_binary": [], "static_source": []}
         if suite_wl_folder is not None:
@@ -236,7 +237,7 @@ def db_load(path):
                     m = _m
 
             if i != 1:
-                debug(
+                logger.debug(
                     "Workload directory {} has multiple entries".format(
                         str(suite_wl_folder)
                     )
@@ -279,12 +280,16 @@ def db_load(path):
                 ml = None
             suite_workload["static_source"] = ml
         else:
-            debug("App directory %s does not feature test suite data" % str(a))
+            logger.debug("App directory %s does not feature test suite data" % str(a))
 
         if not found_static_binary:
-            debug("App directory %s does not feature static binary data" % str(a))
+            logger.debug(
+                "App directory %s does not feature static binary data" % str(a)
+            )
         if not found_static_source:
-            debug("App directory %s does not feature static source data" % str(a))
+            logger.debug(
+                "App directory %s does not feature static source data" % str(a)
+            )
 
         app["benchmark"] = bench_workload
         app["testsuite"] = suite_workload
@@ -298,10 +303,10 @@ def get_workloads(
     db, applist, bench=False, suite=False, static_binary=False, static_source=False
 ):
     if "*" in applist and len(applist) > 1:
-        warning(
+        logger.warning(
             "* in the application list but other entries are specified: " + str(applist)
         )
-        warning("Ignoring them.")
+        logger.warning("Ignoring them.")
         applist = db.keys()
     elif "*" in applist:
         applist = db.keys()
@@ -447,8 +452,8 @@ def used_by_apps(
 
     def _used_by_app(app):
         if app not in db.keys():
-            error("%s not in the database." % app)
-            error("Valid entries are: " + str(db.keys()))
+            logger.error("%s not in the database." % app)
+            logger.error("Valid entries are: " + str(db.keys()))
             exit(1)
 
         req = []
@@ -586,7 +591,7 @@ def container_exists(name):
 
 
 def remove_container(name):
-    info("Removing stale container...")
+    logger.info("Removing stale container...")
     runcmd = ["docker", "container", "rm", name]
     process = subprocess.Popen(runcmd)
     process.wait()
@@ -608,9 +613,9 @@ def select_files_for_copy_in_db(dockerfile):
 def run_tests(path_db, application, workload, path_dockerfile, only_build_docker=False):
     start = datetime.now()
 
-    info("Building container...")
+    logger.info("Building container...")
     if not path_dockerfile.exists():
-        error("Dockerfile %s does not exist" % str(path_dockerfile))
+        logger.error("Dockerfile %s does not exist" % str(path_dockerfile))
         return False
 
     containername = "%s-loupe" % application
@@ -642,22 +647,22 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
 
     ret = process.returncode
     if ret != 0:
-        error("Problem building the container? Error code %d" % ret)
+        logger.error("Problem building the container? Error code %d" % ret)
         return False
 
     if not container_exists(containername):
-        error("Problem building the container?")
+        logger.error("Problem building the container?")
         return False
 
     if only_build_docker:
-        info(
+        logger.info(
             "Done building the container, exiting (called with "
             + ONLY_DOCKER_OPT
             + ")."
         )
         return True
 
-    info(
+    logger.info(
         "Running dynamic analysis in the container ({} replicas)...".format(
             NUMBER_GENERATE_REPLICAS
         )
@@ -693,7 +698,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     results = [None] * NUMBER_GENERATE_REPLICAS
     static_results_array = [None]
     for j in range(NUMBER_GENERATE_REPLICAS // NUMBER_PARALLEL_REPLICAS):
-        debug(
+        logger.debug(
             "Starting replica batch (%d/%d), batch size %d"
             % (
                 (j * NUMBER_PARALLEL_REPLICAS) + NUMBER_PARALLEL_REPLICAS,
@@ -720,11 +725,11 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                 t.join()
 
     # sanitize a bit, make sure that the output is sane
-    info("Sanitizing replicas outputs...")
+    logger.info("Sanitizing replicas outputs...")
 
     # sanitize binary static output
     if static_results_array[0] is None:
-        error("Binary static analysis results are invalid (no results!)")
+        logger.error("Binary static analysis results are invalid (no results!)")
         return False
 
     static_results = static_results_array[0].strip()
@@ -733,7 +738,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
         l = 0
         for line in static_results.splitlines():
             if len(re.sub("[^,]", "", line)) != 1:
-                error(
+                logger.error(
                     "Line %d of the binary static analysis output seems " % l
                     + "corrupted. Dumping."
                 )
@@ -741,7 +746,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                 return False
             l += 1
         if l != MAX_SYSCALL + 2:
-            error(
+            logger.error(
                 "Somehow the binary static analysis output does not have the "
                 + "right size... Expected %d lines, got %d. Dumping."
                 % (MAX_SYSCALL + 2, l)
@@ -753,13 +758,13 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     x = 0
     for r in results:
         if r is None:
-            error("Replica %d did not produce result" % x)
+            logger.error("Replica %d did not produce result" % x)
             return False
 
         l = 0
         for line in r.splitlines():
             if len(re.sub("[^,]", "", line)) != 4:
-                error(
+                logger.error(
                     "Line %d of replica %d's test output seems " % (l, x)
                     + "corrupted. Dumping."
                 )
@@ -767,7 +772,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                 return False
             l += 1
         if l != MAX_SYSCALL + 2:
-            error(
+            logger.error(
                 "Somehow replica %d's file does not have the right size... " % x
                 + "Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l)
             )
@@ -775,7 +780,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
             return False
         x += 1
 
-    info("Merging replicas outputs...")
+    logger.info("Merging replicas outputs...")
 
     def _merge_cvs(results):
         final_csv = ""
@@ -811,7 +816,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                 d += 1
             else:
                 final_csv += known[0] + "\n"
-        info("Replicas reported %d differences" % d)
+        logger.info("Replicas reported %d differences" % d)
         return final_csv
 
     def _check_results_valid(csv):
@@ -833,14 +838,14 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
 
     out = _merge_cvs(results)
     if not _check_results_valid(out):
-        error(
+        logger.error(
             "Dynamic analysis results are invalid (all or none of the "
             + "syscalls invoked can be stubbed/faked"
         )
         return False
 
     # write to the db
-    info("Writing to the database...")
+    logger.info("Writing to the database...")
 
     hashdf = get_file_hash(path_dockerfile)
 
@@ -864,7 +869,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                 else:
                     shutil.copyfile(source, destination)
     else:
-        info("This run already exists, replacing (see changes with git diff).")
+        logger.info("This run already exists, replacing (see changes with git diff).")
         shutil.rmtree(os.path.join(runpath, "data"))
         if os.path.exists(os.path.join(runpath, "cmd.txt")):
             os.remove(os.path.join(runpath, "cmd.txt"))
@@ -881,7 +886,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
         with open(os.path.join(runpath, "data", "static_binary.csv"), "a+") as outf:
             outf.write(static_results)
 
-    debug("Outputing additional reproducibility and debugging information...")
+    logger.debug("Outputing additional reproducibility and debugging information...")
 
     with open(os.path.join(runpath, "cmd.txt"), "a+") as outf:
         outf.write(" ".join(sys.argv))
@@ -898,32 +903,34 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                         outf.write(logf.read())
                     repnum += 1
 
-    debug("Checking explorer logs...")
+    logger.debug("Checking explorer logs...")
     with open(os.path.join(runpath, "explore.logs")) as logf:
         content = logf.read()
         err = False
 
         if "Final check analysis for faking failed; the entire set cannot" in content:
-            warning("At least one replica reported issues when consolidating stubbing")
-            warning(
+            logger.warning(
+                "At least one replica reported issues when consolidating stubbing"
+            )
+            logger.warning(
                 "and faking measurements. Please check %s."
                 % os.path.join(runpath, "explore.logs")
             )
             err = True
 
         if "[E] " in content:
-            warning(
+            logger.warning(
                 "At least one replica reported an error. Please check %s."
                 % os.path.join(runpath, "explore.logs")
             )
             err = True
 
         if not err:
-            debug("explorer logs all OK.")
+            logger.debug("explorer logs all OK.")
 
     end = datetime.now()
 
-    info("Done! Full analysis last %s." % str(end - start))
+    logger.info("Done! Full analysis last %s." % str(end - start))
     print(" -- Make sure to commit the changes to the database :-)")
 
     return True
@@ -1023,20 +1030,20 @@ def support_plan(applist, supported):
 if __name__ == "__main__":
     args = args.parse_args()
 
-    info("Checking database...")
+    logger.info("Checking database...")
     if not db_check(args.dbpath):
-        error("Problem with the database, exiting.")
+        logger.error("Problem with the database, exiting.")
         exit(1)
 
     if args.cmd == "search":
         if (
             args.applist is None or args.wllist is None
         ) and args.paperhistogramplot is not True:
-            error(
+            logger.error(
                 "Application list (-a/--applications) and workload list "
                 + "(-w/--workloads) are required for this option."
             )
-            error("Call with --help for more information.")
+            logger.error("Call with --help for more information.")
             exit(1)
 
         common.OUTPUT_NAMES = args.outputnames is True
@@ -1053,11 +1060,11 @@ if __name__ == "__main__":
             or args.supportfile is not None
         ):
             if "*" in args.wllist and len(args.wllist) > 1:
-                warning(
+                logger.warning(
                     "* in the workload list but other entries are specified: "
                     + str(args.wllist)
                 )
-                warning("Ignoring them.")
+                logger.warning("Ignoring them.")
                 benchmark = True
                 testsuite = True
             elif "*" in args.wllist:
@@ -1068,7 +1075,7 @@ if __name__ == "__main__":
             elif "testsuite" in args.wllist or "suite" in args.wllist:
                 testsuite = True
             else:
-                error(
+                logger.error(
                     "Invalid workload passed (valid: '*', 'benchmark'/'bench', 'testsuite'/'suite')"
                 )
                 exit(1)
@@ -1086,7 +1093,7 @@ if __name__ == "__main__":
             or args.paperhistogramplot is True
         ):
             # build plot container
-            info("Building plot container")
+            logger.info("Building plot container")
             runcmd = [
                 "docker",
                 "build",
@@ -1128,13 +1135,13 @@ if __name__ == "__main__":
             ]
 
             # process data
-            info("Processing data")
+            logger.info("Processing data")
 
             # 1. check that apps are featured in the database
             error = False
             for a in apps:
                 if a not in db.keys():
-                    error(
+                    logger.error(
                         "Application missing from the database "
                         + "(and required for the plot): "
                         + a
@@ -1209,7 +1216,7 @@ if __name__ == "__main__":
                         )
                     )
 
-            info("Building plot")
+            logger.info("Building plot")
             cwd = os.getcwd()
             runcmd = [
                 "docker",
@@ -1227,7 +1234,7 @@ if __name__ == "__main__":
             process.wait()
 
             if missingBars:
-                warning(
+                logger.warning(
                     "The plot is missing bars because certain measurements are not provided"
                 )
 
@@ -1235,13 +1242,13 @@ if __name__ == "__main__":
             print("Plot: ./paper-histogram.svg")
         elif args.heatmapplot is True:
             # process data
-            info("Processing data")
+            logger.info("Processing data")
 
             # we need to be able to use the same dataset for all plots
             considered = get_workloads(
                 db, args.applist.split(","), benchmark, testsuite, True, True
             )[1]
-            info("Apps considered in this plot: " + " ".join(considered))
+            logger.info("Apps considered in this plot: " + " ".join(considered))
 
             cumulative = process_cumulative(
                 db, considered, bench=benchmark, suite=testsuite
@@ -1334,7 +1341,7 @@ if __name__ == "__main__":
             with open(os.path.join("./data-dynstub-dump.dat"), "a") as outf:
                 outf.write(dynstubdat_dump)
 
-            info("Building plot")
+            logger.info("Building plot")
             cwd = os.getcwd()
             runcmd = [
                 "docker",
@@ -1362,13 +1369,13 @@ if __name__ == "__main__":
                 print("Plot: ./heapmap-static-source.svg")
         elif args.cumulativeplot is True:
             # process data
-            info("Processing data")
+            logger.info("Processing data")
 
             # we need to be able to use the same dataset for all lines
             considered = get_workloads(
                 db, args.applist.split(","), benchmark, False, False, False
             )[1]
-            info("Apps considered in this plot: " + " ".join(considered))
+            logger.info("Apps considered in this plot: " + " ".join(considered))
 
             cumulative = process_cumulative(
                 db, considered, bench=benchmark, suite=testsuite
@@ -1432,7 +1439,7 @@ if __name__ == "__main__":
                 outf.write("\n\n\n")
                 outf.write(req)
 
-            info("Building plot")
+            logger.info("Building plot")
             cwd = os.getcwd()
             runcmd = [
                 "docker",
@@ -1478,13 +1485,15 @@ if __name__ == "__main__":
             support_plan(args.applist.split(","), supported)
 
         else:
-            warning("Not implemented yet.")
+            logger.warning("Not implemented yet.")
             exit(0)
 
     if args.cmd == "generate":
         wl = args.workload
         if (args.isbenchmark is True) and (args.issuite is True):
-            error("Workload cannot be both a benchmark (-b) and a test suite (-s)")
+            logger.error(
+                "Workload cannot be both a benchmark (-b) and a test suite (-s)"
+            )
             exit(1)
         elif args.isbenchmark is True:
             wl = "benchmark-" + wl
@@ -1510,30 +1519,30 @@ if __name__ == "__main__":
             ):
                 wl = "suite-" + wl
             else:
-                error("Cannot understand that answer ('%s')." % ans)
+                logger.error("Cannot understand that answer ('%s')." % ans)
                 exit(1)
 
         # check Dockerfile for obvious errors
         # we just provide that as a quick sanity check for confused users
         # hopefully this does reduce the amount of bug reports we get :)
-        debug("Checking Dockerfile...")
+        logger.debug("Checking Dockerfile...")
         with open(args.dockerfile) as dockerf:
             content = dockerf.read()
             if "loupe-base:latest" not in content:
-                warning(
+                logger.warning(
                     "Dockerfile (%s) does not base on the loupe-base container "
                     "- here be dragons." % args.dockerfile
                 )
 
             if "explore.py" not in content:
-                error(
+                logger.error(
                     "Dockerfile (%s) does not seem to be calling explore.py in "
                     "the CMD rule." % args.dockerfile
                 )
                 exit(1)
 
             if "--output-csv" not in content:
-                error(
+                logger.error(
                     "Dockerfile (%s) calls explore.py without the --output-csv "
                     "option, which is mandatory when using the loupe wrapper."
                     % args.dockerfile
@@ -1541,7 +1550,7 @@ if __name__ == "__main__":
                 exit(1)
 
             if "--final-check" not in content:
-                warning(
+                logger.warning(
                     "Dockerfile (%s) calls explore.py without the --final-check "
                     "option, which is recommended." % args.dockerfile
                 )
