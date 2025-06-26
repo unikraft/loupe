@@ -1,0 +1,12 @@
+[project]
+name = "lpm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "gitpython>=3.1.44",
+    "loguru>=0.7.3",
+    "pytest>=8.4.1",
+    "setuptools>=80.9.0",
+]

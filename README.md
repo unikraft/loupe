@@ -13,19 +13,19 @@ of your application(s), and (2) analyze the data collected for your
 application(s). It can tell you what system calls you need to run them, and
 visualize these numbers in a variety of plots.
 
-Loupe is based on *dynamic* analysis, but it is also able to gather static
-analysis data.  We put the emphasis on *reproducible* analysis: measurements
+Loupe is based on _dynamic_ analysis, but it is also able to gather static
+analysis data. We put the emphasis on _reproducible_ analysis: measurements
 are made in a Docker container.
 
 Loupe stores analysis results in a custom database. A Loupe database is nothing
 more than a git repository with a [particular
 layout](https://github.com/unikraft/loupe/blob/staging/doc/DATABASE_FORMAT.md).
 We offer an online, open [database](https://github.com/unikraft/loupedb)
-maintained by the community.  Feel free to pull request your analysis results!
+maintained by the community. Feel free to pull request your analysis results!
 
-### Loupe is not your regular strace!
+### Loupe is not your regular strace
 
-- Loupe supports stubbing/faking analysis (Loupe is not a *passive* observer)
+- Loupe supports stubbing/faking analysis (Loupe is not a _passive_ observer)
 - Loupe goes beyond system call granularity
 - Loupe supports replication to obtain results stable across runs
 - Loupe offers an infrastructure for reproducibility and sharing of results
@@ -90,13 +90,14 @@ Python dependencies which may be installed using `pip install -r requirements.tx
 
 - [python-git](https://pypi.org/project/python-git/)
 - [pre-commit](https://pre-commit.com/)
+- [loguru](https://github.com/Delgan/loguru)
 
 Once these dependencies have been installed, the setup is very simple: `make
 all`
 
 ## 3. Gathering Data
 
-Below is a quick *getting started* example showing how to run the analysis with Nginx.
+Below is a quick _getting started_ example showing how to run the analysis with Nginx.
 For a more detailed tutorial on how to port applications to Loupe please refer to the [wiki](https://github.com/unikraft/loupe/wiki).
 
 `loupe generate` takes care of analyzing the system call usage of your
@@ -114,33 +115,33 @@ Let's take a look at benchmarks first.
 **Step 0**: first you'll need to generate the `loupe-base` container image as
 follows (in loupe's root directory):
 
-	$ make docker
+    make docker
 
 **Step 1**: identify a benchmarking tool that we can use to benchmark Nginx.
 
 Here we'll go for [wrk](https://github.com/wg/wrk).
 
-**Step 2**: write a *test script* that uses wrk. Test scripts are used by Loupe
+**Step 2**: write a _test script_ that uses wrk. Test scripts are used by Loupe
 to determine whether or not the application (here Nginx) works. Test scripts return
 0 if the application works, 1 if it doesn't.
 
 In the case of Nginx, our test script looks like the following:
 
-	#!/bin/bash
+    #!/bin/bash
 
-	# nginx command: ./objs/nginx -p $(pwd) -g 'daemon off;'
+    # nginx command: ./objs/nginx -p $(pwd) -g 'daemon off;'
 
-	bench=$(wrk http://localhost:80/index.html -d3s)
+    bench=$(wrk http://localhost:80/index.html -d3s)
 
-	nl=$(echo ${bench} | grep -P "Transfer/sec:\s*\d+(?:\.\d+)MB" | wc -l)
-	if [ "$nl" -eq "1" ]; then
-	    exit 0
-	fi
+    nl=$(echo ${bench} | grep -P "Transfer/sec:\s*\d+(?:\.\d+)MB" | wc -l)
+    if [ "$nl" -eq "1" ]; then
+        exit 0
+    fi
 
-	exit 1
+    exit 1
 
 This is a very simple script. We first start a 3s benchmark on port 80 with
-`wrk`.  Then we parse the output for a chain of characters that typically
+`wrk`. Then we parse the output for a chain of characters that typically
 indicates success (here the throughput, which is absent if the benchmark fails).
 We return 0 if it is present, and 1 otherwise.
 
@@ -151,52 +152,52 @@ container.
 In our case, the Dockerfile looks like the following (slightly modified to
 exclude coverage, which is not necessary here):
 
-	FROM loupe-base:latest
+    FROM loupe-base:latest
 
-	# Install wrk
-	RUN apt update
-	RUN apt install -y wrk
+    # Install wrk
+    RUN apt update
+    RUN apt install -y wrk
 
-	# Nginx related instructions
-	RUN apt build-dep -y nginx
-	RUN wget https://nginx.org/download/nginx-1.20.1.tar.gz
-	RUN tar -xf nginx-1.20.1.tar.gz
-	RUN mv nginx-1.20.1 nginx
+    # Nginx related instructions
+    RUN apt build-dep -y nginx
+    RUN wget https://nginx.org/download/nginx-1.20.1.tar.gz
+    RUN tar -xf nginx-1.20.1.tar.gz
+    RUN mv nginx-1.20.1 nginx
 
-	RUN cd nginx && ./configure \
-		--sbin-path=$(pwd)/nginx \
-		--conf-path=$(pwd)/conf/nginx.conf \
-		--pid-path=$(pwd)/nginx.pid
-	RUN cd nginx && make -j
-	RUN mkdir /root/nginx/logs
+    RUN cd nginx && ./configure \
+     --sbin-path=$(pwd)/nginx \
+     --conf-path=$(pwd)/conf/nginx.conf \
+     --pid-path=$(pwd)/nginx.pid
+    RUN cd nginx && make -j
+    RUN mkdir /root/nginx/logs
 
-	# Copy test script
-	COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
-	RUN chmod a+x /root/nginx-test.sh
+    # Copy test script
+    COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
+    RUN chmod a+x /root/nginx-test.sh
 
-	# Run command (without coverage)
-	CMD /root/explore.py --output-csv -t /root/nginx-test.sh \
-			     -b /root/nginx/objs/nginx \
-			     -- -p /root/nginx -g "daemon off;"
+    # Run command (without coverage)
+    CMD /root/explore.py --output-csv -t /root/nginx-test.sh \
+           -b /root/nginx/objs/nginx \
+           -- -p /root/nginx -g "daemon off;"
 
 This is a simple container. We install `wrk`, and configure and build Nginx.
 Finally, we start `explore.py`. The arguments are quite important:
 
- - `--output-csv` is necessary to enable parsing by Loupe
- - `-t /root/nginx-test.sh` indicates our test script
- - `-b /root/nginx-1.20.1/objs/nginx` indicates our binary
- - `--` denotes arguments that are passed on to nginx (remember that we want to call `objs/nginx -p $(pwd) -g 'daemon off;'`)
+- `--output-csv` is necessary to enable parsing by Loupe
+- `-t /root/nginx-test.sh` indicates our test script
+- `-b /root/nginx-1.20.1/objs/nginx` indicates our binary
+- `--` denotes arguments that are passed on to nginx (remember that we want to call `objs/nginx -p $(pwd) -g 'daemon off;'`)
 
 **Step 4**: start the analysis using the following command:
 
-	$ ./loupe generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
+    ./loupe generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
 
 The arguments are important too:
 
- - `-b` tells Loupe that you are running a benchmark, not a test suite, and `-w` defines the name of the benchmark.
- - `-db` tells Loupe where the database is
- - `-a` tells Loupe the name of the software that we are benchmarking
- - `-d ./Dockerfile.nginx` passes our Dockerfile from Step 3
+- `-b` tells Loupe that you are running a benchmark, not a test suite, and `-w` defines the name of the benchmark.
+- `-db` tells Loupe where the database is
+- `-a` tells Loupe the name of the software that we are benchmarking
+- `-d ./Dockerfile.nginx` passes our Dockerfile from Step 3
 
 #### Test-suite workload
 
@@ -206,20 +207,20 @@ Gathering data for a test suite is not fundamentally different from a benchmark.
 repository as the software itself, but the case of Nginx it is located in a
 [separate repository](https://github.com/nginx/nginx-tests.git).
 
-**Step 2**: write a *test script* that parses the output of the test suite and
+**Step 2**: write a _test script_ that parses the output of the test suite and
 determines whether it is a success or a failure. It is generally a very simple
 task: run it once manually, and search for a string that indicates success.
 
 In the case of Nginx, our test script looks like the following:
 
-	#!/bin/bash
+    #!/bin/bash
 
-	nl=$(cat $1 | grep -P "All tests successful." | wc -l)
-	if [ "$nl" -eq "1" ]; then
-	    exit 0
-	fi
+    nl=$(cat $1 | grep -P "All tests successful." | wc -l)
+    if [ "$nl" -eq "1" ]; then
+        exit 0
+    fi
 
-	exit 1
+    exit 1
 
 **Step 3**: create a Docker container that build nginx and wrk, and performs
 the system call analysis using Loupe. Use `loupe-base` as basis for your Docker
@@ -229,45 +230,45 @@ This Dockerfile will be very similar to the one you wrote for the benchmark.
 
 In our case, the Dockerfile looks like the following:
 
-	FROM loupe-base:latest
+    FROM loupe-base:latest
 
-	RUN apt build-dep -y nginx
+    RUN apt build-dep -y nginx
 
-	# needed to run the test suite
-	RUN apt install -y prove6
+    # needed to run the test suite
+    RUN apt install -y prove6
 
-	COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
-	RUN chmod a+x /root/nginx-test.sh
+    COPY dockerfile_data/nginx-test.sh /root/nginx-test.sh
+    RUN chmod a+x /root/nginx-test.sh
 
-	# the test suite cannot be run as root - don't ask me why
-	RUN useradd -ms /bin/bash user
-	USER user
-	RUN mkdir /tmp/nginx
-	WORKDIR /tmp/nginx
+    # the test suite cannot be run as root - don't ask me why
+    RUN useradd -ms /bin/bash user
+    USER user
+    RUN mkdir /tmp/nginx
+    WORKDIR /tmp/nginx
 
-	# Nginx related instructions
-	RUN wget https://nginx.org/download/nginx-1.20.1.tar.gz
-	RUN tar -xf nginx-1.20.1.tar.gz
-	RUN cd nginx-1.20.1 && ./configure \
-		--sbin-path=$(pwd)/nginx \
-		--conf-path=$(pwd)/conf/nginx.conf \
-		--pid-path=$(pwd)/nginx.pid
-	RUN cd nginx-1.20.1 && make -j && mkdir logs
-	RUN cd nginx-1.20.1 && sed -i "s/listen       80/listen       8034/g" conf/nginx.conf
-	# necessary for the test suite
-	RUN mv nginx-1.20.1 nginx
+    # Nginx related instructions
+    RUN wget https://nginx.org/download/nginx-1.20.1.tar.gz
+    RUN tar -xf nginx-1.20.1.tar.gz
+    RUN cd nginx-1.20.1 && ./configure \
+     --sbin-path=$(pwd)/nginx \
+     --conf-path=$(pwd)/conf/nginx.conf \
+     --pid-path=$(pwd)/nginx.pid
+    RUN cd nginx-1.20.1 && make -j && mkdir logs
+    RUN cd nginx-1.20.1 && sed -i "s/listen       80/listen       8034/g" conf/nginx.conf
+    # necessary for the test suite
+    RUN mv nginx-1.20.1 nginx
 
-	# test suite
-	RUN git clone https://github.com/nginx/nginx-tests.git
+    # test suite
+    RUN git clone https://github.com/nginx/nginx-tests.git
 
-	CMD cd /tmp/nginx/nginx-tests && /root/explore.py --output-csv \
-			     --only-consider /tmp/nginx/nginx/objs/nginx \
-			     --timeout 600 --test-sequential -t /root/nginx-test.sh \
-			     -b /usr/bin/prove -- -m .
+    CMD cd /tmp/nginx/nginx-tests && /root/explore.py --output-csv \
+           --only-consider /tmp/nginx/nginx/objs/nginx \
+           --timeout 600 --test-sequential -t /root/nginx-test.sh \
+           -b /usr/bin/prove -- -m .
 
 **Step 4**: start the analysis using the following command:
 
-	$ ./loupe generate -s -db ../loupedb -a "nginx" -w "nginx-tests" -d ./Dockerfile.nginx
+    ./loupe generate -s -db ../loupedb -a "nginx" -w "nginx-tests" -d ./Dockerfile.nginx
 
 As you can see, the only difference is the `-s` instead of `-b` to indicate
 that this is a testsuite.
@@ -279,8 +280,8 @@ Note: for test suites, `-w` can be empty.
 Existing runs can be easily reproduced. In order to reproduce [Example 1](https://github.com/unikraft/loupe#benchmark-workload):
 
 ```
-$ cd loupedb/nginx/benchmark-wrk/7883824b5cbef4f66dd1c9bdcf7d6185
-$ loupe generate -b -db ../../../../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
+cd loupedb/nginx/benchmark-wrk/7883824b5cbef4f66dd1c9bdcf7d6185
+loupe generate -b -db ../../../../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx
 ```
 
 `git diff` can then be used to visualize changes.
@@ -326,25 +327,31 @@ Loupe can generate the paper's plot using information from the database.
 #### Cumulative Plot
 
 Simply run
+
 ```
-$ ./loupe search --cumulative-plot -db ../loupedb -a "*" -w suite
+./loupe search --cumulative-plot -db ../loupedb -a "*" -w suite
 ```
+
 to output a cumulative plot of the database's content for test-suites and all applications.
 
 #### Heatmap Plot
 
 Similarly, run
+
 ```
-$ ./loupe search --heatmap-plot -db ../loupedb -a "*" -w suite
+./loupe search --heatmap-plot -db ../loupedb -a "*" -w suite
 ```
+
 to output a heatmap plot for the same data set.
 
 #### Paper Histogram Plot
 
 Similarly, run
+
 ```
-$ ./loupe search --paper-histogram-plot -db ../loupedb
+./loupe search --paper-histogram-plot -db ../loupedb
 ```
+
 to output the histogram plot of the paper.
 
 #### OS Support Plan
@@ -352,8 +359,9 @@ to output the histogram plot of the paper.
 To get an optimized order of syscall implementation/faking/stubbing for a
 given OS (characterized by a set of already-supported system calls) towards
 a particular set of applications:
+
 ```
-$ ./loupe search -db ../loupedb --guide-support <already supported syscalls> --applications <apps> --workloads <workload>
+./loupe search -db ../loupedb --guide-support <already supported syscalls> --applications <apps> --workloads <workload>
 ```
 
 Here, `<already supported syscalls>` is a newline-separated list of syscalls
@@ -366,7 +374,7 @@ and `<workload>` is `bench` or `suite`.
 Run:
 
 ```
-$ make paperplots
+make paperplots
 ```
 
 Generated plots will be located under `paperplots`.
@@ -417,6 +425,7 @@ Loupe can analyze, for each system call stubbed/faked, the impact on
 performance and resource usage.
 
 For that...
+
 - the test script must be extended to support benchmarking (usually very simple!);
 - and `explore.py` must be called with particular arguments.
 
@@ -470,7 +479,7 @@ You can find other examples of scripts that support performance measurement [her
 **Step 2**: We now want to call `explore.py` as following:
 
 ```
-$ /root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/objs/nginx -- -p /root/nginx -g "daemon off;"
+/root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/objs/nginx -- -p /root/nginx -g "daemon off;"
 ```
 
 Note that support is not integrated in the `loupe` main program. In order to
@@ -478,8 +487,8 @@ run this, manually start the Docker contain built previously while running the
 analysis, and manually run:
 
 ```
-$ docker run -it docker.io/library/nginx-loupe bash
-$ /root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/objs/nginx -- -p /root/nginx -g "daemon off;"
+docker run -it docker.io/library/nginx-loupe bash
+/root/explore.py --perf-analysis -t /root/nginx-test.sh -b /root/nginx/objs/nginx -- -p /root/nginx -g "daemon off;"
 ```
 
 This will output the performance and resource usage impact detailed analysis per-system call.
@@ -500,14 +509,17 @@ with CFLAGS `-fprofile-arcs -ftest-coverage` and LDFLAGS `-lgcov`. An example
 is visible [here](https://github.com/unikraft/loupedb/blob/87439475881b64de0203d9c142ddc01b1071698d/nginx/benchmark-wrk/7883824b5cbef4f66dd1c9bdcf7d6185/Dockerfile.nginx).
 
 **Step 2**: Build the application container, e.g., for nginx:
+
 ```
-$ ./loupe generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx --only-build-docker
+./loupe generate -b -db ../loupedb -a "nginx" -w "wrk" -d ./Dockerfile.nginx --only-build-docker
 ```
+
 We don't need to perform the actual system call measurement, we only need the
 container to be built, so we pass `--only-build-docker`.
 
 **Step 3**: Enter the container and generate coverage. It's as simple as running
 the instrumented software. For example, with Nginx:
+
 ```
 $ docker run -it nginx-loupe:latest /bin/bash
 root@b0ef11e440d0:~# # we're in the container, generate coverage data
@@ -520,6 +532,7 @@ root@b0ef11e440d0:~# ls nginx-coverage/objs/src/core/
 ```
 
 **Step 4**: Generate an lcov report. Example with Nginx, still in the same container:
+
 ```
 root@b0ef11e440d0:~/nginx-coverage# lcov --capture --directory . --output-file cov.info
 [shows files considered, if you get WARNINGs, investigate, they might be
@@ -553,12 +566,15 @@ script with `-h`.
 Solution: You can use `make rebuild-docker` instead of `make docker`.
 
 **Issue 2:** Loupe fails with the following error message:
+
 ```
 [E] Database /home/hle/Development/loupedb is dirty; commit your changes before running this tool.
 ```
+
 Solution: You should either commit your changes to the database, or ignore the changes with `--allow-dirty-db`
 
 **Issue 3:** The container hangs while building, with the following error:
+
 ```
 Please select the geographic area in which you live. Subsequent configuration
 questions will narrow this down by presenting a list of cities, representing
@@ -569,20 +585,25 @@ the time zones in which they are located.
   3. Antarctica  6. Asia       9. Indian    12. US
 Geographic area:
 ```
+
 Solution: We likely forgot to add `ARG DEBIAN_FRONTEND=noninteractive` in the Dockerfile. Try to add it, it should address the issue.
 
 **Issue 4:** Performance measurement shows with the following error:
+
 ```
 [E] Bug here! Failed to determine VmPeak.
 ```
+
 ...and the value for the memory usage of one or more system calls is -1.
 
 Solution: It is likely that the program is crashing during performance analysis, and that Loupe is consequently unable to measure the peak process memory usage. You should assume that those system calls cannot be faked or stubbed.
 
 **Issue 5:** Performance measurement shows with the following error:
+
 ```
 [E] Bug here! VmPeak not in kB:${something}
 ```
+
 ...and the value for the memory usage of one or more system calls is -1.
 
 Solution: This is a bug in Loupe. Please submit a bug report.
@@ -642,13 +663,16 @@ introduce a new file, make sure to add an SPDX license header. If you do
 significant-enough changes, consider adding yourself to `COPYING.md`.
 
 Here are a few ideas of contributions to get started:
+
 - Add support to convert Loupe databases to SQLite.
 - Fix [open bug reports](https://github.com/unikraft/loupe/issues).
 
 It is recommended to make use of the [pre-commit](https://pre-commit.com/) to ensure consistent formatting between files. You should have already installed pre-commit from within the `requirements.txt`, after which run:
+
 ```bash
 pre-commit install
 ```
+
 Which will ensure that whenever you make a commit, all files will be automatically formatted.
 
 ## 10. Disclaimer
@@ -660,5 +684,5 @@ with a critical eye. We hope that it will be useful!
 ## 11. Acknowledgements
 
 This artifact would not exist without the infrastructure and hard work of the
-Unikraft community.  We encourage interested researchers to visit the project's
+Unikraft community. We encourage interested researchers to visit the project's
 [web page](https://unikraft.org/) and [GitHub](https://github.com/unikraft/).
