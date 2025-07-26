@@ -66,25 +66,32 @@ def open_syscall_file(path):
         return l
 
 
-# init a fresh database
-def init_db(path):
+def init_db(path: pathlib.Path) -> bool:
+    """Inits the database
+
+    :param path: path to install the database
+    :return: bool on whether this was successful
+    """
     if not os.path.isdir(path):
         os.mkdir(path)
-    g = git.cmd.Git(path)
-    g.init()
+    git_repo = git.cmd.Git(path)
+    git_repo.init()
+    return True
 
 
-# check that the db is sane
-def db_check(path):
-    # it must exist and be in a git repo
+def db_check(path: pathlib.Path) -> bool:
+    """Checks a clean version of the db exists
+
+    :param path: path where database should be located
+    :return: bool indicating whether a clean database is found
+    """
     try:
         git_repo = git.Repo(path, search_parent_directories=True)
     except git.exc.NoSuchPathError:
         logger.error("Database %s does not exist" % path)
         create = input("Create it? [y/n] ")
         if create.lower()[0] == "y":
-            init_db(path)
-            return True
+            return init_db(path)
         else:
             return False
     except git.exc.InvalidGitRepositoryError:
@@ -95,11 +102,15 @@ def db_check(path):
     git_repo = git.Repo(path, search_parent_directories=True)
     if git_repo.is_dirty() or len(git_repo.untracked_files) != 0:
         if not ENABLE_DIRTY_DB:
-            logger.error(
-                "Database %s is dirty; commit your changes before running this tool."
-                % path
-            )
-            return False
+            reset = input("Dirty database, would you like to reset it? [y/n]: ")
+            if reset[0].lower() == "y":
+                git_repo.git.reset()
+            else:
+                logger.error(
+                    "Database %s is dirty; commit your changes before running this tool."
+                    % path
+                )
+                return False
         else:
             logger.warning("DB dirty, ignoring.")
 
@@ -610,7 +621,34 @@ def select_files_for_copy_in_db(dockerfile):
     return lines
 
 
-def run_tests(path_db, application, workload, path_dockerfile, only_build_docker=False):
+def run_tests(
+    path_db: str,
+    application: str,
+    workload: str,
+    path_dockerfile: pathlib.Path,
+    only_build_docker: bool = False,
+) -> None | bool:
+    """Runs the test by calling the docker command on the respective paramenters
+
+    Parameters
+    ----------
+    path_db : path to the database that will be committed onto
+
+    application : the name of the application being tested
+
+    workload : what kind of workload will be applied
+
+    path_dockerfile : path to the respective dockerfile
+
+    only_build_docker : whether to only build the dockerfile
+
+
+    Returns
+    -------
+
+    nothing, only runs the shell command
+
+    """
     start = datetime.now()
 
     logger.info("Building container...")
@@ -624,7 +662,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     # that could be needed
     tmpbuild = get_temp_dir()
     shutil.copyfile(
-        path_dockerfile, os.path.join(tmpbuild, "Dockerfile.%s" % application)
+        path_dockerfile, os.path.join(tmpbuild, "%s.dockerfile" % application)
     )
     if pathlib.Path("./dockerfile_data").exists():
         shutil.copytree("./dockerfile_data", os.path.join(tmpbuild, "dockerfile_data"))
@@ -735,7 +773,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
     static_results = static_results_array[0].strip()
 
     if static_results != "Static analysis skipped":
-        l = 0
+        num_lines = 0
         for line in static_results.splitlines():
             if len(re.sub("[^,]", "", line)) != 1:
                 logger.error(
@@ -744,12 +782,12 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                 )
                 print(static_results)
                 return False
-            l += 1
-        if l != MAX_SYSCALL + 2:
+            num_lines += 1
+        if num_lines != MAX_SYSCALL + 2:
             logger.error(
                 "Somehow the binary static analysis output does not have the "
                 + "right size... Expected %d lines, got %d. Dumping."
-                % (MAX_SYSCALL + 2, l)
+                % (MAX_SYSCALL + 2, num_lines)
             )
             print(static_results)
             return False
@@ -761,7 +799,7 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
             logger.error("Replica %d did not produce result" % x)
             return False
 
-        l = 0
+        num_lines = 0
         for line in r.splitlines():
             if len(re.sub("[^,]", "", line)) != 4:
                 logger.error(
@@ -770,8 +808,8 @@ def run_tests(path_db, application, workload, path_dockerfile, only_build_docker
                 )
                 print(r)
                 return False
-            l += 1
-        if l != MAX_SYSCALL + 2:
+            num_lines += 1
+        if num_lines != MAX_SYSCALL + 2:
             logger.error(
                 "Somehow replica %d's file does not have the right size... " % x
                 + "Expected %d lines, got %d. Dumping." % (MAX_SYSCALL, l)
