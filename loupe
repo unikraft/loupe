@@ -102,15 +102,11 @@ def db_check(path: pathlib.Path) -> bool:
     git_repo = git.Repo(path, search_parent_directories=True)
     if git_repo.is_dirty() or len(git_repo.untracked_files) != 0:
         if not ENABLE_DIRTY_DB:
-            reset = input("Dirty database, would you like to reset it? [y/n]: ")
-            if reset[0].lower() == "y":
-                git_repo.git.reset()
-            else:
-                logger.error(
-                    "Database %s is dirty; commit your changes before running this tool."
-                    % path
-                )
-                return False
+            logger.error(
+                "Database %s is dirty; commit your changes before running this tool."
+                % path
+            )
+            return False
         else:
             logger.warning("DB dirty, ignoring.")
 
@@ -632,15 +628,15 @@ def run_tests(
 
     Parameters
     ----------
-    path_db : path to the database that will be committed onto
+    path_db: path to the database that will be committed onto
 
-    application : the name of the application being tested
+    application: the name of the application being tested
 
-    workload : what kind of workload will be applied
+    workload: what kind of workload will be applied
 
-    path_dockerfile : path to the respective dockerfile
+    path_dockerfile: path to the respective dockerfile
 
-    only_build_docker : whether to only build the dockerfile
+    only_build_docker: whether to only build the dockerfile
 
 
     Returns
