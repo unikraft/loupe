@@ -48,6 +48,7 @@ from datetime import datetime
 from loguru import logger
 
 import src.common.args as args
+from src.common.utils import get_output_vars
 
 ENABLE_DIRTY_DB = False
 NUMBER_GENERATE_REPLICAS = 2
@@ -60,10 +61,11 @@ assert NUMBER_GENERATE_REPLICAS % NUMBER_PARALLEL_REPLICAS == 0
 
 def open_syscall_file(path):
     with open(path, "r") as f:
-        l = list(set([e for e in f.read().split("\n") if len(e) > 1]))
-        l = format_syscall_list_to_num(l)
-        l.sort()
-        return l
+        list_syscall_paths = list(set([e for e in f.read().split("\n") if len(e) > 1]))
+        list_syscall_paths = format_syscall_list_to_num(list_syscall_paths)
+        list_syscall_paths.sort()
+        breakpoint()
+        return list_syscall_paths
 
 
 def init_db(path: pathlib.Path) -> bool:
@@ -1061,13 +1063,425 @@ def support_plan(applist, supported):
             step += 1
 
 
+def loupe_search(args):
+    benchmark, testsuite = get_output_vars(args, logger)
+    common.OUTPUT_NAMES = args.outputnames is True
+    db = db_load(args.dbpath)
+    usage = []
+
+    if args.showusage is True or args.supportfile is not None:
+        usage = used_by_apps(
+            db, args.applist.split(","), bench=benchmark, suite=testsuite
+        )
+
+    if (
+        args.heatmapplot is True
+        or args.cumulativeplot is True
+        or args.paperhistogramplot is True
+    ):
+        # build plot container
+        logger.info("Building plot container")
+        runcmd = [
+            "docker",
+            "build",
+            "--tag",
+            "loupe-plot",
+            "-f",
+            "docker/Dockerfile.loupe-plot",
+            ".",
+        ]
+        process = subprocess.Popen(runcmd)
+        process.wait()
+
+        # remove data file
+        fileList = glob.glob("./*.dat")
+        for filePath in fileList:
+            try:
+                os.remove(filePath)
+            except:
+                pass
+
+    if args.showusage is True:
+        logger.info("Required:")
+        logger.info(format_syscall_list(usage["required"]))
+        logger.info("Can be stubbed:")
+        logger.info(format_syscall_list(usage["stubbed"]))
+        logger.info("Can be faked:")
+        logger.info(format_syscall_list(usage["faked"]))
+        logger.info("Can be both stubbed or faked:")
+        logger.info(format_syscall_list(usage["both"]))
+    elif args.paperhistogramplot is True:
+        apps = [
+            "haproxy",
+            "lighttpd",
+            "memcached",
+            "nginx",
+            "redis",
+            "sqlite",
+            "weborf",
+        ]
+
+        # process data
+        logger.info("Processing data")
+
+        # 1. check that apps are featured in the database
+        error = False
+        for a in apps:
+            if a not in db.keys():
+                logger.error(
+                    "Application missing from the database "
+                    + "(and required for the plot): "
+                    + a
+                )
+                error = True
+
+        if error:
+            exit(1)
+
+        # 2. generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
+        # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
+        missingBars = False
+        for a in apps:
+            if (
+                "benchmark" not in db[a].keys()
+                or len(db[a]["benchmark"].keys()) == 0
+                or len(db[a]["benchmark"]["dynamic"]) == 0
+            ):
+                missingBars = True
+            dat_bench = used_by_apps(db, [a], True, False, False, False)
+
+            if (
+                "testsuite" not in db[a].keys()
+                or len(db[a]["testsuite"].keys()) == 0
+                or len(db[a]["testsuite"]["dynamic"]) == 0
+            ):
+                missingBars = True
+            dat_suite = used_by_apps(db, [a], False, True, False, False)
+
+            dat_static_binary = used_by_apps(db, [a], False, False, True, False)
+            if not len(dat_static_binary["required"]):
+                missingBars = True
+
+            dat_static_source = used_by_apps(db, [a], False, False, False, True)
+            if not len(dat_static_source["required"]):
+                missingBars = True
+
+            with open(os.path.join("./" + a + ".dat"), "a") as outf:
+                # header
+                outf.write(
+                    a
+                    + " staticsrc   staticbin   required    stubonly    fakeonly    fakeorstub\n"
+                )
+                # binary
+                outf.write(
+                    "all     0           {}         0           0           0           0\n".format(
+                        str(len(dat_static_binary["required"]))
+                    )
+                )
+                # source
+                outf.write(
+                    "all     {}          0          0           0           0           0\n".format(
+                        str(len(dat_static_source["required"]))
+                    )
+                )
+                # suite
+                outf.write(
+                    "suite   0           0          {}          {}          {}          {}\n".format(
+                        str(len(dat_suite["required"])),
+                        str(len(dat_suite["stubbed"])),
+                        str(len(dat_suite["faked"])),
+                        str(len(dat_suite["both"])),
+                    )
+                )
+                # bench
+                outf.write(
+                    "bench   0           0          {}          {}          {}          {}\n".format(
+                        str(len(dat_bench["required"])),
+                        str(len(dat_bench["stubbed"])),
+                        str(len(dat_bench["faked"])),
+                        str(len(dat_bench["both"])),
+                    )
+                )
+
+        logger.info("Building plot")
+        cwd = os.getcwd()
+        runcmd = [
+            "docker",
+            "run",
+            "-it",
+            "--rm",
+            "-v",
+            cwd + ":/mnt",
+            "loupe-plot",
+            "gnuplot",
+            "/mnt/resources/paper-histogram-plot.gnu",
+        ]
+        print(" ".join(runcmd))
+        process = subprocess.Popen(runcmd)
+        process.wait()
+
+        if missingBars:
+            logger.warning(
+                "The plot is missing bars because certain measurements are not provided"
+            )
+
+        # notify user
+        print("Plot: ./paper-histogram.svg")
+    elif args.heatmapplot is True:
+        # process data
+        logger.info("Processing data")
+
+        # we need to be able to use the same dataset for all plots
+        considered = get_workloads(
+            db, args.applist.split(","), benchmark, testsuite, True, True
+        )[1]
+        logger.info("Apps considered in this plot: " + " ".join(considered))
+
+        cumulative = process_cumulative(
+            db, considered, bench=benchmark, suite=testsuite
+        )
+
+        cumulative_binary = process_cumulative(
+            db, considered, False, False, True, False
+        )
+
+        cumulative_source = process_cumulative(
+            db, considered, False, False, False, True
+        )
+
+        # generate data files (./data-staticsource.dat, ./data-staticbinary.dat,
+        # ./data-dynused.dat, ./data-dynstubfake.dat)
+        staticsourcedat = ""
+        staticbindat = ""
+        dynuseddat = ""
+        dynstubfakedat = ""
+
+        i = 1
+        for sysnumber in reversed(range(MAX_SYSCALL + 2)):
+            x = (i - 1) % 24
+            y = (i - 1) // 24
+            i += 1
+
+            if x == 0 and y != 0:
+                staticsourcedat += "\n"
+                staticbindat += "\n"
+                dynuseddat += "\n"
+                dynstubfakedat += "\n"
+
+            p = 0
+            if sysnumber <= MAX_SYSCALL:
+                p = cumulative[1][sysnumber]
+            dynuseddat += (
+                str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+            )
+
+            if sysnumber <= MAX_SYSCALL:
+                p = cumulative[0][sysnumber]
+            dynstubfakedat += (
+                str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+            )
+
+            if sysnumber <= MAX_SYSCALL:
+                p = cumulative_binary[0][sysnumber]
+            staticbindat += (
+                str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+            )
+
+            if sysnumber <= MAX_SYSCALL:
+                p = cumulative_source[0][sysnumber]
+            staticsourcedat += (
+                str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
+            )
+
+        with open(os.path.join("./data-staticsource.dat"), "a") as outf:
+            outf.write(staticsourcedat)
+        with open(os.path.join("./data-staticbinary.dat"), "a") as outf:
+            outf.write(staticbindat)
+        with open(os.path.join("./data-dynused.dat"), "a") as outf:
+            outf.write(dynuseddat)
+        with open(os.path.join("./data-dynstubfake.dat"), "a") as outf:
+            outf.write(dynstubfakedat)
+
+        # generate dumps (only used separately for correlation checks)
+        dynuseddat_dump = ""
+        dynstubfakedat_dump = ""
+        dynstubdat_dump = ""
+
+        cumulative_nofake = process_cumulative(
+            db, considered, bench=benchmark, suite=testsuite, ignore_fake=True
+        )
+
+        for sysnumber in range(MAX_SYSCALL):
+            p = cumulative[1][sysnumber]
+            dynuseddat_dump += str(sysnumber) + "\t" + str(p) + "\n"
+
+            p = cumulative[0][sysnumber]
+            dynstubfakedat_dump += str(sysnumber) + "\t" + str(100 - p) + "\n"
+
+            p = cumulative_nofake[0][sysnumber]
+            dynstubdat_dump += str(sysnumber) + "\t" + str(100 - p) + "\n"
+
+        with open(os.path.join("./data-dynused-dump.dat"), "a") as outf:
+            outf.write(dynuseddat_dump)
+        with open(os.path.join("./data-dynstubfake-dump.dat"), "a") as outf:
+            outf.write(dynstubfakedat_dump)
+        with open(os.path.join("./data-dynstub-dump.dat"), "a") as outf:
+            outf.write(dynstubdat_dump)
+
+        logger.info("Building plot")
+        cwd = os.getcwd()
+        runcmd = [
+            "docker",
+            "run",
+            "-it",
+            "--rm",
+            "-v",
+            cwd + ":/mnt",
+            "loupe-plot",
+            "gnuplot",
+            "/mnt/resources/heatmap-plot.gnu",
+        ]
+        print(" ".join(runcmd))
+        process = subprocess.Popen(runcmd)
+        process.wait()
+
+        # notify user
+        print("Plot: ./heapmap-dynamic-used.svg")
+        print("Plot: ./heapmap-dynamic-stubfake.svg")
+        print("Plot: ./heapmap-static-binary.svg")
+
+        if args.ssource is not True:
+            os.remove("./heapmap-static-source.svg")
+        else:
+            print("Plot: ./heapmap-static-source.svg")
+    elif args.cumulativeplot is True:
+        # process data
+        logger.info("Processing data")
+
+        # we need to be able to use the same dataset for all lines
+        considered = get_workloads(
+            db, args.applist.split(","), benchmark, False, False, False
+        )[1]
+        logger.info("Apps considered in this plot: " + " ".join(considered))
+
+        cumulative = process_cumulative(
+            db, considered, bench=benchmark, suite=testsuite
+        )
+
+        cumulative_binary = process_cumulative(
+            db, considered, False, False, True, False
+        )
+
+        cumulative_source = process_cumulative(
+            db, considered, False, False, False, True
+        )
+
+        # generate data.dat
+        d = {}
+        c = 0
+        for i in sorted(cumulative_binary[0].values(), reverse=True):
+            d[c] = i
+            c += 1
+
+        bin = "# x\tstatic-binary\n" + "\n".join(
+            ["%s\t%s" % (k, v) for (k, v) in (d.items())]
+        )
+
+        d = {}
+        c = 0
+        for i in sorted(cumulative_source[0].values(), reverse=True):
+            d[c] = i
+            c += 1
+
+        src = "# x\tstatic-source\n" + "\n".join(
+            ["%s\t%s" % (k, v) for (k, v) in (d.items())]
+        )
+
+        d = {}
+        c = 0
+        for i in sorted(cumulative[0].values(), reverse=True):
+            d[c] = i
+            c += 1
+
+        req = "# x\tdyn-req\n" + "\n".join(
+            ["%s\t%s" % (k, v) for (k, v) in (d.items())]
+        )
+
+        d = {}
+        c = 0
+        for i in sorted(cumulative[1].values(), reverse=True):
+            d[c] = i
+            c += 1
+
+        exe = "# x\tdyn-exe\n" + "\n".join(
+            ["%s\t%s" % (k, v) for (k, v) in (d.items())]
+        )
+
+        with open(os.path.join("./data.dat"), "a") as outf:
+            outf.write(bin)
+            outf.write("\n\n\n")
+            outf.write(src)
+            outf.write("\n\n\n")
+            outf.write(exe)
+            outf.write("\n\n\n")
+            outf.write(req)
+
+        logger.info("Building plot")
+        cwd = os.getcwd()
+        runcmd = [
+            "docker",
+            "run",
+            "-it",
+            "--rm",
+            "-v",
+            cwd + ":/mnt",
+            "loupe-plot",
+            "gnuplot",
+            "/mnt/resources/cumulative-plot.gnu",
+        ]
+        print(" ".join(runcmd))
+        process = subprocess.Popen(runcmd)
+        process.wait()
+
+        # notify user
+        print("Plot: ./cumulative-nostatic.svg")
+        print("Plot: ./cumulative-nosource.svg")
+
+        if args.ssource is True:
+            print("Plot: ./cumulative-nobinary.svg")
+            print("Plot: ./cumulative-all.svg")
+        else:
+            os.remove("./cumulative-nobinary.svg")
+            os.remove("./cumulative-all.svg")
+    elif args.supportfile is not None:
+        supported = set(format_syscall_list(open_syscall_file(args.supportfile)))
+        required = set(format_syscall_list(usage["required"]))
+        stubbed = set(format_syscall_list(usage["stubbed"]))
+        faked = set(format_syscall_list(usage["faked"]))
+        print("Missing a full implementation:")
+        print(str(format_syscall_list_to_names(list(required.difference(supported)))))
+        print("Missing a stub:")
+        print(str(format_syscall_list_to_names(list(stubbed.difference(supported)))))
+        print("Missing a fake:")
+        print(str(format_syscall_list_to_names(list(faked.difference(supported)))))
+
+        support_plan(args.applist.split(","), supported)
+
+    else:
+        logger.warning("Not implemented yet.")
+        exit(0)
+
+
 if __name__ == "__main__":
     args = args.parse_args()
 
     if not args.verbose:
         logger.remove(0)
         logger.add(
-            sys.stdout, format="<green>{level}</green> | {message}", colorize=True
+            sys.stdout,
+            level="INFO",
+            format="<green>{level}</green> | {message}",
+            colorize=True,
         )
 
     logger.info("Checking database...")
@@ -1076,457 +1490,7 @@ if __name__ == "__main__":
         exit(1)
 
     if args.cmd == "search":
-        if (
-            args.applist is None or args.wllist is None
-        ) and args.paperhistogramplot is not True:
-            logger.error(
-                "Application list (-a/--applications) and workload list "
-                + "(-w/--workloads) are required for this option."
-            )
-            logger.error("Call with --help for more information.")
-            exit(1)
-
-        common.OUTPUT_NAMES = args.outputnames is True
-
-        db = db_load(args.dbpath)
-
-        benchmark = False
-        testsuite = False
-
-        if (
-            args.showusage is True
-            or args.cumulativeplot is True
-            or args.heatmapplot is True
-            or args.supportfile is not None
-        ):
-            if "*" in args.wllist and len(args.wllist) > 1:
-                logger.warning(
-                    "* in the workload list but other entries are specified: "
-                    + str(args.wllist)
-                )
-                logger.warning("Ignoring them.")
-                benchmark = True
-                testsuite = True
-            elif "*" in args.wllist:
-                benchmark = True
-                testsuite = True
-            elif "benchmark" in args.wllist or "bench" in args.wllist:
-                benchmark = True
-            elif "testsuite" in args.wllist or "suite" in args.wllist:
-                testsuite = True
-            else:
-                logger.error(
-                    "Invalid workload passed (valid: '*', 'benchmark'/'bench', 'testsuite'/'suite')"
-                )
-                exit(1)
-
-        usage = []
-
-        if args.showusage is True or args.supportfile is not None:
-            usage = used_by_apps(
-                db, args.applist.split(","), bench=benchmark, suite=testsuite
-            )
-
-        if (
-            args.heatmapplot is True
-            or args.cumulativeplot is True
-            or args.paperhistogramplot is True
-        ):
-            # build plot container
-            logger.info("Building plot container")
-            runcmd = [
-                "docker",
-                "build",
-                "--tag",
-                "loupe-plot",
-                "-f",
-                "docker/Dockerfile.loupe-plot",
-                ".",
-            ]
-            process = subprocess.Popen(runcmd)
-            process.wait()
-
-            # remove data file
-            fileList = glob.glob("./*.dat")
-            for filePath in fileList:
-                try:
-                    os.remove(filePath)
-                except:
-                    pass
-
-        if args.showusage is True:
-            print("Required:")
-            print(format_syscall_list(usage["required"]))
-            print("Can be stubbed:")
-            print(format_syscall_list(usage["stubbed"]))
-            print("Can be faked:")
-            print(format_syscall_list(usage["faked"]))
-            print("Can be both stubbed or faked:")
-            print(format_syscall_list(usage["both"]))
-        elif args.paperhistogramplot is True:
-            apps = [
-                "haproxy",
-                "lighttpd",
-                "memcached",
-                "nginx",
-                "redis",
-                "sqlite",
-                "weborf",
-            ]
-
-            # process data
-            logger.info("Processing data")
-
-            # 1. check that apps are featured in the database
-            error = False
-            for a in apps:
-                if a not in db.keys():
-                    logger.error(
-                        "Application missing from the database "
-                        + "(and required for the plot): "
-                        + a
-                    )
-                    error = True
-
-            if error:
-                exit(1)
-
-            # 2. generate data files (haproxy.dat, lighttpd.dat, memcached.dat, nginx.dat,
-            # redis.dat, sqlite.dat, webfsd.dat, and weborf.dat)
-            missingBars = False
-            for a in apps:
-                if (
-                    "benchmark" not in db[a].keys()
-                    or len(db[a]["benchmark"].keys()) == 0
-                    or len(db[a]["benchmark"]["dynamic"]) == 0
-                ):
-                    missingBars = True
-                dat_bench = used_by_apps(db, [a], True, False, False, False)
-
-                if (
-                    "testsuite" not in db[a].keys()
-                    or len(db[a]["testsuite"].keys()) == 0
-                    or len(db[a]["testsuite"]["dynamic"]) == 0
-                ):
-                    missingBars = True
-                dat_suite = used_by_apps(db, [a], False, True, False, False)
-
-                dat_static_binary = used_by_apps(db, [a], False, False, True, False)
-                if not len(dat_static_binary["required"]):
-                    missingBars = True
-
-                dat_static_source = used_by_apps(db, [a], False, False, False, True)
-                if not len(dat_static_source["required"]):
-                    missingBars = True
-
-                with open(os.path.join("./" + a + ".dat"), "a") as outf:
-                    # header
-                    outf.write(
-                        a
-                        + " staticsrc   staticbin   required    stubonly    fakeonly    fakeorstub\n"
-                    )
-                    # binary
-                    outf.write(
-                        "all     0           {}         0           0           0           0\n".format(
-                            str(len(dat_static_binary["required"]))
-                        )
-                    )
-                    # source
-                    outf.write(
-                        "all     {}          0          0           0           0           0\n".format(
-                            str(len(dat_static_source["required"]))
-                        )
-                    )
-                    # suite
-                    outf.write(
-                        "suite   0           0          {}          {}          {}          {}\n".format(
-                            str(len(dat_suite["required"])),
-                            str(len(dat_suite["stubbed"])),
-                            str(len(dat_suite["faked"])),
-                            str(len(dat_suite["both"])),
-                        )
-                    )
-                    # bench
-                    outf.write(
-                        "bench   0           0          {}          {}          {}          {}\n".format(
-                            str(len(dat_bench["required"])),
-                            str(len(dat_bench["stubbed"])),
-                            str(len(dat_bench["faked"])),
-                            str(len(dat_bench["both"])),
-                        )
-                    )
-
-            logger.info("Building plot")
-            cwd = os.getcwd()
-            runcmd = [
-                "docker",
-                "run",
-                "-it",
-                "--rm",
-                "-v",
-                cwd + ":/mnt",
-                "loupe-plot",
-                "gnuplot",
-                "/mnt/resources/paper-histogram-plot.gnu",
-            ]
-            print(" ".join(runcmd))
-            process = subprocess.Popen(runcmd)
-            process.wait()
-
-            if missingBars:
-                logger.warning(
-                    "The plot is missing bars because certain measurements are not provided"
-                )
-
-            # notify user
-            print("Plot: ./paper-histogram.svg")
-        elif args.heatmapplot is True:
-            # process data
-            logger.info("Processing data")
-
-            # we need to be able to use the same dataset for all plots
-            considered = get_workloads(
-                db, args.applist.split(","), benchmark, testsuite, True, True
-            )[1]
-            logger.info("Apps considered in this plot: " + " ".join(considered))
-
-            cumulative = process_cumulative(
-                db, considered, bench=benchmark, suite=testsuite
-            )
-
-            cumulative_binary = process_cumulative(
-                db, considered, False, False, True, False
-            )
-
-            cumulative_source = process_cumulative(
-                db, considered, False, False, False, True
-            )
-
-            # generate data files (./data-staticsource.dat, ./data-staticbinary.dat,
-            # ./data-dynused.dat, ./data-dynstubfake.dat)
-            staticsourcedat = ""
-            staticbindat = ""
-            dynuseddat = ""
-            dynstubfakedat = ""
-
-            i = 1
-            for sysnumber in reversed(range(MAX_SYSCALL + 2)):
-                x = (i - 1) % 24
-                y = (i - 1) // 24
-                i += 1
-
-                if x == 0 and y != 0:
-                    staticsourcedat += "\n"
-                    staticbindat += "\n"
-                    dynuseddat += "\n"
-                    dynstubfakedat += "\n"
-
-                p = 0
-                if sysnumber <= MAX_SYSCALL:
-                    p = cumulative[1][sysnumber]
-                dynuseddat += (
-                    str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
-                )
-
-                if sysnumber <= MAX_SYSCALL:
-                    p = cumulative[0][sysnumber]
-                dynstubfakedat += (
-                    str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
-                )
-
-                if sysnumber <= MAX_SYSCALL:
-                    p = cumulative_binary[0][sysnumber]
-                staticbindat += (
-                    str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
-                )
-
-                if sysnumber <= MAX_SYSCALL:
-                    p = cumulative_source[0][sysnumber]
-                staticsourcedat += (
-                    str(x) + " " + str(y) + " " + str(p) + " " + str(sysnumber) + "\n"
-                )
-
-            with open(os.path.join("./data-staticsource.dat"), "a") as outf:
-                outf.write(staticsourcedat)
-            with open(os.path.join("./data-staticbinary.dat"), "a") as outf:
-                outf.write(staticbindat)
-            with open(os.path.join("./data-dynused.dat"), "a") as outf:
-                outf.write(dynuseddat)
-            with open(os.path.join("./data-dynstubfake.dat"), "a") as outf:
-                outf.write(dynstubfakedat)
-
-            # generate dumps (only used separately for correlation checks)
-            dynuseddat_dump = ""
-            dynstubfakedat_dump = ""
-            dynstubdat_dump = ""
-
-            cumulative_nofake = process_cumulative(
-                db, considered, bench=benchmark, suite=testsuite, ignore_fake=True
-            )
-
-            for sysnumber in range(MAX_SYSCALL):
-                p = cumulative[1][sysnumber]
-                dynuseddat_dump += str(sysnumber) + "\t" + str(p) + "\n"
-
-                p = cumulative[0][sysnumber]
-                dynstubfakedat_dump += str(sysnumber) + "\t" + str(100 - p) + "\n"
-
-                p = cumulative_nofake[0][sysnumber]
-                dynstubdat_dump += str(sysnumber) + "\t" + str(100 - p) + "\n"
-
-            with open(os.path.join("./data-dynused-dump.dat"), "a") as outf:
-                outf.write(dynuseddat_dump)
-            with open(os.path.join("./data-dynstubfake-dump.dat"), "a") as outf:
-                outf.write(dynstubfakedat_dump)
-            with open(os.path.join("./data-dynstub-dump.dat"), "a") as outf:
-                outf.write(dynstubdat_dump)
-
-            logger.info("Building plot")
-            cwd = os.getcwd()
-            runcmd = [
-                "docker",
-                "run",
-                "-it",
-                "--rm",
-                "-v",
-                cwd + ":/mnt",
-                "loupe-plot",
-                "gnuplot",
-                "/mnt/resources/heatmap-plot.gnu",
-            ]
-            print(" ".join(runcmd))
-            process = subprocess.Popen(runcmd)
-            process.wait()
-
-            # notify user
-            print("Plot: ./heapmap-dynamic-used.svg")
-            print("Plot: ./heapmap-dynamic-stubfake.svg")
-            print("Plot: ./heapmap-static-binary.svg")
-
-            if args.ssource is not True:
-                os.remove("./heapmap-static-source.svg")
-            else:
-                print("Plot: ./heapmap-static-source.svg")
-        elif args.cumulativeplot is True:
-            # process data
-            logger.info("Processing data")
-
-            # we need to be able to use the same dataset for all lines
-            considered = get_workloads(
-                db, args.applist.split(","), benchmark, False, False, False
-            )[1]
-            logger.info("Apps considered in this plot: " + " ".join(considered))
-
-            cumulative = process_cumulative(
-                db, considered, bench=benchmark, suite=testsuite
-            )
-
-            cumulative_binary = process_cumulative(
-                db, considered, False, False, True, False
-            )
-
-            cumulative_source = process_cumulative(
-                db, considered, False, False, False, True
-            )
-
-            # generate data.dat
-            d = {}
-            c = 0
-            for i in sorted(cumulative_binary[0].values(), reverse=True):
-                d[c] = i
-                c += 1
-
-            bin = "# x\tstatic-binary\n" + "\n".join(
-                ["%s\t%s" % (k, v) for (k, v) in (d.items())]
-            )
-
-            d = {}
-            c = 0
-            for i in sorted(cumulative_source[0].values(), reverse=True):
-                d[c] = i
-                c += 1
-
-            src = "# x\tstatic-source\n" + "\n".join(
-                ["%s\t%s" % (k, v) for (k, v) in (d.items())]
-            )
-
-            d = {}
-            c = 0
-            for i in sorted(cumulative[0].values(), reverse=True):
-                d[c] = i
-                c += 1
-
-            req = "# x\tdyn-req\n" + "\n".join(
-                ["%s\t%s" % (k, v) for (k, v) in (d.items())]
-            )
-
-            d = {}
-            c = 0
-            for i in sorted(cumulative[1].values(), reverse=True):
-                d[c] = i
-                c += 1
-
-            exe = "# x\tdyn-exe\n" + "\n".join(
-                ["%s\t%s" % (k, v) for (k, v) in (d.items())]
-            )
-
-            with open(os.path.join("./data.dat"), "a") as outf:
-                outf.write(bin)
-                outf.write("\n\n\n")
-                outf.write(src)
-                outf.write("\n\n\n")
-                outf.write(exe)
-                outf.write("\n\n\n")
-                outf.write(req)
-
-            logger.info("Building plot")
-            cwd = os.getcwd()
-            runcmd = [
-                "docker",
-                "run",
-                "-it",
-                "--rm",
-                "-v",
-                cwd + ":/mnt",
-                "loupe-plot",
-                "gnuplot",
-                "/mnt/resources/cumulative-plot.gnu",
-            ]
-            print(" ".join(runcmd))
-            process = subprocess.Popen(runcmd)
-            process.wait()
-
-            # notify user
-            print("Plot: ./cumulative-nostatic.svg")
-            print("Plot: ./cumulative-nosource.svg")
-
-            if args.ssource is True:
-                print("Plot: ./cumulative-nobinary.svg")
-                print("Plot: ./cumulative-all.svg")
-            else:
-                os.remove("./cumulative-nobinary.svg")
-                os.remove("./cumulative-all.svg")
-        elif args.supportfile is not None:
-            supported = set(format_syscall_list(open_syscall_file(args.supportfile)))
-            required = set(format_syscall_list(usage["required"]))
-            stubbed = set(format_syscall_list(usage["stubbed"]))
-            faked = set(format_syscall_list(usage["faked"]))
-            print("Missing a full implementation:")
-            print(
-                str(format_syscall_list_to_names(list(required.difference(supported))))
-            )
-            print("Missing a stub:")
-            print(
-                str(format_syscall_list_to_names(list(stubbed.difference(supported))))
-            )
-            print("Missing a fake:")
-            print(str(format_syscall_list_to_names(list(faked.difference(supported)))))
-
-            support_plan(args.applist.split(","), supported)
-
-        else:
-            logger.warning("Not implemented yet.")
-            exit(0)
+        loupe_search(args)
 
     if args.cmd == "generate":
         wl = args.workload
@@ -1543,20 +1507,10 @@ if __name__ == "__main__":
             else:
                 wl = "suite"
         else:
-            ans = str(
-                input("Is this workload a benchmark or a testsuite? [bench/suite] ")
-            )
-            if (
-                ans.lower() == "b"
-                or ans.lower() == "benchmark"
-                or ans.lower() == "bench"
-            ):
+            ans = str(input("Is this workload a benchmark or a testsuite? [b/t] "))
+            if ans.lower()[0] == "b":
                 wl = "benchmark-" + wl
-            elif (
-                ans.lower() == "s"
-                or ans.lower() == "testsuite"
-                or ans.lower() == "suite"
-            ):
+            elif ans.lower()[0] == "t":
                 wl = "suite-" + wl
             else:
                 logger.error("Cannot understand that answer ('%s')." % ans)
