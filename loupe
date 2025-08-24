@@ -1478,7 +1478,10 @@ if __name__ == "__main__":
     if not args.verbose:
         logger.remove(0)
         logger.add(
-            sys.stdout, format="<green>{level}</green> | {message}", colorize=True
+            sys.stdout,
+            level="INFO",
+            format="<green>{level}</green> | {message}",
+            colorize=True,
         )
 
     logger.info("Checking database...")
