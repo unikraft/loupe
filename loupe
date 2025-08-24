@@ -1102,14 +1102,14 @@ def loupe_search(args):
                 pass
 
     if args.showusage is True:
-        print("Required:")
-        print(format_syscall_list(usage["required"]))
-        print("Can be stubbed:")
-        print(format_syscall_list(usage["stubbed"]))
-        print("Can be faked:")
-        print(format_syscall_list(usage["faked"]))
-        print("Can be both stubbed or faked:")
-        print(format_syscall_list(usage["both"]))
+        logger.info("Required:")
+        logger.info(format_syscall_list(usage["required"]))
+        logger.info("Can be stubbed:")
+        logger.info(format_syscall_list(usage["stubbed"]))
+        logger.info("Can be faked:")
+        logger.info(format_syscall_list(usage["faked"]))
+        logger.info("Can be both stubbed or faked:")
+        logger.info(format_syscall_list(usage["both"]))
     elif args.paperhistogramplot is True:
         apps = [
             "haproxy",
