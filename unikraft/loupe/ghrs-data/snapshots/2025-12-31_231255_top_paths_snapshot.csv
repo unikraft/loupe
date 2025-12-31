@@ -1,0 +1,9 @@
+url_path,views_total,views_unique
+/unikraft/loupe,8,7
+/unikraft/loupe/blob/staging/README.md,4,3
+/unikraft/loupe/blob/staging/doc/DATABASE_FORMAT.md,4,2
+/unikraft/loupe/tree/staging/docker,2,2
+/unikraft/loupe/blob/staging/docker/Dockerfile.loupe-base,1,1
+/unikraft/loupe/blob/staging/docker/Dockerfile.loupe-plot,1,1
+/unikraft/loupe/blob/staging/explore.py,1,1
+/unikraft/loupe/pulse,1,1
