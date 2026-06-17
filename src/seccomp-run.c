@@ -470,7 +470,7 @@ main(int argc, char **argv)
 {
     char *evalue = NULL;
     char *nvalue = NULL;
-    int c, sysnum, errno, *syscalls, status;
+    int c, sysnum, f_errno = 0, *syscalls, status;
     int flags = 0; /* make sure to zero initialize */
 
     /* only valid with flags = DO_PARTIALSTUB or DO_PATHSTUB */
@@ -546,7 +546,7 @@ main(int argc, char **argv)
                 if (strcmp(evalue, "crash") == 0) {
 		    SETF(flags, DO_CRASH);
 	        } else {
-                    errno = strtol(evalue, NULL, 0);
+                    f_errno = strtol(evalue, NULL, 0);
 		    SETF(flags, DO_ERRNO);
 		}
                 break;
@@ -561,11 +561,20 @@ main(int argc, char **argv)
 		SETF(flags, DO_PTRACE);
 		SETF(flags, DO_CHECKPATH);
 
-                strcpy(EXECUTABLE_PATH, optarg);
                 if (optarg[0] == '-') {
                     error ("Invalid value passed to -y.\n");
+                    usage(argv[0]);
                     exit(EXIT_FAILURE);
                 }
+
+                if (strlen(optarg) >= PATH_MAX) {
+                    error ("Path passed to -y is too long (max %d characters).\n",
+                           PATH_MAX - 1);
+                    exit(EXIT_FAILURE);
+                }
+
+                strncpy(EXECUTABLE_PATH, optarg, PATH_MAX);
+                EXECUTABLE_PATH[PATH_MAX] = '\0';
 
 		break;
             case 'z':
@@ -645,7 +654,7 @@ main(int argc, char **argv)
                       "but ptrace option only compatible with one at a time.", sysnum);
                 exit(EXIT_FAILURE);
             }
-            ptracer_loop(syscalls[0], ptrace_pos, ptrace_val, ptrace_str, flags, errno);
+            ptracer_loop(syscalls[0], ptrace_pos, ptrace_val, ptrace_str, flags, f_errno);
             exit(EXIT_SUCCESS);
 	} else {
 	    /* child = tracee */
@@ -659,7 +668,7 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    if (install_filter(sysnum, syscalls, flags, errno))
+    if (install_filter(sysnum, syscalls, flags, f_errno))
         exit(EXIT_FAILURE);
 
     debug("Alright, execv-ing now.\n");
