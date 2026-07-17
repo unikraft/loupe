@@ -42,7 +42,6 @@ import sys
 import src.common as common
 import subprocess
 import threading
-from distutils.dir_util import copy_tree
 from src.common import *
 from datetime import datetime
 from loguru import logger
@@ -899,7 +898,7 @@ def run_tests(
                     os.path.join(runpath, "dockerfile_data/%s" % file)
                 )
                 if os.path.isdir(source):
-                    copy_tree(source, destination)
+                    shutil.copytree(source, destination, dirs_exist_ok=True)
                 else:
                     shutil.copyfile(source, destination)
     else:
