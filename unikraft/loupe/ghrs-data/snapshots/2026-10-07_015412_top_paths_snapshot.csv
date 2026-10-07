@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/unikraft/loupe,17,11
+/unikraft/loupe/tree/staging/src,3,1
+/unikraft/loupe/blob/staging/README.md,2,2
+/unikraft/loupe/issues,2,2
+/unikraft/loupe/blob/b60f2bcdf9590695c00afea82098541f6b7bb132/README.md,1,1
+/unikraft/loupe/blob/staging/doc/PERF_METRICS.md,1,1
+/unikraft/loupe/blob/staging/index.md,1,1
+/unikraft/loupe/blob/staging/requirements.txt,1,1
+/unikraft/loupe/blob/staging/src/common/args.py,1,1
+/unikraft/loupe/blob/staging/src/static-binary-analyser/code_analyser.py,1,1
