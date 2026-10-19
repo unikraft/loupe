@@ -1,0 +1,9 @@
+url_path,views_total,views_unique
+/unikraft/loupe,8,5
+/unikraft/loupe/issues,7,5
+/unikraft/loupe/blob/staging/COPYING.md,4,4
+/unikraft/loupe/pulls,3,2
+/unikraft/loupe/blob/staging/README.md,2,2
+/unikraft/loupe/blob/staging/doc/PERF_METRICS.md,2,2
+/unikraft/loupe/blob/staging/requirements.txt,1,1
+/unikraft/loupe/graphs/commit-activity,1,1
