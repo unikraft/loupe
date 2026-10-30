@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/unikraft/loupe/blob/edce8006/README.md,20,20
+/unikraft/loupe/blob/edce8006/Dockerfile.loupe-base,3,3
+/unikraft/loupe/blob/edce8006/dyn.csv,3,3
+/unikraft/loupe/blob/edce8006/index.md,3,3
+/unikraft/loupe/blob/edce8006/root/explore.py,3,3
+/unikraft/loupe/blob/edce8006/static-source-analyser,3,3
+/unikraft/loupe/blob/edce8006/static_analyser.py,3,3
+/unikraft/loupe/blob/edce8006/static_binary.csv,3,3
+/unikraft/loupe/blob/edce8006/static_sources.csv,3,3
+/unikraft/loupe/blob/edce8006/doc/PERF_METRICS.md,2,2
